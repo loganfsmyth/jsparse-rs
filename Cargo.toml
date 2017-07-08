@@ -1,0 +1,7 @@
+[package]
+name = "jsparse"
+version = "0.1.0"
+authors = ["Logan Smyth <loganfsmyth@gmail.com>"]
+
+[dependencies]
+ucd = "0.1.1"
