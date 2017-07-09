@@ -41,122 +41,129 @@ pub struct Token<'a> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TokenType<'a> {
-  Whitespace,
-  LineTerminator,
+    Whitespace,
+    LineTerminator,
 
-  LCurly,
-  LParen,
-  RParen,
-  LSquare,
-  RSquare,
-  Semicolon,
-  Comma,
-  Tilde,
-  Quest,
-  Colon,
+    LCurly,
+    LParen,
+    RParen,
+    LSquare,
+    RSquare,
+    Semicolon,
+    Comma,
+    Tilde,
+    Quest,
+    Colon,
 
-  Period,
-  Ellipsis,
+    Period,
+    Ellipsis,
 
-  RCurly,
-  IdentifierName,
+    RCurly,
+    IdentifierName,
 
-  LAngle,
-  LessEq,
-  LAngleAngle,
-  LAngleAngleEq,
+    LAngle,
+    LessEq,
+    LAngleAngle,
+    LAngleAngleEq,
 
-  RAngle,
-  GreaterEq,
-  RAngleAngle,
-  RAngleAngleAngle,
-  RAngleAngleEq,
-  RAngleAngleAngleEq,
+    RAngle,
+    GreaterEq,
+    RAngleAngle,
+    RAngleAngleAngle,
+    RAngleAngleEq,
+    RAngleAngleAngleEq,
 
-  NEq,
-  NEqEq,
-  Exclam,
+    NEq,
+    NEqEq,
+    Exclam,
 
-  Eq,
-  EqEq,
-  EqEqEq,
-  Arrow,
+    Eq,
+    EqEq,
+    EqEqEq,
+    Arrow,
 
-  Plus,
-  PlusPlus,
-  PlusEq,
+    Plus,
+    PlusPlus,
+    PlusEq,
 
-  Minus,
-  MinusMinus,
-  MinusEq,
+    Minus,
+    MinusMinus,
+    MinusEq,
 
-  Mod,
-  ModEq,
+    Mod,
+    ModEq,
 
-  Star,
-  StarEq,
-  StarStar,
-  StarStarEq,
+    Star,
+    StarEq,
+    StarStar,
+    StarStarEq,
 
-  Amp,
-  AmpAmp,
-  AmpEq,
+    Amp,
+    AmpAmp,
+    AmpEq,
 
-  Bar,
-  BarBar,
-  BarEq,
+    Bar,
+    BarBar,
+    BarEq,
 
-  Caret,
-  CaretEq,
+    Caret,
+    CaretEq,
 
-  Comment,
+    Comment,
 
-  Div,
-  DivEq,
-  RegularExpressionLiteral(&'a str, &'a str),
+    Div,
+    DivEq,
+    RegularExpressionLiteral(&'a str, &'a str),
 
-  NumericLiteral(NumberType, &'a str),
-  StringLiteral(&'a str),
+    NumericLiteral(NumberType, &'a str),
+    StringLiteral(&'a str),
 
-  TemplateTick,
-  TemplateClose,
-  TemplateOpen,
-  TemplateChars(&'a str),
+    TemplateTick,
+    TemplateClose,
+    TemplateOpen,
+    TemplateChars(&'a str),
 
-  Unknown,
-  EOF,
+    Unknown,
+    EOF,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum NumberType {
-  Hex,
-  Octal,
-  Binary,
-  Float,
+    Hex,
+    Octal,
+    Binary,
+    Float,
 }
 
 
 
 
-fn read_tokens<'a, 'b, 'c>(chars: &'a str, tokens: &'b mut [Token<'c>]) -> (&'a str, &'b [Token<'c>]) {
-	let mut c = chars;
-	let mut i = 0;
-	for token in tokens.iter_mut() {
-		let next = read_token(c, token);
+fn read_tokens<'a, 'b, 'c>(
+    chars: &'a str,
+    tokens: &'b mut [Token<'c>],
+) -> (&'a str, &'b [Token<'c>]) {
+    let mut c = chars;
+    let mut i = 0;
+    for token in tokens.iter_mut() {
+        let next = read_token(c, token);
 
-		if next as *const _ == c as *const _ { break; }
-		if token.tok == TokenType::Unknown { break; }
+        if next as *const _ == c as *const _ {
+            break;
+        }
+        if token.tok == TokenType::Unknown {
+            break;
+        }
 
-		c = next;
-		i += 1;
-	}
+        c = next;
+        i += 1;
+    }
 
-	(c, &tokens[..i])
+    (c, &tokens[..i])
 }
 
 fn read_token<'a>(chars: &'a str, token: &mut Token) -> &'a str {
 
 
-	// if same slice is returned, it means "not enough chars"
+    // if same slice is returned, it means "not enough chars"
     return chars;
 }
