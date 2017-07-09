@@ -1,6 +1,8 @@
 use ucd::Codepoint;
 use std::iter::Peekable;
 
+use std::mem;
+
 
 #[cfg(test)]
 mod tests {
@@ -8,11 +10,13 @@ mod tests {
     #[test]
     fn it_works() {
         //tokenize("one;");
-        let mut s = TokenStream::new("one;'foo';`foo`;0.3;08.2;".chars());
+        let mut s = TokenStream::new("one;'foo';`foo`;0.3;08.2;`a\\u{123y}c`;".chars());
 
         for token in s {
             println!("Token: {:?}", token);
         }
+
+        println!("{}", mem::size_of::<TState>());
     }
 }
 
@@ -39,9 +43,10 @@ impl<T: Iterator<Item = char>> TokenStream<T> {
 }
 
 impl<T: Iterator<Item = char>> Iterator for TokenStream<T> {
-    type Item = TState;
+    type Item = (TState, String);
 
-    fn next(&mut self) -> Option<TState> {
+    fn next(&mut self) -> Option<(TState, String)> {
+        let mut s = String::new();
         loop {
             {
                 let state = self.state;
@@ -49,28 +54,34 @@ impl<T: Iterator<Item = char>> Iterator for TokenStream<T> {
 
                 match c {
                     Some(c) => {
+
                         // println!("Step: {}", *c);
                         self.state = self.state.step(*c, self.flags);
 
                         // println!("From {:?} to {:?}", state, self.state);
 
                         match self.state {
-                            TState::Start => {
-                                return Some(state);
+                            TState::Start | TState::Unknown => {
+                                let st = s;
+                                s = String::new();
+
+                                return Some((state, st));
                             }
-                            _ => {}
+                            _ => {
+                                s.push(*c);
+                            }
                         }
                     }
                     None => {
                         match self.state {
-                            TState::Start => {
+                            TState::Start | TState::Unknown => {
                                 return None;
                             }
                             _ => {
                                 self.state = self.state.step('_', self.flags);
                                 match self.state {
-                                    TState::Start => {
-                                        return Some(state);
+                                    TState::Start | TState::Unknown => {
+                                        return Some((state, s));
                                     }
                                     _ => {
                                         panic!(
@@ -91,7 +102,7 @@ impl<T: Iterator<Item = char>> Iterator for TokenStream<T> {
                 TState::Unknown => {
                     // TODO: Figure out a good storing for recoverable tokenization?
                     self.it.next();
-                    return Some(TState::Unknown);
+                    return Some((TState::Unknown, String::from("")));
                 }
                 _ => {
                     self.it.next();
@@ -275,28 +286,58 @@ enum TState {
     TemplateCharLineTerminator,
     TemplateCharEnd,
 
-    EscapeSequenceOrContinuation(EscapeReturnState),
-    EscapeSequenceLegacyOctal1(EscapeReturnState),
-    EscapeSequenceLegacyOctal2(EscapeReturnState),
-    EscapeSequenceMaybeContinuationSequence(EscapeReturnState),
-    EscapeSequence(EscapeReturnState),
-    EscapeSequenceUnicode(EscapeReturnState),
-    EscapeSequenceUnicodeHex(EscapeReturnState),
-    EscapeSequenceUnicodeHex1(EscapeReturnState),
-    EscapeSequenceUnicodeHex2(EscapeReturnState),
-    EscapeSequenceUnicodeHex3(EscapeReturnState),
-    EscapeSequenceUnicodeHex4(EscapeReturnState),
-    EscapeSequenceHex1(EscapeReturnState),
-    EscapeSequenceHex2(EscapeReturnState),
-    EscapeSequenceDone(EscapeReturnState),
-}
+    // IdentEscape
+    IdentEscapeSequence,
+    IdentEscapeHex1,
+    IdentEscapeHex2,
+    IdentEscapeHex3,
+    IdentEscapeHex4,
+    IdentEscapeHexStart,
+    IdentEscapeHex,
+    IdentEscapeEnd,
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum EscapeReturnState {
-    IdentifierPart,
-    SingleString,
-    DoubleString,
-    TemplateChar,
+    // SingleEscape
+    SingleEscapeSequenceOrContinuation,
+    SingleEscapeSequenceMaybeContinuationSequence,
+    SingleLegacyOctal1,
+    SingleLegacyOctal2,
+    SingleEscapeHexStart,
+    SingleEscapeHex,
+    SingleEscapeHex1,
+    SingleEscapeHex2,
+    SingleEscapeHex3,
+    SingleEscapeHex4,
+    SingleEscapeSequenceHex1,
+    SingleEscapeSequenceHex2,
+    SingleEscapeEnd,
+
+    // DoubleEscape
+    DoubleEscapeSequenceOrContinuation,
+    DoubleEscapeSequenceMaybeContinuationSequence,
+    DoubleLegacyOctal1,
+    DoubleLegacyOctal2,
+    DoubleEscapeHexStart,
+    DoubleEscapeHex,
+    DoubleEscapeHex1,
+    DoubleEscapeHex2,
+    DoubleEscapeHex3,
+    DoubleEscapeHex4,
+    DoubleEscapeSequenceHex1,
+    DoubleEscapeSequenceHex2,
+    DoubleEscapeEnd,
+
+    // Template Literal
+    TemplateEscapeSequenceOrContinuation,
+    TemplateEscapeSequenceMaybeContinuationSequence,
+    TemplateEscapeHexStart,
+    TemplateEscapeHex,
+    TemplateEscapeHex1,
+    TemplateEscapeHex2,
+    TemplateEscapeHex3,
+    TemplateEscapeHex4,
+    TemplateEscapeSequenceHex1,
+    TemplateEscapeSequenceHex2,
+    TemplateEscapeEnd,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -305,7 +346,7 @@ struct TokenFlags {
     template: bool,
     annexb: bool,
 
-    read_line: bool
+    read_line: bool,
 }
 
 impl TokenFlags {
@@ -390,7 +431,7 @@ impl TState {
                     '"' => TState::DChars,
                     '\'' => TState::SChars,
 
-                    '\\' => TState::EscapeSequence(EscapeReturnState::IdentifierPart),
+                    '\\' => TState::IdentEscapeSequence,
                     c if is_ident_start(c) => TState::Ident,
                     _ => TState::MiscLineText,
                 }
@@ -579,7 +620,7 @@ impl TState {
             }
             TState::Ident => {
                 match c {
-                    '\\' => TState::EscapeSequence(EscapeReturnState::IdentifierPart),
+                    '\\' => TState::IdentEscapeSequence,
                     c if is_ident_continue(c) => TState::Ident,
                     _ => TState::Start,
                 }
@@ -604,11 +645,10 @@ impl TState {
                     'e' | 'E' => TState::ExponentSign,
                     '0'...'7' if flags.annexb => TState::LegacyOctal,
                     '8' | '9' if flags.annexb => TState::Integer,
-                    _ => {
-                        TState::Start
-                    }
+                    _ => TState::Start,
                 }
             }
+
             TState::Hex => {
                 match c {
                     '0'...'9' => TState::Hex,
@@ -675,7 +715,7 @@ impl TState {
             TState::DChars => {
                 match c {
                     '"' => TState::DCharEnd,
-                    '\\' => TState::EscapeSequenceOrContinuation(EscapeReturnState::DoubleString),
+                    '\\' => TState::DoubleEscapeSequenceOrContinuation,
                     _ => TState::DChars,
                 }
             }
@@ -684,7 +724,7 @@ impl TState {
             TState::SChars => {
                 match c {
                     '\'' => TState::SCharEnd,
-                    '\\' => TState::EscapeSequenceOrContinuation(EscapeReturnState::SingleString),
+                    '\\' => TState::SingleEscapeSequenceOrContinuation,
                     _ => TState::SChars,
                 }
             }
@@ -746,7 +786,7 @@ impl TState {
                 match c {
                     '`' => TState::TemplateCharEnd,
                     '$' => TState::TemplateDollarChar,
-                    '\\' => TState::EscapeSequenceOrContinuation(EscapeReturnState::TemplateChar),
+                    '\\' => TState::TemplateEscapeSequenceOrContinuation,
                     '\r' => TState::TemplateCharLineTerminator,
                     _ => TState::TemplateChars,
                 }
@@ -756,7 +796,7 @@ impl TState {
                     '`' => TState::TemplateCharEnd,
                     '{' => TState::TemplateCharEnd,
                     '$' => TState::TemplateDollarChar,
-                    '\\' => TState::EscapeSequenceOrContinuation(EscapeReturnState::TemplateChar),
+                    '\\' => TState::TemplateEscapeSequenceOrContinuation,
                     '\r' => TState::TemplateCharLineTerminator,
                     _ => TState::TemplateChars,
                 }
@@ -766,7 +806,7 @@ impl TState {
                 match c {
                     '\n' => TState::TemplateChars,
                     '$' => TState::TemplateDollarChar,
-                    '\\' => TState::EscapeSequenceOrContinuation(EscapeReturnState::TemplateChar),
+                    '\\' => TState::TemplateEscapeSequenceOrContinuation,
                     '\r' => TState::TemplateCharLineTerminator,
                     _ => TState::TemplateChars,
                 }
@@ -774,124 +814,295 @@ impl TState {
 
             TState::TemplateCharEnd => TState::Start,
 
-            // TODO: Escape sequences aren't working properly
-            TState::EscapeSequenceOrContinuation(ref next) => {
+            // IdentEscape
+            TState::IdentEscapeSequence => {
                 match c {
-                    '\n' | '\u{2028}' | '\u{2029}' => TState::EscapeSequenceDone(*next),
-                    '\r' => TState::EscapeSequenceMaybeContinuationSequence(*next),
+                    'u' => TState::IdentEscapeHex1,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::IdentEscapeHex1 => {
+                match c {
+                    '{' => TState::IdentEscapeHexStart,
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex2,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::IdentEscapeHex2 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex3,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::IdentEscapeHex3 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex4,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::IdentEscapeHex4 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeEnd,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::IdentEscapeHexStart => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::IdentEscapeHex => {
+                match c {
+                    '}' => TState::IdentEscapeEnd,
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::IdentEscapeEnd => TState::Ident, // no-consume
 
-                    'u' => TState::EscapeSequenceUnicode(*next),
-                    'x' => TState::EscapeSequenceHex1(*next),
-                    '\'' | '"' | '\\' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' => {
-                        TState::EscapeSequenceDone(*next)
-                    }
+            // SingleEscape
+            TState::SingleEscapeSequenceOrContinuation => {
+                match c {
+                    '0'...'3' if flags.annexb => TState::SingleLegacyOctal1,
+                    '4'...'7' if flags.annexb => TState::SingleLegacyOctal2,
+
+                    '0' => TState::SingleEscapeEnd,
                     '1'...'9' => TState::Unknown,
-                    _ => TState::EscapeSequenceDone(*next),
+                    'u' => TState::SingleEscapeHex1,
+                    'x' => TState::SingleEscapeSequenceHex1,
+                    '\r' => TState::SingleEscapeSequenceMaybeContinuationSequence,
+                    '\n' | '\u{2028}' | '\u{2029}' => TState::SingleEscapeEnd,
+                    _ => TState::SingleEscapeEnd,
                 }
             }
-            TState::EscapeSequenceMaybeContinuationSequence(ref next) => {
+            TState::SingleEscapeSequenceMaybeContinuationSequence => {
                 match c {
-                    '\n' => TState::EscapeSequenceDone(*next),
-                    _ => {
-                        // TODO: Make escaped items their own tokens to make decoding easier
-                        // _ => TState::EscapeSequenceDone(*next), // no-consume
-                        match *next {  
-                            EscapeReturnState::IdentifierPart => TState::Ident,
-                            EscapeReturnState::SingleString => TState::SChars,
-                            EscapeReturnState::DoubleString => TState::DChars,
-                            EscapeReturnState::TemplateChar => TState::TemplateChars,
-                        }
-                    }
+                    '\n' => TState::SingleEscapeEnd,
+                    _ => TState::SingleEscapeEnd,
+                }
+            }
+            TState::SingleLegacyOctal1 => {
+                match c {
+                    '0'...'7' => TState::SingleLegacyOctal2,
+                    _ => TState::SChars,
+                }
+            }
+            TState::SingleLegacyOctal2 => {
+                match c {
+                    '0'...'7' => TState::SingleEscapeEnd,
+                    _ => TState::SChars,
                 }
             }
 
-            TState::EscapeSequence(ref next) => {
+            TState::SingleEscapeHex1 => {
                 match c {
-                    'u' => TState::EscapeSequenceUnicode(*next),
-                    'x' => TState::EscapeSequenceHex1(*next),
-                    '\'' | '"' | '\\' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' => {
-                        TState::EscapeSequenceDone(*next)
-                    }
+                    '{' => TState::SingleEscapeHexStart,
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex2,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::SingleEscapeHex2 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex3,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::SingleEscapeHex3 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex4,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::SingleEscapeHex4 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeEnd,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::SingleEscapeHexStart => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::SingleEscapeHex => {
+                match c {
+                    '}' => TState::SingleEscapeEnd,
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::SingleEscapeSequenceHex1 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex3,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::SingleEscapeSequenceHex2 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeEnd,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::SingleEscapeEnd => TState::SChars, // no-consume
 
-                    '0'...'3' if flags.annexb => TState::EscapeSequenceLegacyOctal1(*next),
-                    '4'...'7' if flags.annexb => TState::EscapeSequenceLegacyOctal2(*next),
+            // DoubleEscape
+            TState::DoubleEscapeSequenceOrContinuation => {
+                match c {
+                    '0'...'3' if flags.annexb => TState::DoubleLegacyOctal1,
+                    '4'...'7' if flags.annexb => TState::DoubleLegacyOctal2,
 
+                    '0' => TState::DoubleEscapeEnd,
                     '1'...'9' => TState::Unknown,
-                    '\r' | '\n' | '\u{2028}' | '\u{2029}' => TState::Unknown,
-                    _ => TState::EscapeSequenceDone(*next),
+                    'u' => TState::DoubleEscapeHex1,
+                    'x' => TState::DoubleEscapeSequenceHex1,
+                    '\r' => TState::DoubleEscapeSequenceMaybeContinuationSequence,
+                    '\n' | '\u{2028}' | '\u{2029}' => TState::DoubleEscapeEnd,
+                    _ => TState::DoubleEscapeEnd,
+                }
+            }
+            TState::DoubleEscapeSequenceMaybeContinuationSequence => {
+                match c {
+                    '\n' => TState::DoubleEscapeEnd,
+                    _ => TState::DoubleEscapeEnd,
                 }
             }
 
-            TState::EscapeSequenceLegacyOctal1(ref next) => {
+            TState::DoubleLegacyOctal1 => {
                 match c {
-                    '0'...'7' => TState::EscapeSequenceLegacyOctal2(*next),
-                    _ => TState::Start, // no-consume
+                    '0'...'7' => TState::SingleLegacyOctal2,
+                    _ => TState::SChars,
                 }
             }
-            TState::EscapeSequenceLegacyOctal2(ref next) => {
+            TState::DoubleLegacyOctal2 => {
                 match c {
-                    '0'...'7' => TState::EscapeSequenceDone(*next),
-                    _ => TState::Start, // no-consume
-                }
-            }
-            TState::EscapeSequenceUnicode(ref next) => {
-                match c {
-                    '{' => TState::EscapeSequenceUnicodeHex(*next),
-                    _ => TState::EscapeSequenceUnicodeHex1(*next), // no-consume
-                }
-            }
-            TState::EscapeSequenceUnicodeHex(ref next) => {
-                match c {
-                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::EscapeSequenceUnicodeHex(*next),
-                    '}' => TState::EscapeSequenceDone(*next),
-                    _ => TState::Unknown,
-                }
-            }
-            TState::EscapeSequenceUnicodeHex1(ref next) => {
-                match c {
-                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::EscapeSequenceUnicodeHex2(*next),
-                    _ => TState::Unknown,
+                    '0'...'7' => TState::DoubleEscapeEnd,
+                    _ => TState::SChars,
                 }
             }
 
-            TState::EscapeSequenceUnicodeHex2(ref next) => {
+            TState::DoubleEscapeHex1 => {
                 match c {
-                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::EscapeSequenceUnicodeHex3(*next),
+                    '{' => TState::DoubleEscapeHexStart,
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex2,
                     _ => TState::Unknown,
                 }
             }
-            TState::EscapeSequenceUnicodeHex3(ref next) => {
+            TState::DoubleEscapeHex2 => {
                 match c {
-                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::EscapeSequenceUnicodeHex4(*next),
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex3,
                     _ => TState::Unknown,
                 }
             }
-            TState::EscapeSequenceUnicodeHex4(ref next) => {
+            TState::DoubleEscapeHex3 => {
                 match c {
-                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::EscapeSequenceDone(*next),
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex4,
                     _ => TState::Unknown,
                 }
             }
-            TState::EscapeSequenceHex1(ref next) => {
+            TState::DoubleEscapeHex4 => {
                 match c {
-                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::EscapeSequenceHex2(*next),
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeEnd,
                     _ => TState::Unknown,
                 }
             }
-            TState::EscapeSequenceHex2(ref next) => {
+            TState::DoubleEscapeHexStart => {
                 match c {
-                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::EscapeSequenceDone(*next),
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex,
                     _ => TState::Unknown,
                 }
             }
-            TState::EscapeSequenceDone(ref next) => {
-                match *next {
-                    EscapeReturnState::IdentifierPart => TState::Ident,
-                    EscapeReturnState::SingleString => TState::SChars,
-                    EscapeReturnState::DoubleString => TState::DChars,
-                    EscapeReturnState::TemplateChar => TState::TemplateChars,
+            TState::DoubleEscapeHex => {
+                match c {
+                    '}' => TState::DoubleEscapeEnd,
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex,
+                    _ => TState::Unknown,
                 }
             }
+            TState::DoubleEscapeSequenceHex1 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex3,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::DoubleEscapeSequenceHex2 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeEnd,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::DoubleEscapeEnd => TState::DChars, // no-consume
+
+            // TemplateEscape
+            TState::TemplateEscapeSequenceOrContinuation => {
+                match c {
+                    '0' => TState::TemplateEscapeEnd,
+                    '1'...'9' => TState::Unknown,
+                    'u' => TState::TemplateEscapeHex1,
+                    'x' => TState::TemplateEscapeSequenceHex1,
+                    '\r' => TState::TemplateEscapeSequenceMaybeContinuationSequence,
+                    '\n' | '\u{2028}' | '\u{2029}' => TState::TemplateEscapeEnd,
+                    _ => TState::TemplateEscapeEnd,
+                }
+            }
+            TState::TemplateEscapeSequenceMaybeContinuationSequence => {
+                match c {
+                    '\n' => TState::TemplateEscapeEnd,
+                    _ => TState::TemplateEscapeEnd,
+                }
+            }
+            TState::TemplateEscapeHex1 => {
+                match c {
+                    '{' => TState::TemplateEscapeHexStart,
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex2,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::TemplateEscapeHex2 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex3,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::TemplateEscapeHex3 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex4,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::TemplateEscapeHex4 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeEnd,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::TemplateEscapeHexStart => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::TemplateEscapeHex => {
+                match c {
+                    '}' => TState::TemplateEscapeEnd,
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::TemplateEscapeSequenceHex1 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex3,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::TemplateEscapeSequenceHex2 => {
+                match c {
+                    '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeEnd,
+                    _ => TState::Unknown,
+                }
+            }
+            TState::TemplateEscapeEnd => TState::TemplateChars, // no-consume
         }
     }
 }
