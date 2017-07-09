@@ -8,7 +8,7 @@ mod tests {
     #[test]
     fn it_works() {
         //tokenize("one;");
-        let mut s = TokenStream::new("one;'foo';`foo`;0.3;".chars());
+        let mut s = TokenStream::new("one;'foo';`foo`;0.3;08.2;".chars());
 
         for token in s {
             println!("Token: {:?}", token);
@@ -33,7 +33,7 @@ impl<T: Iterator<Item = char>> TokenStream<T> {
         TokenStream {
             it: it.peekable(),
             state: TState::new(),
-            flags: Default::default(),
+            flags: TokenFlags::new(true),
         }
     }
 }
@@ -159,6 +159,8 @@ enum TState {
     Start,
     Unknown,
 
+    MiscLineText,
+
     // Single-char states
     LParen,
     RParen,
@@ -239,11 +241,20 @@ enum TState {
     // 0       (\.[0-9]*)?     ([eE][+-]?[0-9]+)?
     // [0-9]+  (\.[0-9]*)?     ([eE][+-]?[0-9]+)?
     //         (\.[0-9]+)      ([eE][+-]?[0-9]+)?
+
+    // annex B
+    // top-level
+    // 0[0-7]+
+
+    // in fraction
+    // 0      [8-9]?[0-9]+
+    // 0[0-7]+[8-9][0-9]*
     Integer,
     Decimal,
     Exponent,
     ExponentSign,
     ExponentDigit,
+    LegacyOctal,
 
     // String parsing
     DChars,
@@ -265,6 +276,8 @@ enum TState {
     TemplateCharEnd,
 
     EscapeSequenceOrContinuation(EscapeReturnState),
+    EscapeSequenceLegacyOctal1(EscapeReturnState),
+    EscapeSequenceLegacyOctal2(EscapeReturnState),
     EscapeSequenceMaybeContinuationSequence(EscapeReturnState),
     EscapeSequence(EscapeReturnState),
     EscapeSequenceUnicode(EscapeReturnState),
@@ -290,15 +303,18 @@ enum EscapeReturnState {
 struct TokenFlags {
     operator: bool,
     template: bool,
-    appendixb: bool,
+    annexb: bool,
+
+    read_line: bool
 }
 
 impl TokenFlags {
-    fn new(appendixb: bool) -> TokenFlags {
+    fn new(annexb: bool) -> TokenFlags {
         TokenFlags {
             operator: false,
             template: false,
-            appendixb: appendixb,
+            annexb: annexb,
+            read_line: false,
         }
     }
 }
@@ -319,6 +335,9 @@ impl TState {
             TState::Unknown => TState::Start,
             TState::Start => {
                 match c {
+                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::LineTerminator,
+                    _ if flags.read_line => TState::MiscLineText,
+
                     // Spec explicit whitespace whitelist.
                     '\u{9}' | '\u{B}' | '\u{C}' | '\u{20}' | '\u{A0}' | '\u{FEFF}' => {
                         TState::Whitespace
@@ -329,7 +348,6 @@ impl TState {
                     '\u{202F}' |
                     '\u{205F}' |
                     '\u{3000}' => TState::Whitespace,
-                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::LineTerminator,
                     '(' => TState::LParen,
                     ')' => TState::RParen,
                     '{' => TState::LCurly,
@@ -367,13 +385,21 @@ impl TState {
                     }
                     '`' => TState::TemplateChars,
                     '.' => TState::Period,
-                    '0'...'9' => TState::Integer,
+                    '0' => TState::Zero,
+                    '1'...'9' => TState::Integer,
                     '"' => TState::DChars,
                     '\'' => TState::SChars,
 
                     '\\' => TState::EscapeSequence(EscapeReturnState::IdentifierPart),
                     c if is_ident_start(c) => TState::Ident,
-                    _ => TState::Unknown,
+                    _ => TState::MiscLineText,
+                }
+            }
+
+            TState::MiscLineText => {
+                match c {
+                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Start,
+                    _ => TState::MiscLineText,
                 }
             }
 
@@ -576,7 +602,11 @@ impl TState {
                     'b' | 'B' => TState::Binary,
 
                     'e' | 'E' => TState::ExponentSign,
-                    _ => TState::Start,
+                    '0'...'7' if flags.annexb => TState::LegacyOctal,
+                    '8' | '9' if flags.annexb => TState::Integer,
+                    _ => {
+                        TState::Start
+                    }
                 }
             }
             TState::Hex => {
@@ -596,6 +626,14 @@ impl TState {
             TState::Binary => {
                 match c {
                     '0' | '1' => TState::Binary,
+                    _ => TState::Start,
+                }
+            }
+
+            TState::LegacyOctal => {
+                match c {
+                    '0'...'7' => TState::LegacyOctal,
+                    '8' | '9' => TState::Integer,
                     _ => TState::Start,
                 }
             }
@@ -774,16 +812,32 @@ impl TState {
                     '\'' | '"' | '\\' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' => {
                         TState::EscapeSequenceDone(*next)
                     }
+
+                    '0'...'3' if flags.annexb => TState::EscapeSequenceLegacyOctal1(*next),
+                    '4'...'7' if flags.annexb => TState::EscapeSequenceLegacyOctal2(*next),
+
                     '1'...'9' => TState::Unknown,
                     '\r' | '\n' | '\u{2028}' | '\u{2029}' => TState::Unknown,
                     _ => TState::EscapeSequenceDone(*next),
                 }
             }
 
+            TState::EscapeSequenceLegacyOctal1(ref next) => {
+                match c {
+                    '0'...'7' => TState::EscapeSequenceLegacyOctal2(*next),
+                    _ => TState::Start, // no-consume
+                }
+            }
+            TState::EscapeSequenceLegacyOctal2(ref next) => {
+                match c {
+                    '0'...'7' => TState::EscapeSequenceDone(*next),
+                    _ => TState::Start, // no-consume
+                }
+            }
             TState::EscapeSequenceUnicode(ref next) => {
                 match c {
                     '{' => TState::EscapeSequenceUnicodeHex(*next),
-                    _ => TState::EscapeSequenceUnicodeHex1(*next),
+                    _ => TState::EscapeSequenceUnicodeHex1(*next), // no-consume
                 }
             }
             TState::EscapeSequenceUnicodeHex(ref next) => {
