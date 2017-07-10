@@ -338,6 +338,8 @@ enum TState {
     TemplateEscapeSequenceHex1,
     TemplateEscapeSequenceHex2,
     TemplateEscapeEnd,
+
+    EOF,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -360,6 +362,13 @@ impl TokenFlags {
     }
 }
 
+match state.write('c') {
+    TState::Start => {
+
+    }
+}
+
+
 impl Default for TokenFlags {
     fn default() -> TokenFlags {
         TokenFlags::new(false)
@@ -371,9 +380,30 @@ impl TState {
         TState::Start
     }
 
-    pub fn step(&self, c: char, flags: TokenFlags) -> TState {
-        match *self {
+    pub fn end(&mut self) -> TState {
+        let state = *self;
+
+        *self = match state {
+            TState::Start => TState::EOF,
+
+            // If in an UnknownToken state, also return that?
+            s => {
+                match self.step(' ') {
+                    TState::Start => TState::EOF,
+                    _ => s,
+                }
+            }
+        }
+
+        return state;
+    }
+
+    pub fn write(&mut self, c: char, flags: TokenFlags) -> TState {
+        let state = *self;
+
+        *self = match state {
             TState::Unknown => TState::Start,
+
             TState::Start => {
                 match c {
                     '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::LineTerminator,
@@ -697,13 +727,13 @@ impl TState {
                 match c {
                     '+' | '-' => TState::Exponent,
                     '0'...'9' => TState::ExponentDigit,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // InvalidNumberToken
                 }
             }
             TState::Exponent => {
                 match c {
                     '0'...'9' => TState::ExponentDigit,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // InvalidNumberToken
                 }
             }
             TState::ExponentDigit => {
@@ -712,6 +742,8 @@ impl TState {
                     _ => TState::Start,
                 }
             }
+
+
             TState::DChars => {
                 match c {
                     '"' => TState::DCharEnd,
@@ -738,7 +770,7 @@ impl TState {
                     '[' => TState::RegexClassChars,
                     '\\' => TState::RegexEscapedChars,
 
-                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown,
+                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown, // InvalidRegexp
                     _ => TState::RegexChars,
                 }
             }
@@ -748,7 +780,7 @@ impl TState {
                     '[' => TState::RegexClassChars,
                     '\\' => TState::RegexEscapedChars,
 
-                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown,
+                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown, // InvalidRegexp
                     _ => TState::RegexChars,
                 }
             }
@@ -757,20 +789,20 @@ impl TState {
                     '/' => TState::RegexFlags,
                     ']' => TState::RegexChars,
                     '\\' => TState::RegexClassEscapedChars,
-                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown,
+                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown, // InvalidRegexp
                     _ => TState::RegexClassChars,
                 }
             }
 
             TState::RegexClassEscapedChars => {
                 match c {
-                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown,
+                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown, // InvalidRegexp
                     _ => TState::RegexClassChars,
                 }
             }
             TState::RegexEscapedChars => {
                 match c {
-                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown,
+                    '\u{A}' | '\u{D}' | '\u{2028}' | '\u{2029}' => TState::Unknown, // InvalidRegexp
                     _ => TState::RegexChars,
                 }
             }
@@ -818,45 +850,45 @@ impl TState {
             TState::IdentEscapeSequence => {
                 match c {
                     'u' => TState::IdentEscapeHex1,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // if valid ident char, continue parsing ident, else back to start
                 }
             }
             TState::IdentEscapeHex1 => {
                 match c {
                     '{' => TState::IdentEscapeHexStart,
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex2,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // if valid ident char, continue parsing ident, else back to start
                 }
             }
             TState::IdentEscapeHex2 => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex3,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // if valid ident char, continue parsing ident, else back to start
                 }
             }
             TState::IdentEscapeHex3 => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex4,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // if valid ident char, continue parsing ident, else back to start
                 }
             }
             TState::IdentEscapeHex4 => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeEnd,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // if valid ident char, continue parsing ident, else back to start
                 }
             }
             TState::IdentEscapeHexStart => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // if valid ident char, continue parsing ident, else back to start
                 }
             }
             TState::IdentEscapeHex => {
                 match c {
                     '}' => TState::IdentEscapeEnd,
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // if valid ident char, continue parsing ident, else back to start
                 }
             }
             TState::IdentEscapeEnd => TState::Ident, // no-consume
@@ -868,7 +900,7 @@ impl TState {
                     '4'...'7' if flags.annexb => TState::SingleLegacyOctal2,
 
                     '0' => TState::SingleEscapeEnd,
-                    '1'...'9' => TState::Unknown,
+                    '1'...'9' => TState::Unknown, // Continue parsing ident
                     'u' => TState::SingleEscapeHex1,
                     'x' => TState::SingleEscapeSequenceHex1,
                     '\r' => TState::SingleEscapeSequenceMaybeContinuationSequence,
@@ -899,50 +931,50 @@ impl TState {
                 match c {
                     '{' => TState::SingleEscapeHexStart,
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex2,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // Keep looking for '
                 }
             }
             TState::SingleEscapeHex2 => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex3,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // Keep looking for '
                 }
             }
             TState::SingleEscapeHex3 => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex4,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // Keep looking for '
                 }
             }
             TState::SingleEscapeHex4 => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeEnd,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // Keep looking for '
                 }
             }
             TState::SingleEscapeHexStart => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // Keep looking for } or '
                 }
             }
             TState::SingleEscapeHex => {
                 match c {
                     '}' => TState::SingleEscapeEnd,
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // Keep looking for } or '
                 }
             }
             TState::SingleEscapeSequenceHex1 => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex3,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // Keep looking for '
                 }
             }
             TState::SingleEscapeSequenceHex2 => {
                 match c {
                     '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeEnd,
-                    _ => TState::Unknown,
+                    _ => TState::Unknown, // Keep looking for '
                 }
             }
             TState::SingleEscapeEnd => TState::SChars, // no-consume
@@ -1104,5 +1136,7 @@ impl TState {
             }
             TState::TemplateEscapeEnd => TState::TemplateChars, // no-consume
         }
+
+        return state;
     }
 }
