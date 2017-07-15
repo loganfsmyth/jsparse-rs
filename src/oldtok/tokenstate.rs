@@ -362,13 +362,6 @@ impl TokenFlags {
     }
 }
 
-match state.write('c') {
-    TState::Start => {
-
-    }
-}
-
-
 impl Default for TokenFlags {
     fn default() -> TokenFlags {
         TokenFlags::new(false)
