@@ -324,30 +324,32 @@ enum TState {
     SingleEscapeSequenceHex2(String, String, String),
 
     // DoubleEscape
-    DoubleEscapeSequenceOrContinuation,
-    DoubleEscapeSequenceMaybeContinuationSequence,
-    DoubleLegacyOctal1,
-    DoubleLegacyOctal2,
-    DoubleEscapeHexStart,
-    DoubleEscapeHex,
-    DoubleEscapeHex1,
-    DoubleEscapeHex2,
-    DoubleEscapeHex3,
-    DoubleEscapeHex4,
-    DoubleEscapeSequenceHex1,
-    DoubleEscapeSequenceHex2,
+    DoubleEscapeSequenceOrContinuation(String, String),
+    DoubleEscapeSequenceMaybeContinuationSequence(String, String),
+    DoubleLegacyOctal1(String, String, String),
+    DoubleLegacyOctal2(String, String, String),
+    DoubleEscapeHexStart(String, String),
+    DoubleEscapeHex(String, String, String),
+    DoubleEscapeHex1(String, String),
+    DoubleEscapeHex2(String, String, String),
+    DoubleEscapeHex3(String, String, String),
+    DoubleEscapeHex4(String, String, String),
+    DoubleEscapeSequenceHex1(String, String),
+    DoubleEscapeSequenceHex2(String, String, String),
 
     // Template Literal
-    TemplateEscapeSequenceOrContinuation,
-    TemplateEscapeSequenceMaybeContinuationSequence,
-    TemplateEscapeHexStart,
-    TemplateEscapeHex,
-    TemplateEscapeHex1,
-    TemplateEscapeHex2,
-    TemplateEscapeHex3,
-    TemplateEscapeHex4,
-    TemplateEscapeSequenceHex1,
-    TemplateEscapeSequenceHex2,
+    TemplateEscapeSequenceOrContinuation(String, String),
+    TemplateEscapeSequenceMaybeContinuationSequence(String, String),
+    TemplateLegacyOctal1(String, String, String),
+    TemplateLegacyOctal2(String, String, String),
+    TemplateEscapeHexStart(String, String),
+    TemplateEscapeHex(String, String, String),
+    TemplateEscapeHex1(String, String),
+    TemplateEscapeHex2(String, String, String),
+    TemplateEscapeHex3(String, String, String),
+    TemplateEscapeHex4(String, String, String),
+    TemplateEscapeSequenceHex1(String, String),
+    TemplateEscapeSequenceHex2(String, String, String),
 
     EOF,
     Unknown,
@@ -369,6 +371,26 @@ macro_rules! single_chars {
             '\'' => TState::SCharEnd($r, $s),
             '\\' => TState::SingleEscapeSequenceOrContinuation(append($r, $c), $s),
             _ => TState::SChars(append($r, $c), append($s, $c)),
+        }
+    }
+}
+macro_rules! double_chars {
+    ($r: ident, $s: ident, $c: ident) => {
+        match $c {
+            '"' => TState::DCharEnd($r, $s),
+            '\\' => TState::DoubleEscapeSequenceOrContinuation(append($r, $c), $s),
+            _ => TState::DChars(append($r, $c), append($s, $c)),
+        }
+    }
+}
+macro_rules! template_chars {
+    ($r: ident, $s: ident, $c: ident) => {
+        match $c {
+            '`' => TState::TemplateCharEnd($r, $s),
+            '$' => TState::TemplateDollarChar($r, $s),
+            '\\' => TState::TemplateEscapeSequenceOrContinuation(append($r, $c), $s),
+            '\r' => TState::TemplateCharLineTerminator($r, $s),
+            _ => TState::TemplateChars(append($r, $c), append($s, $c)),
         }
     }
 }
@@ -1491,11 +1513,7 @@ impl Tokenizer {
                 }
 
                 TState::DChars(r, s) => {
-                    match c {
-                        '"' => TState::DCharEnd(r, s),
-                        '\\' => TState::DoubleEscapeSequenceOrContinuation,
-                        _ => TState::DChars(append(r, c), append(s, c)),
-                    }
+                    double_chars!(r, s, c)
                 }
                 TState::DCharEnd(r, s) => {
                     if tokens.len() == 0 {
@@ -1593,20 +1611,14 @@ impl Tokenizer {
                 }
 
                 TState::TemplateChars(r, s) => {
-                    match c {
-                        '`' => TState::TemplateCharEnd(r, s),
-                        '$' => TState::TemplateDollarChar(r, s),
-                        '\\' => TState::TemplateEscapeSequenceOrContinuation,
-                        '\r' => TState::TemplateCharLineTerminator(r, s),
-                        _ => TState::TemplateChars(append(r, c), append(s, c)),
-                    }
+                    template_chars!(r, s, c)
                 }
                 TState::TemplateDollarChar(r, s) => {
                     match c {
                         '`' => TState::TemplateCharEnd(r, s),
                         '{' => TState::TemplateCharEnd(r, s),
                         '$' => TState::TemplateDollarChar(append(r, '$'), append(s, '$')),
-                        '\\' => TState::TemplateEscapeSequenceOrContinuation,
+                        '\\' => TState::TemplateEscapeSequenceOrContinuation(append(r, c), s),
                         '\r' => TState::TemplateCharLineTerminator(append(r, c), append(s, c)),
                         _ => TState::TemplateChars(append(r, c), append(s, c)),
                     }
@@ -1616,7 +1628,7 @@ impl Tokenizer {
                     match c {
                         '\n' => TState::TemplateChars(append(r, c), append(s, c)),
                         '$' => TState::TemplateDollarChar(append(r, '$'), append(s, '$')),
-                        '\\' => TState::TemplateEscapeSequenceOrContinuation,
+                        '\\' => TState::TemplateEscapeSequenceOrContinuation(append(r, c), s),
                         '\r' => TState::TemplateCharLineTerminator(append(r, c), append(s, c)),
                         _ => TState::TemplateChars(append(r, c), append(s, c)),
                     }
@@ -1917,163 +1929,383 @@ impl Tokenizer {
                 }
 
                 // DoubleEscape
-                TState::DoubleEscapeSequenceOrContinuation => {
+                TState::DoubleEscapeSequenceOrContinuation(r, s) => {
                     match c {
-                        '0'...'3' if flags.annexb => TState::DoubleLegacyOctal1,
-                        '4'...'7' if flags.annexb => TState::DoubleLegacyOctal2,
+                        '0'...'3' if flags.annexb => TState::DoubleLegacyOctal1(append(r, c), s, append(String::new(), c)),
+                        '4'...'7' if flags.annexb => TState::DoubleLegacyOctal2(append(r, c), s, append(String::new(), c)),
 
-                        '0' => TState::DChars(String::new(), String::new()),
-                        '1'...'9' => TState::Unknown,
-                        'u' => TState::DoubleEscapeHex1,
-                        'x' => TState::DoubleEscapeSequenceHex1,
-                        '\r' => TState::DoubleEscapeSequenceMaybeContinuationSequence,
-                        '\n' | '\u{2028}' | '\u{2029}' => TState::DChars(String::new(), String::new()),
-                        _ => TState::DChars(String::new(), String::new()),
+                        // TODO: This needs to actually throw if it has decimals after it
+                        '0' => TState::DChars(append(r, c), append(s, '\u{0}')),
+                        '1'...'9' => TState::Unknown, // Continue parsing string
+                        'u' => TState::DoubleEscapeHex1(append(r, c), s),
+                        'x' => TState::DoubleEscapeSequenceHex1(append(r, c), s),
+                        '\r' => TState::DoubleEscapeSequenceMaybeContinuationSequence(append(r, c), s),
+                        '\n' | '\u{2028}' | '\u{2029}' => TState::DChars(append(r, c), s),
+
+                        _ => double_chars!(r, s, c),
                     }
                 }
-                TState::DoubleEscapeSequenceMaybeContinuationSequence => {
+                TState::DoubleEscapeSequenceMaybeContinuationSequence(r, s) => {
                     match c {
-                        '\n' => TState::DChars(String::new(), String::new()),
-                        _ => TState::DChars(String::new(), String::new()),
+                        '\n' => TState::DChars(append(r, c), s),
+                        _ => double_chars!(r, s, c),
+                    }
+                }
+                TState::DoubleLegacyOctal1(r, s, h) => {
+                    match c {
+                        '0'...'7' => TState::DoubleLegacyOctal2(append(r, c), s, append(h, c)),
+                        _ => {
+                            match u32::from_str_radix(&h, 8) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            let s = append(s, decoded_c);
+
+                                            double_chars!(r, s, c)
+                                        },
+                                        None => {
+                                            panic!("Unexpected number");
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number");
+                                }
+                            }
+                        }
+                    }
+                }
+                TState::DoubleLegacyOctal2(r, s, h) => {
+                    match c {
+                        '0'...'7' => {
+                            let h = append(h, c);
+                            match u32::from_str_radix(&h, 8) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            TState::DChars(append(r, c), append(s, decoded_c))
+                                        },
+                                        None => {
+                                            panic!("Unexpected number")
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number")
+                                }
+                            }
+                        }
+                        _ => {
+                            match u32::from_str_radix(&h, 8) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            let s = append(s, decoded_c);
+
+                                            double_chars!(r, s, c)
+                                        },
+                                        None => {
+                                            panic!("Unexpected number");
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number");
+                                }
+                            }
+                        }
                     }
                 }
 
-                TState::DoubleLegacyOctal1 => {
+                TState::DoubleEscapeHex1(r, s) => {
                     match c {
-                        '0'...'7' => TState::DoubleLegacyOctal2,
-                        _ => TState::DChars(String::new(), String::new()),
+                        '{' => TState::DoubleEscapeHexStart(append(r, c), s),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex2(append(r, c), s, append(String::new(), c)),
+                        _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::DoubleLegacyOctal2 => {
+                TState::DoubleEscapeHex2(r, s, h) => {
                     match c {
-                        '0'...'7' => TState::DChars(String::new(), String::new()),
-                        _ => TState::DChars(String::new(), String::new()),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex3(append(r, c), s, append(h, c)),
+                        _ => TState::Unknown, // Keep looking for '
+                    }
+                }
+                TState::DoubleEscapeHex3(r, s, h) => {
+                    match c {
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex4(append(r, c), s, append(h, c)),
+                        _ => TState::Unknown, // Keep looking for '
+                    }
+                }
+                TState::DoubleEscapeHex4(r, s, h) => {
+                    match c {
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            let h = append(h, c);
+                            match u32::from_str_radix(&h, 16) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            TState::DChars(append(r, c), append(s, decoded_c))
+                                        },
+                                        None => {
+                                            panic!("Unexpected number")
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number")
+                                }
+                            }
+                        }
+                        _ => TState::Unknown, // Keep looking for '
+                    }
+                }
+                TState::DoubleEscapeHexStart(r, s) => {
+                    match c {
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex(append(r, c), s, append(String::new(), c)),
+                        _ => TState::Unknown, // Keep looking for } or '
+                    }
+                }
+                TState::DoubleEscapeHex(r, s, h) => {
+                    match c {
+                        '}' => {
+                            match u32::from_str_radix(&h, 16) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            TState::DChars(append(r, c), append(s, decoded_c))
+                                        },
+                                        None => {
+                                            panic!("Unexpected number")
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number")
+                                }
+                            }
+                        }
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex(append(r, c), s, append(h, c)),
+                        _ => TState::Unknown, // Keep looking for } or '
+                    }
+                }
+                TState::DoubleEscapeSequenceHex1(r, s) => {
+                    match c {
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeSequenceHex2(append(r, c), s, append(String::new(), c)),
+                        _ => TState::Unknown, // Keep looking for '
+                    }
+                }
+                TState::DoubleEscapeSequenceHex2(r, s, h) => {
+                    match c {
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            let h = append(h, c);
+                            match u32::from_str_radix(&h, 16) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            TState::DChars(append(r, c), append(s, decoded_c))
+                                        },
+                                        None => {
+                                            panic!("Unexpected number")
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number")
+                                }
+                            }
+                        }
+                        _ => TState::Unknown, // Keep looking for '
                     }
                 }
 
-                TState::DoubleEscapeHex1 => {
-                    match c {
-                        '{' => TState::DoubleEscapeHexStart,
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex2,
-                        _ => TState::Unknown,
-                    }
-                }
-                TState::DoubleEscapeHex2 => {
-                    match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex3,
-                        _ => TState::Unknown,
-                    }
-                }
-                TState::DoubleEscapeHex3 => {
-                    match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex4,
-                        _ => TState::Unknown,
-                    }
-                }
-                TState::DoubleEscapeHex4 => {
-                    match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DChars(String::new(), String::new()),
-                        _ => TState::Unknown,
-                    }
-                }
-                TState::DoubleEscapeHexStart => {
-                    match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex,
-                        _ => TState::Unknown,
-                    }
-                }
-                TState::DoubleEscapeHex => {
-                    match c {
-                        '}' => TState::DChars(String::new(), String::new()),
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex,
-                        _ => TState::Unknown,
-                    }
-                }
-                TState::DoubleEscapeSequenceHex1 => {
-                    match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeSequenceHex2,
-                        _ => TState::Unknown,
-                    }
-                }
-                TState::DoubleEscapeSequenceHex2 => {
-                    match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DChars(String::new(), String::new()),
-                        _ => TState::Unknown,
-                    }
-                }
 
                 // TemplateEscape
-                TState::TemplateEscapeSequenceOrContinuation => {
+                TState::TemplateEscapeSequenceOrContinuation(r, s) => {
                     match c {
-                        '0' => TState::TemplateChars(String::new(), String::new()),
-                        '1'...'9' => TState::Unknown,
-                        'u' => TState::TemplateEscapeHex1,
-                        'x' => TState::TemplateEscapeSequenceHex1,
-                        '\r' => TState::TemplateEscapeSequenceMaybeContinuationSequence,
-                        '\n' | '\u{2028}' | '\u{2029}' => {
-                            TState::TemplateChars(String::new(), String::new())
+                        '0'...'3' if flags.annexb => TState::TemplateLegacyOctal1(append(r, c), s, append(String::new(), c)),
+                        '4'...'7' if flags.annexb => TState::TemplateLegacyOctal2(append(r, c), s, append(String::new(), c)),
+
+                        // TODO: This needs to actually throw if it has decimals after it
+                        '0' => TState::TemplateChars(append(r, c), append(s, '\u{0}')),
+                        '1'...'9' => TState::Unknown, // Continue parsing string
+                        'u' => TState::TemplateEscapeHex1(append(r, c), s),
+                        'x' => TState::TemplateEscapeSequenceHex1(append(r, c), s),
+                        '\r' => TState::TemplateEscapeSequenceMaybeContinuationSequence(append(r, c), s),
+                        '\n' | '\u{2028}' | '\u{2029}' => TState::TemplateChars(append(r, c), s),
+
+                        _ => template_chars!(r, s, c),
+                    }
+                }
+                TState::TemplateEscapeSequenceMaybeContinuationSequence(r, s) => {
+                    match c {
+                        '\n' => TState::TemplateChars(append(r, c), s),
+                        _ => template_chars!(r, s, c),
+                    }
+                }
+                TState::TemplateLegacyOctal1(r, s, h) => {
+                    match c {
+                        '0'...'7' => TState::TemplateLegacyOctal2(append(r, c), s, append(h, c)),
+                        _ => {
+                            match u32::from_str_radix(&h, 8) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            let s = append(s, decoded_c);
+
+                                            template_chars!(r, s, c)
+                                        },
+                                        None => {
+                                            panic!("Unexpected number");
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number");
+                                }
+                            }
                         }
-                        _ => TState::TemplateChars(String::new(), String::new()),
                     }
                 }
-                TState::TemplateEscapeSequenceMaybeContinuationSequence => {
+                TState::TemplateLegacyOctal2(r, s, h) => {
                     match c {
-                        '\n' => TState::TemplateChars(String::new(), String::new()),
-                        _ => TState::TemplateChars(String::new(), String::new()),
+                        '0'...'7' => {
+                            let h = append(h, c);
+                            match u32::from_str_radix(&h, 8) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            TState::TemplateChars(append(r, c), append(s, decoded_c))
+                                        },
+                                        None => {
+                                            panic!("Unexpected number")
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number")
+                                }
+                            }
+                        }
+                        _ => {
+                            match u32::from_str_radix(&h, 8) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            let s = append(s, decoded_c);
+
+                                            template_chars!(r, s, c)
+                                        },
+                                        None => {
+                                            panic!("Unexpected number");
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number");
+                                }
+                            }
+                        }
                     }
                 }
-                TState::TemplateEscapeHex1 => {
+
+                TState::TemplateEscapeHex1(r, s) => {
                     match c {
-                        '{' => TState::TemplateEscapeHexStart,
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex2,
-                        _ => TState::Unknown,
+                        '{' => TState::TemplateEscapeHexStart(append(r, c), s),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex2(append(r, c), s, append(String::new(), c)),
+                        _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeHex2 => {
+                TState::TemplateEscapeHex2(r, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex3,
-                        _ => TState::Unknown,
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex3(append(r, c), s, append(h, c)),
+                        _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeHex3 => {
+                TState::TemplateEscapeHex3(r, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex4,
-                        _ => TState::Unknown,
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex4(append(r, c), s, append(h, c)),
+                        _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeHex4 => {
+                TState::TemplateEscapeHex4(r, s, h) => {
                     match c {
                         '0'...'9' | 'a'...'f' | 'A'...'F' => {
-                            TState::TemplateChars(String::new(), String::new())
+                            let h = append(h, c);
+                            match u32::from_str_radix(&h, 16) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            TState::TemplateChars(append(r, c), append(s, decoded_c))
+                                        },
+                                        None => {
+                                            panic!("Unexpected number")
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number")
+                                }
+                            }
                         }
-                        _ => TState::Unknown,
+                        _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeHexStart => {
+                TState::TemplateEscapeHexStart(r, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex,
-                        _ => TState::Unknown,
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex(append(r, c), s, append(String::new(), c)),
+                        _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
-                TState::TemplateEscapeHex => {
+                TState::TemplateEscapeHex(r, s, h) => {
                     match c {
-                        '}' => TState::TemplateChars(String::new(), String::new()),
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex,
-                        _ => TState::Unknown,
+                        '}' => {
+                            match u32::from_str_radix(&h, 16) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            TState::TemplateChars(append(r, c), append(s, decoded_c))
+                                        },
+                                        None => {
+                                            panic!("Unexpected number")
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number")
+                                }
+                            }
+                        }
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex(append(r, c), s, append(h, c)),
+                        _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
-                TState::TemplateEscapeSequenceHex1 => {
+                TState::TemplateEscapeSequenceHex1(r, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeSequenceHex2,
-                        _ => TState::Unknown,
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeSequenceHex2(append(r, c), s, append(String::new(), c)),
+                        _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeSequenceHex2 => {
+                TState::TemplateEscapeSequenceHex2(r, s, h) => {
                     match c {
                         '0'...'9' | 'a'...'f' | 'A'...'F' => {
-                            TState::TemplateChars(String::new(), String::new())
+                            let h = append(h, c);
+                            match u32::from_str_radix(&h, 16) {
+                                Ok(n) => {
+                                    match char::from_u32(n) {
+                                        Some(decoded_c) => {
+                                            TState::TemplateChars(append(r, c), append(s, decoded_c))
+                                        },
+                                        None => {
+                                            panic!("Unexpected number")
+                                        }
+                                    }
+                                }
+                                Err(_) => {
+                                    panic!("Unexpected number")
+                                }
+                            }
                         }
-                        _ => TState::Unknown,
+                        _ => TState::Unknown, // Keep looking for '
                     }
                 }
 
@@ -2501,8 +2733,86 @@ mod tests {
             raw: Some("omg".into()),
             value: "omg".into(),
         });
+        assert_token!("\"o\\\nmg\"", TokenType::StringLiteral {
+            raw: Some("o\\\nmg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("\"o\\\rmg\"", TokenType::StringLiteral {
+            raw: Some("o\\\rmg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("\"o\\\u{2028}mg\"", TokenType::StringLiteral {
+            raw: Some("o\\\u{2028}mg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("\"o\\\u{2029}mg\"", TokenType::StringLiteral {
+            raw: Some("o\\\u{2029}mg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("\"o\\\r\nmg\"", TokenType::StringLiteral {
+            raw: Some("o\\\r\nmg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("\"o\\0mg\"", TokenType::StringLiteral {
+            raw: Some("o\\0mg".into()),
+            value: "o\u{0}mg".into(),
+        });
+        assert_token!("\"o\\x65mg\"", TokenType::StringLiteral {
+            raw: Some("o\\x65mg".into()),
+            value: "o\u{65}mg".into(),
+        });
+        assert_token!("\"o\\u0065mg\"", TokenType::StringLiteral {
+            raw: Some("o\\u0065mg".into()),
+            value: "o\u{65}mg".into(),
+        });
+        assert_token!("\"o\\u{65}mg\"", TokenType::StringLiteral {
+            raw: Some("o\\u{65}mg".into()),
+            value: "o\u{65}mg".into(),
+        });
+    }
 
-        // TODO: Escape codes
+    #[test]
+    fn it_should_tokenize_string_literal_double_legacy_octal() {
+        assert_token_annexb!("\"o\\18mg\"", TokenType::StringLiteral {
+            raw: Some("o\\18mg".into()),
+            value: "o\u{1}8mg".into(),
+        });
+        assert_token_annexb!("\"o\\1mg\"", TokenType::StringLiteral {
+            raw: Some("o\\1mg".into()),
+            value: "o\u{1}mg".into(),
+        });
+        assert_token_annexb!("\"o\\7mg\"", TokenType::StringLiteral {
+            raw: Some("o\\7mg".into()),
+            value: "o\u{7}mg".into(),
+        });
+        assert_token_annexb!("\"o\\17mg\"", TokenType::StringLiteral {
+            raw: Some("o\\17mg".into()),
+            value: "o\u{F}mg".into(),
+        });
+        assert_token_annexb!("\"o\\178mg\"", TokenType::StringLiteral {
+            raw: Some("o\\178mg".into()),
+            value: "o\u{F}8mg".into(),
+        });
+        assert_token_annexb!("\"o\\77mg\"", TokenType::StringLiteral {
+            raw: Some("o\\77mg".into()),
+            value: "o\u{3F}mg".into(),
+        });
+        assert_token_annexb!("\"o\\377mg\"", TokenType::StringLiteral {
+            raw: Some("o\\377mg".into()),
+            value: "o\u{FF}mg".into(),
+        });
+        assert_token_annexb!("\"o\\344mg\"", TokenType::StringLiteral {
+            raw: Some("o\\344mg".into()),
+            value: "o\u{E4}mg".into(),
+        });
+        assert_token_annexb!("\"o\\477mg\"", TokenType::StringLiteral {
+            raw: Some("o\\477mg".into()),
+            value: "o\u{27}7mg".into(),
+        });
+        assert_token_annexb!("\"o\\777mg\"", TokenType::StringLiteral {
+            raw: Some("o\\777mg".into()),
+            value: "o\u{3F}7mg".into(),
+        });
     }
 
     #[test]
@@ -2544,6 +2854,41 @@ mod tests {
             value: "omg".into(),
         });
 
-        // TODO: Escape codes
+        assert_token!("`o\\\nmg`", TokenType::TemplatePart {
+            raw: Some("o\\\nmg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("`o\\\rmg`", TokenType::TemplatePart {
+            raw: Some("o\\\rmg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("`o\\\u{2028}mg`", TokenType::TemplatePart {
+            raw: Some("o\\\u{2028}mg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("`o\\\u{2029}mg`", TokenType::TemplatePart {
+            raw: Some("o\\\u{2029}mg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("`o\\\r\nmg`", TokenType::TemplatePart {
+            raw: Some("o\\\r\nmg".into()),
+            value: "omg".into(),
+        });
+        assert_token!("`o\\0mg`", TokenType::TemplatePart {
+            raw: Some("o\\0mg".into()),
+            value: "o\u{0}mg".into(),
+        });
+        assert_token!("`o\\x65mg`", TokenType::TemplatePart {
+            raw: Some("o\\x65mg".into()),
+            value: "o\u{65}mg".into(),
+        });
+        assert_token!("`o\\u0065mg`", TokenType::TemplatePart {
+            raw: Some("o\\u0065mg".into()),
+            value: "o\u{65}mg".into(),
+        });
+        assert_token!("`o\\u{65}mg`", TokenType::TemplatePart {
+            raw: Some("o\\u{65}mg".into()),
+            value: "o\u{65}mg".into(),
+        });
     }
 }
