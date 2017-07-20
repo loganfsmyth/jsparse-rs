@@ -340,8 +340,6 @@ enum TState {
     // Template Literal
     TemplateEscapeSequenceOrContinuation(String, String),
     TemplateEscapeSequenceMaybeContinuationSequence(String, String),
-    TemplateLegacyOctal1(String, String, String),
-    TemplateLegacyOctal2(String, String, String),
     TemplateEscapeHexStart(String, String),
     TemplateEscapeHex(String, String, String),
     TemplateEscapeHex1(String, String),
@@ -2122,15 +2120,12 @@ impl Tokenizer {
                 // TemplateEscape
                 TState::TemplateEscapeSequenceOrContinuation(r, s) => {
                     match c {
-                        '0'...'3' if flags.annexb => TState::TemplateLegacyOctal1(append(r, c), s, append(String::new(), c)),
-                        '4'...'7' if flags.annexb => TState::TemplateLegacyOctal2(append(r, c), s, append(String::new(), c)),
-
                         // TODO: This needs to actually throw if it has decimals after it
                         '0' => TState::TemplateChars(append(r, c), append(s, '\u{0}')),
                         '1'...'9' => TState::Unknown, // Continue parsing string
                         'u' => TState::TemplateEscapeHex1(append(r, c), s),
                         'x' => TState::TemplateEscapeSequenceHex1(append(r, c), s),
-                        '\r' => TState::TemplateEscapeSequenceMaybeContinuationSequence(append(r, c), s),
+                        '\r' => TState::TemplateEscapeSequenceMaybeContinuationSequence(append(r, '\n'), s),
                         '\n' | '\u{2028}' | '\u{2029}' => TState::TemplateChars(append(r, c), s),
 
                         _ => template_chars!(r, s, c),
@@ -2138,73 +2133,8 @@ impl Tokenizer {
                 }
                 TState::TemplateEscapeSequenceMaybeContinuationSequence(r, s) => {
                     match c {
-                        '\n' => TState::TemplateChars(append(r, c), s),
+                        '\n' => TState::TemplateChars(r, s),
                         _ => template_chars!(r, s, c),
-                    }
-                }
-                TState::TemplateLegacyOctal1(r, s, h) => {
-                    match c {
-                        '0'...'7' => TState::TemplateLegacyOctal2(append(r, c), s, append(h, c)),
-                        _ => {
-                            match u32::from_str_radix(&h, 8) {
-                                Ok(n) => {
-                                    match char::from_u32(n) {
-                                        Some(decoded_c) => {
-                                            let s = append(s, decoded_c);
-
-                                            template_chars!(r, s, c)
-                                        },
-                                        None => {
-                                            panic!("Unexpected number");
-                                        }
-                                    }
-                                }
-                                Err(_) => {
-                                    panic!("Unexpected number");
-                                }
-                            }
-                        }
-                    }
-                }
-                TState::TemplateLegacyOctal2(r, s, h) => {
-                    match c {
-                        '0'...'7' => {
-                            let h = append(h, c);
-                            match u32::from_str_radix(&h, 8) {
-                                Ok(n) => {
-                                    match char::from_u32(n) {
-                                        Some(decoded_c) => {
-                                            TState::TemplateChars(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
-                                        }
-                                    }
-                                }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
-                            }
-                        }
-                        _ => {
-                            match u32::from_str_radix(&h, 8) {
-                                Ok(n) => {
-                                    match char::from_u32(n) {
-                                        Some(decoded_c) => {
-                                            let s = append(s, decoded_c);
-
-                                            template_chars!(r, s, c)
-                                        },
-                                        None => {
-                                            panic!("Unexpected number");
-                                        }
-                                    }
-                                }
-                                Err(_) => {
-                                    panic!("Unexpected number");
-                                }
-                            }
-                        }
                     }
                 }
 
@@ -2727,6 +2657,7 @@ mod tests {
         });
     }
 
+
     #[test]
     fn it_should_tokenize_string_literal_double() {
         assert_token!("\"omg\"", TokenType::StringLiteral {
@@ -2859,7 +2790,7 @@ mod tests {
             value: "omg".into(),
         });
         assert_token!("`o\\\rmg`", TokenType::TemplatePart {
-            raw: Some("o\\\rmg".into()),
+            raw: Some("o\\\nmg".into()),
             value: "omg".into(),
         });
         assert_token!("`o\\\u{2028}mg`", TokenType::TemplatePart {
@@ -2871,7 +2802,7 @@ mod tests {
             value: "omg".into(),
         });
         assert_token!("`o\\\r\nmg`", TokenType::TemplatePart {
-            raw: Some("o\\\r\nmg".into()),
+            raw: Some("o\\\nmg".into()),
             value: "omg".into(),
         });
         assert_token!("`o\\0mg`", TokenType::TemplatePart {
