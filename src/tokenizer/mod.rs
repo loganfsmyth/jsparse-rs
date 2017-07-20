@@ -157,9 +157,13 @@ pub enum TokenType {
         value: String,
     },
     TemplatePart {
+        // The raw string content, as it is in the original file,
+        // excluding leading and trailing backticks/${/}.
+        raw: Option<String>,
+
         // The raw string content except CR and CRLF is converted to LF, as it is in the
         // original file, excluding leading and trailing backticks/${/}.
-        raw: Option<String>,
+        raw_value: Option<String>,
 
         // The decoded string literal text.
         value: String,
@@ -295,10 +299,10 @@ enum TState {
     RegexFlags(String, String),
 
     // Template Literal parsing
-    TemplateChars(String, String),
-    TemplateDollarChar(String, String),
-    TemplateCharLineTerminator(String, String),
-    TemplateCharEnd(String, String),
+    TemplateChars(String, String, String),
+    TemplateDollarChar(String, String, String),
+    TemplateCharLineTerminator(String, String, String),
+    TemplateCharEnd(String, String, String),
 
     // IdentEscape
     IdentEscapeSequence(String, String),
@@ -338,16 +342,16 @@ enum TState {
     DoubleEscapeSequenceHex2(String, String, String),
 
     // Template Literal
-    TemplateEscapeSequenceOrContinuation(String, String),
-    TemplateEscapeSequenceMaybeContinuationSequence(String, String),
-    TemplateEscapeHexStart(String, String),
-    TemplateEscapeHex(String, String, String),
-    TemplateEscapeHex1(String, String),
-    TemplateEscapeHex2(String, String, String),
-    TemplateEscapeHex3(String, String, String),
-    TemplateEscapeHex4(String, String, String),
-    TemplateEscapeSequenceHex1(String, String),
-    TemplateEscapeSequenceHex2(String, String, String),
+    TemplateEscapeSequenceOrContinuation(String, String, String),
+    TemplateEscapeSequenceMaybeContinuationSequence(String, String, String),
+    TemplateEscapeHexStart(String, String, String),
+    TemplateEscapeHex(String, String, String, String),
+    TemplateEscapeHex1(String, String, String),
+    TemplateEscapeHex2(String, String, String, String),
+    TemplateEscapeHex3(String, String, String, String),
+    TemplateEscapeHex4(String, String, String, String),
+    TemplateEscapeSequenceHex1(String, String, String),
+    TemplateEscapeSequenceHex2(String, String, String, String),
 
     EOF,
     Unknown,
@@ -382,13 +386,13 @@ macro_rules! double_chars {
     }
 }
 macro_rules! template_chars {
-    ($r: ident, $s: ident, $c: ident) => {
+    ($r: ident, $rv: ident, $s: ident, $c: ident) => {
         match $c {
-            '`' => TState::TemplateCharEnd($r, $s),
-            '$' => TState::TemplateDollarChar($r, $s),
-            '\\' => TState::TemplateEscapeSequenceOrContinuation(append($r, $c), $s),
-            '\r' => TState::TemplateCharLineTerminator($r, $s),
-            _ => TState::TemplateChars(append($r, $c), append($s, $c)),
+            '`' => TState::TemplateCharEnd($r, $rv, $s),
+            '$' => TState::TemplateDollarChar($r, $rv, $s),
+            '\\' => TState::TemplateEscapeSequenceOrContinuation(append($r, $c), append($rv, $c), $s),
+            '\r' => TState::TemplateCharLineTerminator($r, $rv, $s),
+            _ => TState::TemplateChars(append($r, $c), append($rv, $c), append($s, $c)),
         }
     }
 }
@@ -526,7 +530,7 @@ impl Tokenizer {
                         '{' => TState::LCurly,
                         '}' => {
                             if flags.template {
-                                TState::TemplateChars(String::new(), String::new())
+                                TState::TemplateChars(String::new(), String::new(), String::new())
                             } else {
                                 TState::RCurly
                             }
@@ -556,7 +560,7 @@ impl Tokenizer {
                                 TState::ExpressionSlash
                             }
                         }
-                        '`' => TState::TemplateChars(String::new(), String::new()),
+                        '`' => TState::TemplateChars(String::new(), String::new(), String::new()),
                         '.' => TState::Period(append(String::new(), c), append(String::new(), c)),
                         '0' => TState::Zero(append(String::new(), c), append(String::new(), c)),
                         '1'...'9' => TState::Integer(append(String::new(), c), append(String::new(), c)),
@@ -1608,36 +1612,37 @@ impl Tokenizer {
                     TState::Start
                 }
 
-                TState::TemplateChars(r, s) => {
-                    template_chars!(r, s, c)
+                TState::TemplateChars(r, rv, s) => {
+                    template_chars!(r, rv, s, c)
                 }
-                TState::TemplateDollarChar(r, s) => {
+                TState::TemplateDollarChar(r, rv, s) => {
                     match c {
-                        '`' => TState::TemplateCharEnd(r, s),
-                        '{' => TState::TemplateCharEnd(r, s),
-                        '$' => TState::TemplateDollarChar(append(r, '$'), append(s, '$')),
-                        '\\' => TState::TemplateEscapeSequenceOrContinuation(append(r, c), s),
-                        '\r' => TState::TemplateCharLineTerminator(append(r, c), append(s, c)),
-                        _ => TState::TemplateChars(append(r, c), append(s, c)),
+                        '`' => TState::TemplateCharEnd(r, rv, s),
+                        '{' => TState::TemplateCharEnd(r, rv, s),
+                        '$' => TState::TemplateDollarChar(append(r, '$'), append(rv, '$'), append(s, '$')),
+                        '\\' => TState::TemplateEscapeSequenceOrContinuation(append(r, c), append(rv, c), s),
+                        '\r' => TState::TemplateCharLineTerminator(append(r, c), append(rv, c), append(s, c)),
+                        _ => TState::TemplateChars(append(r, c), append(rv, c), append(s, c)),
                     }
                 }
 
-                TState::TemplateCharLineTerminator(r, s) => {
+                TState::TemplateCharLineTerminator(r, rv, s) => {
                     match c {
-                        '\n' => TState::TemplateChars(append(r, c), append(s, c)),
-                        '$' => TState::TemplateDollarChar(append(r, '$'), append(s, '$')),
-                        '\\' => TState::TemplateEscapeSequenceOrContinuation(append(r, c), s),
-                        '\r' => TState::TemplateCharLineTerminator(append(r, c), append(s, c)),
-                        _ => TState::TemplateChars(append(r, c), append(s, c)),
+                        '\n' => TState::TemplateChars(append(r, c), append(rv, c), append(s, c)),
+                        '$' => TState::TemplateDollarChar(append(r, '$'), append(rv, '$'), append(s, '$')),
+                        '\\' => TState::TemplateEscapeSequenceOrContinuation(append(r, c), append(rv, c), s),
+                        '\r' => TState::TemplateCharLineTerminator(append(r, c), append(rv, c), append(s, c)),
+                        _ => TState::TemplateChars(append(r, c), append(rv, c), append(s, c)),
                     }
                 }
 
-                TState::TemplateCharEnd(r, s) => {
+                TState::TemplateCharEnd(r, rv, s) => {
                     if tokens.len() == 0 {
                         return None;
                     }
                     tokens[0].tok = TokenType::TemplatePart {
                         raw: r.into(),
+                        raw_value: rv.into(),
                         value: s,
                     };
                     count += 1;
@@ -2118,46 +2123,46 @@ impl Tokenizer {
 
 
                 // TemplateEscape
-                TState::TemplateEscapeSequenceOrContinuation(r, s) => {
+                TState::TemplateEscapeSequenceOrContinuation(r, rv, s) => {
                     match c {
                         // TODO: This needs to actually throw if it has decimals after it
-                        '0' => TState::TemplateChars(append(r, c), append(s, '\u{0}')),
+                        '0' => TState::TemplateChars(append(r, c), append(rv, c), append(s, '\u{0}')),
                         '1'...'9' => TState::Unknown, // Continue parsing string
-                        'u' => TState::TemplateEscapeHex1(append(r, c), s),
-                        'x' => TState::TemplateEscapeSequenceHex1(append(r, c), s),
-                        '\r' => TState::TemplateEscapeSequenceMaybeContinuationSequence(append(r, '\n'), s),
-                        '\n' | '\u{2028}' | '\u{2029}' => TState::TemplateChars(append(r, c), s),
+                        'u' => TState::TemplateEscapeHex1(append(r, c), append(rv, c), s),
+                        'x' => TState::TemplateEscapeSequenceHex1(append(r, c), append(rv, c), s),
+                        '\r' => TState::TemplateEscapeSequenceMaybeContinuationSequence(append(r, '\r'), append(rv, '\n'), s),
+                        '\n' | '\u{2028}' | '\u{2029}' => TState::TemplateChars(append(r, c), append(rv, c), s),
 
-                        _ => template_chars!(r, s, c),
+                        _ => template_chars!(r, rv, s, c),
                     }
                 }
-                TState::TemplateEscapeSequenceMaybeContinuationSequence(r, s) => {
+                TState::TemplateEscapeSequenceMaybeContinuationSequence(r, rv, s) => {
                     match c {
-                        '\n' => TState::TemplateChars(r, s),
-                        _ => template_chars!(r, s, c),
+                        '\n' => TState::TemplateChars(append(r, c), rv, s),
+                        _ => template_chars!(r, rv, s, c),
                     }
                 }
 
-                TState::TemplateEscapeHex1(r, s) => {
+                TState::TemplateEscapeHex1(r, rv, s) => {
                     match c {
-                        '{' => TState::TemplateEscapeHexStart(append(r, c), s),
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex2(append(r, c), s, append(String::new(), c)),
+                        '{' => TState::TemplateEscapeHexStart(append(r, c), append(rv, c), s),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex2(append(r, c), append(rv, c), s, append(String::new(), c)),
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeHex2(r, s, h) => {
+                TState::TemplateEscapeHex2(r, rv, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex3(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex3(append(r, c), append(rv, c), s, append(h, c)),
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeHex3(r, s, h) => {
+                TState::TemplateEscapeHex3(r, rv, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex4(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex4(append(r, c), append(rv, c), s, append(h, c)),
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeHex4(r, s, h) => {
+                TState::TemplateEscapeHex4(r, rv, s, h) => {
                     match c {
                         '0'...'9' | 'a'...'f' | 'A'...'F' => {
                             let h = append(h, c);
@@ -2165,7 +2170,7 @@ impl Tokenizer {
                                 Ok(n) => {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
-                                            TState::TemplateChars(append(r, c), append(s, decoded_c))
+                                            TState::TemplateChars(append(r, c), append(rv, c), append(s, decoded_c))
                                         },
                                         None => {
                                             panic!("Unexpected number")
@@ -2180,20 +2185,20 @@ impl Tokenizer {
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeHexStart(r, s) => {
+                TState::TemplateEscapeHexStart(r, rv, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex(append(r, c), append(rv, c), s, append(String::new(), c)),
                         _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
-                TState::TemplateEscapeHex(r, s, h) => {
+                TState::TemplateEscapeHex(r, rv, s, h) => {
                     match c {
                         '}' => {
                             match u32::from_str_radix(&h, 16) {
                                 Ok(n) => {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
-                                            TState::TemplateChars(append(r, c), append(s, decoded_c))
+                                            TState::TemplateChars(append(r, c), append(rv, c), append(s, decoded_c))
                                         },
                                         None => {
                                             panic!("Unexpected number")
@@ -2205,17 +2210,17 @@ impl Tokenizer {
                                 }
                             }
                         }
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex(append(r, c), append(rv, c), s, append(h, c)),
                         _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
-                TState::TemplateEscapeSequenceHex1(r, s) => {
+                TState::TemplateEscapeSequenceHex1(r, rv, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeSequenceHex2(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeSequenceHex2(append(r, c), append(rv, c), s, append(String::new(), c)),
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
-                TState::TemplateEscapeSequenceHex2(r, s, h) => {
+                TState::TemplateEscapeSequenceHex2(r, rv, s, h) => {
                     match c {
                         '0'...'9' | 'a'...'f' | 'A'...'F' => {
                             let h = append(h, c);
@@ -2223,7 +2228,7 @@ impl Tokenizer {
                                 Ok(n) => {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
-                                            TState::TemplateChars(append(r, c), append(s, decoded_c))
+                                            TState::TemplateChars(append(r, c), append(rv, c), append(s, decoded_c))
                                         },
                                         None => {
                                             panic!("Unexpected number")
@@ -2770,55 +2775,68 @@ mod tests {
     fn it_should_tokenize_template_literal() {
         assert_token!("`omg`", TokenType::TemplatePart {
             raw: Some("omg".into()),
+            raw_value: Some("omg".into()),
             value: "omg".into(),
         });
         assert_token!("`omg${", TokenType::TemplatePart {
             raw: Some("omg".into()),
+            raw_value: Some("omg".into()),
             value: "omg".into(),
         });
         assert_template!("}omg${", TokenType::TemplatePart {
             raw: Some("omg".into()),
+            raw_value: Some("omg".into()),
             value: "omg".into(),
         });
         assert_template!("}omg`", TokenType::TemplatePart {
             raw: Some("omg".into()),
+            raw_value: Some("omg".into()),
             value: "omg".into(),
         });
 
         assert_token!("`o\\\nmg`", TokenType::TemplatePart {
             raw: Some("o\\\nmg".into()),
+            raw_value: Some("o\\\nmg".into()),
             value: "omg".into(),
         });
         assert_token!("`o\\\rmg`", TokenType::TemplatePart {
-            raw: Some("o\\\nmg".into()),
+            raw: Some("o\\\rmg".into()),
+            raw_value: Some("o\\\nmg".into()),
             value: "omg".into(),
         });
         assert_token!("`o\\\u{2028}mg`", TokenType::TemplatePart {
             raw: Some("o\\\u{2028}mg".into()),
+            raw_value: Some("o\\\u{2028}mg".into()),
             value: "omg".into(),
         });
         assert_token!("`o\\\u{2029}mg`", TokenType::TemplatePart {
             raw: Some("o\\\u{2029}mg".into()),
+            raw_value: Some("o\\\u{2029}mg".into()),
             value: "omg".into(),
         });
         assert_token!("`o\\\r\nmg`", TokenType::TemplatePart {
-            raw: Some("o\\\nmg".into()),
+            raw: Some("o\\\r\nmg".into()),
+            raw_value: Some("o\\\nmg".into()),
             value: "omg".into(),
         });
         assert_token!("`o\\0mg`", TokenType::TemplatePart {
             raw: Some("o\\0mg".into()),
+            raw_value: Some("o\\0mg".into()),
             value: "o\u{0}mg".into(),
         });
         assert_token!("`o\\x65mg`", TokenType::TemplatePart {
             raw: Some("o\\x65mg".into()),
+            raw_value: Some("o\\x65mg".into()),
             value: "o\u{65}mg".into(),
         });
         assert_token!("`o\\u0065mg`", TokenType::TemplatePart {
             raw: Some("o\\u0065mg".into()),
+            raw_value: Some("o\\u0065mg".into()),
             value: "o\u{65}mg".into(),
         });
         assert_token!("`o\\u{65}mg`", TokenType::TemplatePart {
             raw: Some("o\\u{65}mg".into()),
+            raw_value: Some("o\\u{65}mg".into()),
             value: "o\u{65}mg".into(),
         });
     }
