@@ -168,7 +168,7 @@ pub struct TryStatement {
 	finalizer: Option<BlockStatement>,
 	position: misc::MaybePosition,
 }
-struct CatchClause {
+pub struct CatchClause {
 	param: misc::Pattern,
 	body: BlockStatement,
 	position: misc::MaybePosition,

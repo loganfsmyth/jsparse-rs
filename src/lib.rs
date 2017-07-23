@@ -1,6 +1,8 @@
 extern crate ucd;
 
 pub mod tokenizer;
+pub mod ast;
+// pub mod parser;
 
 // #[cfg(test)]
 // mod tests {

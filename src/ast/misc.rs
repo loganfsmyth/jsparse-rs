@@ -5,14 +5,19 @@ use super::literal;
 
 pub struct MaybePosition(Option<Box<NodePosition>>);
 
-struct NodePosition {
+pub struct NodePosition {
 	start: usize,
 	end: usize,
 	range: PositionRange,
 }
-struct PositionRange {
+pub struct PositionRange {
 	start: (usize, usize),
 	end: (usize, usize),
+}
+
+pub trait WithPosition {
+	set_position(&mut self, pos: NodePosition);
+	clear_position(&mut self);
 }
 
 
