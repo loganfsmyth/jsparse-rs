@@ -206,7 +206,12 @@ nodes!{
 		// export foo, {foo as bar} from "";
 		// export foo, {type foo} from "";
 		// export foo, {type foo as bar} from "";
-		NamedAndSpecifiers(ModuleIdentifier, Vec<(SourceExportSpecifier, FlowImportKind)>, literal::String), // experimental
+		// experimental
+		NamedAndSpecifiers(
+			ModuleIdentifier,
+			Vec<(SourceExportSpecifier, FlowImportKind)>,
+			literal::String
+		),
 	}
 	pub enum LocalExportSpecifier {
 		Named(misc::BindingIdentifier),

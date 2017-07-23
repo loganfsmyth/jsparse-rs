@@ -8,8 +8,7 @@ use super::statement;
 
 nodes!{
 	// this
-	pub struct ThisExpression {
-	}
+	pub struct ThisExpression {}
 
 	// [1, 2, 3, ...4]
 	pub struct ArrayExpression {
@@ -206,6 +205,8 @@ nodes!{
 		value: Box<alias::Expression>,
 	}
 	pub enum AssignmentOperator {
+		None,
+
 		Add,
 		Subtract,
 		LeftShift,
@@ -218,8 +219,6 @@ nodes!{
 		BitOr,
 		BitXor,
 		Power,
-
-		None,
 	}
 
 	pub enum LeftHandExpression {
@@ -251,7 +250,7 @@ nodes!{
 	pub enum ArrowFunctionKind {
 		Normal,
 		Async,
-		
+
 		Generator, // experimental
 		AsyncGenerator, // experimental
 	}

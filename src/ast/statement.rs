@@ -156,10 +156,8 @@ nodes!{
 	}
 
 	// debugger;
-	pub struct DebuggerStatement {
-	}
+	pub struct DebuggerStatement {}
 
 	// ;
-	pub struct EmptyStatement {
-	}
+	pub struct EmptyStatement {}
 }

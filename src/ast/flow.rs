@@ -283,7 +283,6 @@ nodes!{
 	// declare module.exports: {};
 	pub struct DeclareExportCommonJS {
 		type_annotation: Box<Annotation>,
-		
 	}
 
 	pub enum ModuleItem {

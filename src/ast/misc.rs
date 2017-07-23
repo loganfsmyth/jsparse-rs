@@ -5,7 +5,10 @@ use super::literal;
 
 macro_rules! node_position {
 	($id:ident) => {
-    impl<T> $crate::ast::misc::WithPosition<T> for $id where T: Into<Option<Box<$crate::ast::misc::NodePosition>>> {
+    impl<T> $crate::ast::misc::WithPosition<T> for $id
+    where
+    	T: Into<Option<Box<$crate::ast::misc::NodePosition>>>
+    {
       fn set_position(&mut self, pos: T) {
         self.position = pos.into();
       }
@@ -51,17 +54,17 @@ macro_rules! nodes {
 }
 
 pub struct NodePosition {
-  start: usize,
-  end: usize,
-  range: PositionRange,
+    start: usize,
+    end: usize,
+    range: PositionRange,
 }
 pub struct PositionRange {
-  start: (usize, usize),
-  end: (usize, usize),
+    start: (usize, usize),
+    end: (usize, usize),
 }
 
 pub trait WithPosition<T: Into<Option<Box<NodePosition>>>> {
-  fn set_position(&mut self, pos: T);
+    fn set_position(&mut self, pos: T);
 }
 
 nodes!{
