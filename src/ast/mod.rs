@@ -1,29 +1,14 @@
-mod alias;
-mod jsx;
-mod flow;
-mod misc;
-mod expression;
-mod statement;
-mod declaration;
-mod literal;
+#[macro_use]
+pub mod misc;
+pub mod alias;
+pub mod jsx;
+pub mod flow;
+pub mod expression;
+pub mod statement;
+pub mod declaration;
+pub mod literal;
 
-pub enum AST {
-	Script(Script),
-	Module(Module),
-}
-
-pub struct Script {
-	directives: Vec<misc::Directive>,
-	body: Vec<alias::StatementItem>,
-	position: misc::MaybePosition,
-}
- 
-pub struct Module {
-	directives: Vec<misc::Directive>,
-	body: Vec<alias::ModuleStatementItem>,
-	position: misc::MaybePosition,
-}
-
+// pub use misc;
 
 // TODO
 // Typescript?
