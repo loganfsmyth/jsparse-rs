@@ -9,19 +9,48 @@ nodes!{
 	// let foo, bar;
 	pub struct LexicalDeclaration {
 		kind: LexicalKind,
-		declarations: Vec<LexicalDeclarator>,
+		declarators: LexicalDeclaratorList,
+	}
+	pub enum LexicalKind {
+		Let,
+		Const,
+	}
+	impl misc::NodeDisplay for ArrayExpression {
+		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+			match self.kind {
+				LexicalKind::Let => f.token(misc::Token::Let)?,
+				LexicalKind::Const => f.token(misc::Token::Const)?,
+			}
+			misc::NodeDisplay::fmt(self.declarators)
+		}
+	}
+
+	pub enum LexicalDeclaratorList {
+		Declarator(LexicalDeclarator),
+		List(LexicalDeclarator, Box<LexicalDeclaratorList>),
+	}
+	impl misc::NodeDisplay for ArrayExpression {
+		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+			match self {
+				LexicalDeclaratorList::Declarator(ref decl) => f.node(decl),
+				LexicalDeclaratorList::List(ref decl, ref list) => {
+					f.node(decl)?;
+					f.token(misc::Token::Comma)?;
+					f.node(list)?;
+				}
+			}
+		}
 	}
 	pub struct LexicalDeclarator {
 		id: misc::Pattern,
 		init: Option<alias::Expression>,
 	}
-	pub enum LexicalDeclaratorList {
-		Declarator(LexicalDeclarator),
-		List(LexicalDeclarator, Box<LexicalDeclaratorList>),
-	}
-	pub enum LexicalKind {
-		Let,
-		Const,
+	impl misc::NodeDisplay for ArrayExpression {
+		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+			f.node(self.id)?;
+			f.token(misc::Token::Eq)?;
+			f.node(self.init)?;
+		}
 	}
 
 
@@ -36,6 +65,20 @@ nodes!{
 		type_parameters: Option<flow::Parameters>,
 		return_type: Option<Box<flow::Annotation>>,
 	}
+	impl misc::NodeDisplay for ExportDefaultFunctionDeclaration {
+		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+			f.token(misc::Token::Export)?;
+			f.token(misc::Token::Default)?;
+			f.token(misc::Token::Function)?;
+			if let Some(id) = self.id {
+				f.node(id)?;
+			}
+			f.node(&self.type_parameters)?;
+			f.node(&self.params)?;
+			f.node(&self.return_type)?;
+			f.node(&self.body)?;
+		}
+	}
 
 	// function name() {}
 	pub struct FunctionDeclaration {
@@ -48,6 +91,16 @@ nodes!{
 		type_parameters: Option<flow::Parameters>,
 		return_type: Option<Box<flow::Annotation>>,
 	}
+	impl misc::NodeDisplay for ExportDefaultFunctionDeclaration {
+		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+			f.token(misc::Token::Function)?;
+			f.node(&self.id)?;
+			f.node(&self.type_parameters)?;
+			f.node(&self.params)?;
+			f.node(&self.return_type)?;
+			f.node(&self.body)?;
+		}
+	}
 
 	// export default class name {}
 	pub struct ExportDefaultClassDeclaration {
@@ -58,6 +111,20 @@ nodes!{
 		body: misc::ClassBody,
 
 		type_parameters: Option<flow::Parameters>,
+	}
+	impl misc::NodeDisplay for ExportDefaultClassDeclaration {
+		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+			f.token(misc::Token::Export)?;
+			f.token(misc::Token::Default)?;
+			f.token(misc::Token::Class)?;
+			if let Some(id) = self.id {
+				f.node(id)?;
+			}
+			f.node(&self.type_parameters)?;
+			f.node(&self.params)?;
+			f.node(&self.return_type)?;
+			f.node(&self.body)?;
+		}
 	}
 
 	// class name {}
@@ -87,6 +154,14 @@ nodes!{
 
 		// Flow extension
 		Typeof,
+	}
+	impl misc::NodeDisplay for ImportDeclaration {
+		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+			f.token(misc::Token::Import)?;
+			f.node(&self.specifiers)?;
+			f.token(misc::Token::From)?;
+			f.node(&self.source)
+		}
 	}
 
 	// TODO: This is really hard to read
@@ -168,6 +243,7 @@ nodes!{
 		DefaultFunction(ExportDefaultFunctionDeclaration),
 
 		// export default 4;
+		// TODO: Whatever expression here can't start with "function" or "class" or "async"
 		Default(alias::Expression),
 
 		// export class foo {}

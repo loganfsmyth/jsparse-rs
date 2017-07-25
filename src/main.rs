@@ -32,4 +32,51 @@ fn main() {
 }
 
 
-// 286648
+
+
+// trait Offset: Default {}
+
+// trait Reader {
+//     type Offset: Offset;
+// }
+
+// impl Offset for usize {}
+
+// impl<'a> Reader for &'a [u8] {
+//     type Offset = usize;
+// }
+
+// // OK
+// // struct Header<R: Reader>(R, usize);
+
+// // Bad
+// struct Header<R: Reader>(R, R::Offset);
+
+// impl <R: Reader<Offset=usize>> Header<R> {
+//     fn new(r: R) -> Self {
+//         Header(r, 0)
+//     }
+// }
+
+// fn test<R1: Reader, R2: Reader>(_: Header<R1>, _: Header<R2>) {}
+
+// fn main() {
+//     let buf1 = [0u8];
+//     {
+//       let slice1 = &buf1[..];
+//       {
+//         let header1 = Header::new(slice1);
+//         {
+//           let buf2 = [0u8];
+//           {
+//             let slice2 = &buf2[..];
+//             {
+//               let header2 = Header::new(slice2);
+
+//               test(header1, header2);
+//             }
+//           }
+//         }
+//       }
+//     }
+// }

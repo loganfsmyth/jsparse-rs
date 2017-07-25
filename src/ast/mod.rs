@@ -12,3 +12,15 @@ pub mod literal;
 
 // TODO
 // Typescript?
+
+pub mod nodes {
+  pub type MemberExpression = Box<expression::Member>;
+  struct MemberExpressionBuilder {
+
+  }
+  impl MemberExpression {
+    fn build() -> MemberExpressionBuilder {
+      MemberExpressionBuilder {}
+    }
+  }
+}
