@@ -71,9 +71,8 @@ pub trait HasInOperator {
 
 pub enum SpecialToken {
     None,
-    Class,
-    Function,
-    Curly,
+    Declaration,
+    Object,
 }
 pub trait FirstSpecialToken {
     fn first_special_token(&self) -> SpecialToken {
@@ -268,7 +267,7 @@ nodes!{
   }
   impl FirstSpecialToken for ObjectPattern {
   	fn first_special_token(&self) -> SpecialToken {
-  		SpecialToken::Curly
+  		SpecialToken::Object
   	}
   }
 	pub enum ObjectPatternProperty {

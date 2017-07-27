@@ -19,7 +19,7 @@ nodes!{
 		}
 	}
 	impl misc::FirstSpecialToken for ThisExpression {
-	  fn first_special_token(&self) -> misc::SpecialToken { misc::SpecialToken:: None }
+	  fn first_special_token(&self) -> misc::SpecialToken { misc::SpecialToken::None }
 	}
 	impl misc::HasInOperator for ThisExpression {}
 
@@ -83,7 +83,7 @@ nodes!{
 	}
 	impl misc::FirstSpecialToken for ObjectExpression {
 		fn first_special_token(&self) -> misc::SpecialToken {
-			misc::SpecialToken::Curly
+			misc::SpecialToken::Object
 		}
 	}
 	impl misc::HasInOperator for ObjectExpression {}
@@ -168,7 +168,7 @@ nodes!{
 		}
 	}
 	impl misc::FirstSpecialToken for FunctionExpression {
-	  fn first_special_token(&self) -> misc::SpecialToken { misc::SpecialToken::Function }
+	  fn first_special_token(&self) -> misc::SpecialToken { misc::SpecialToken::Declaration }
 	}
 	impl misc::HasInOperator for FunctionExpression {}
 
@@ -209,7 +209,7 @@ nodes!{
 		}
 	}
 	impl misc::FirstSpecialToken for ClassExpression {
-	  fn first_special_token(&self) -> misc::SpecialToken { misc::SpecialToken::Class }
+	  fn first_special_token(&self) -> misc::SpecialToken { misc::SpecialToken::Declaration }
 	}
 	impl misc::HasInOperator for ClassExpression {}
 
@@ -874,7 +874,7 @@ nodes!{
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
 				&ArrowFunctionBody::Expression(ref expr) => {
-    			if let misc::SpecialToken::Curly = expr.first_special_token() {
+    			if let misc::SpecialToken::Object = expr.first_special_token() {
 						f.with_parens(|f| f.node(expr))
 					} else {
 						f.node(expr)

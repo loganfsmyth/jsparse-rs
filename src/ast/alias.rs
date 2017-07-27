@@ -9,6 +9,7 @@ use super::jsx;
 use super::misc;
 use super::literal;
 use super::display;
+use super::modules;
 
 use super::misc::HasInOperator;
 use super::misc::FirstSpecialToken;
@@ -16,7 +17,7 @@ use super::misc::FirstSpecialToken;
 custom_derive!{
     #[derive(EnumFromInner)]
     pub enum Function {
-        DefaultDeclaration(declaration::ExportDefaultFunctionDeclaration),
+        DefaultDeclaration(modules::ExportDefaultFunctionDeclaration),
         Declaration(declaration::FunctionDeclaration),
         Expression(expression::FunctionExpression),
         ClassMethod(misc::ClassMethod),
@@ -58,8 +59,8 @@ custom_derive!{
     pub enum ModuleStatementItem {
         Statement(Statement),
         Declaration(Declaration),
-        Import(declaration::ImportDeclaration),
-        Export(declaration::ExportDeclaration),
+        Import(ImportDeclaration),
+        Export(ExportDeclaration),
     }
 }
 impl display::NodeDisplay for ModuleStatementItem {
@@ -335,6 +336,85 @@ impl misc::HasInOperator for Expression {
             &Expression::Do(ref node) => node.has_in_operator(),
             &Expression::FlowTypeCast(ref node) => node.has_in_operator(),
             &Expression::JSX(ref node) => node.has_in_operator(),
+        }
+    }
+}
+
+custom_derive!{
+    #[derive(EnumFromInner)]
+    pub enum ExportDeclaration {
+        DefaultClass(modules::ExportDefaultClassDeclaration),
+        DefaultFunction(modules::ExportDefaultFunctionDeclaration),
+        DefaultExpression(modules::ExportDefaultExpression),
+        Class(modules::ExportClassDeclaration),
+        Function(modules::ExportFunctionDeclaration),
+        Variable(modules::ExportVarStatement),
+        Let(modules::ExportLetDeclaration),
+        Const(modules::ExportConstDeclaration),
+        LocalBindings(modules::ExportLocalBindings),
+        FlowDeclaration(flow::AliasDeclaration),
+        SourceSpecifiers(modules::ExportSourceSpecifiers),
+        SourceSpecifiersFlow(modules::ExportFlowtypeSourceSpecifiers),
+        All(modules::ExportAllSpecifiers),
+
+        // experimental
+        Named(modules::ExportNamedSpecifier),
+        NamedAndNamespace(modules::ExportNamedAndNamespace),
+        Namespace(modules::ExportNamespace),
+        NamedAndSpecifiers(modules::ExportNamedAndSpecifiers),
+    }
+}
+impl display::NodeDisplay for ExportDeclaration {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        match self {
+            &ExportDeclaration::DefaultClass(ref n) => f.node(n),
+            &ExportDeclaration::DefaultFunction(ref n) => f.node(n),
+            &ExportDeclaration::DefaultExpression(ref n) => f.node(n),
+            &ExportDeclaration::Class(ref n) => f.node(n),
+            &ExportDeclaration::Function(ref n) => f.node(n),
+            &ExportDeclaration::Variable(ref n) => f.node(n),
+            &ExportDeclaration::Let(ref n) => f.node(n),
+            &ExportDeclaration::Const(ref n) => f.node(n),
+            &ExportDeclaration::LocalBindings(ref n) => f.node(n),
+            &ExportDeclaration::FlowDeclaration(ref n) => f.node(n),
+            &ExportDeclaration::SourceSpecifiers(ref n) => f.node(n),
+            &ExportDeclaration::SourceSpecifiersFlow(ref n) => f.node(n),
+            &ExportDeclaration::All(ref n) => f.node(n),
+            &ExportDeclaration::Named(ref n) => f.node(n),
+            &ExportDeclaration::NamedAndNamespace(ref n) => f.node(n),
+            &ExportDeclaration::Namespace(ref n) => f.node(n),
+            &ExportDeclaration::NamedAndSpecifiers(ref n) => f.node(n),
+        }
+    }
+}
+
+
+custom_derive!{
+    #[derive(EnumFromInner)]
+  pub enum ImportDeclaration {
+    Named(modules::ImportNamedDeclaration),
+    NamedAndNamespace(modules::ImportNamedAndNamespaceDeclaration),
+    Namespace(modules::ImportNamespaceDeclaration),
+    NamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
+    Specifiers(modules::ImportSpecifiersDeclaration),
+    NamedType(modules::ImportNamedTypeDeclaration),
+    NamespaceTypeof(modules::ImportNamespaceTypeofDeclaration),
+    NamedAndSpecifiersType(modules::ImportNamedAndSpecifiersTypeDeclaration),
+    SpecifiersType(modules::ImportSpecifiersTypeDeclaration),
+  }
+}
+impl display::NodeDisplay for ImportDeclaration {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        match self {
+            &ImportDeclaration::Named(ref n) => f.node(n),
+            &ImportDeclaration::NamedAndNamespace(ref n) => f.node(n),
+            &ImportDeclaration::Namespace(ref n) => f.node(n),
+            &ImportDeclaration::NamedAndSpecifiers(ref n) => f.node(n),
+            &ImportDeclaration::Specifiers(ref n) => f.node(n),
+            &ImportDeclaration::NamedType(ref n) => f.node(n),
+            &ImportDeclaration::NamespaceTypeof(ref n) => f.node(n),
+            &ImportDeclaration::NamedAndSpecifiersType(ref n) => f.node(n),
+            &ImportDeclaration::SpecifiersType(ref n) => f.node(n),
         }
     }
 }

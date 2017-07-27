@@ -6,6 +6,7 @@ pub mod flow;
 pub mod expression;
 pub mod statement;
 pub mod declaration;
+pub mod modules;
 pub mod literal;
 mod display;
 

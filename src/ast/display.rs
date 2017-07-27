@@ -124,6 +124,7 @@ pub enum Token {
     AngleL,
     Exports,
 
+    As,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -168,7 +169,7 @@ impl NodeFormatter {
 
     pub fn allow_in<T>(&mut self, cb: T) -> NodeDisplayResult
     where
-        T: FnOnce(&mut Self) -> NodeDisplayResult
+        T: FnOnce(&mut Self) -> NodeDisplayResult,
     {
         let in_operator = self.in_operator;
         self.in_operator = true;
@@ -232,7 +233,7 @@ impl NodeFormatter {
     pub fn node<T: NodeDisplay>(&mut self, s: &T) -> NodeDisplayResult {
         if self.current_depth == self.max_depth {
             // Configurable-per-node-type?
-            Ok(())//write!(self, "[[ Object ]]")
+            Ok(()) //write!(self, "[[ Object ]]")
         } else {
             s.fmt(self)
         }
@@ -248,41 +249,41 @@ impl NodeFormatter {
     }
 
     pub fn identifier(&mut self, name: &str, raw: Option<&str>) -> NodeDisplayResult {
-      if let Some(_raw) = raw {
-        // Write raw value as-is
-      } else {
-        // Serialize "name"
-      }
-      Ok(())
+        if let Some(_raw) = raw {
+            // Write raw value as-is
+        } else {
+            // Serialize "name"
+        }
+        Ok(())
     }
     pub fn string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
-      //write!(self, "\'")?;
-      if let Some(ref _raw) = raw {
-        // Ensure that single-quotes are escaped
-      } else {
-        // Serialize "value", escaping anything that _must_ be escaped, like newlines and slashes
-      }
-      Ok(())//write!(self, "\'")?;
+        //write!(self, "\'")?;
+        if let Some(ref _raw) = raw {
+            // Ensure that single-quotes are escaped
+        } else {
+            // Serialize "value", escaping anything that _must_ be escaped, like newlines and slashes
+        }
+        Ok(()) //write!(self, "\'")?;
     }
     pub fn number(&mut self, value: &f64, raw: Option<&str>) -> NodeDisplayResult {
-      if let Some(ref _raw) = raw {
-        // Write raw value as-is, possibly setting flag
-        self.ends_with_integer = true;
-      } else {
-        // Serialize number
-        self.ends_with_integer = true;
-      }
+        if let Some(ref _raw) = raw {
+            // Write raw value as-is, possibly setting flag
+            self.ends_with_integer = true;
+        } else {
+            // Serialize number
+            self.ends_with_integer = true;
+        }
 
-      Ok(())
+        Ok(())
     }
 
     pub fn template_part(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
-      if let Some(ref _raw) = raw {
-        // Write raw value as-is
-      } else {
-        // Serialize "value"
-      }
-      Ok(())
+        if let Some(ref _raw) = raw {
+            // Write raw value as-is
+        } else {
+            // Serialize "value"
+        }
+        Ok(())
     }
 
     pub fn regexp(&mut self, value: &str, flags: &[char]) -> NodeDisplayResult {
@@ -294,28 +295,28 @@ impl NodeFormatter {
     }
 
     pub fn jsx_identifier(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
-      if let Some(ref _raw) = raw {
-        // Write raw value as-is
-      } else {
-        // Serialize "name"
-      }
-      Ok(())
+        if let Some(ref _raw) = raw {
+            // Write raw value as-is
+        } else {
+            // Serialize "name"
+        }
+        Ok(())
     }
     pub fn jsx_string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
-      if let Some(ref _raw) = raw {
-        // Write raw value as-is
-      } else {
-        // Serialize "value", encoding all entities like {}<>
-      }
-      Ok(())
+        if let Some(ref _raw) = raw {
+            // Write raw value as-is
+        } else {
+            // Serialize "value", encoding all entities like {}<>
+        }
+        Ok(())
     }
     pub fn jsx_text(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
-      if let Some(ref _raw) = raw {
-        // Write raw value as-is
-      } else {
-        // Serialize "value", encoding all entities like {}<>
-      }
-      Ok(())
+        if let Some(ref _raw) = raw {
+            // Write raw value as-is
+        } else {
+            // Serialize "value", encoding all entities like {}<>
+        }
+        Ok(())
     }
 }
 // impl fmt::Write for NodeFormatter {
