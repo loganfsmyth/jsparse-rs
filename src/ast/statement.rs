@@ -39,9 +39,9 @@ nodes!{
 	}
   impl display::NodeDisplay for VariableDeclaratorList {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&VariableDeclaratorList::Declarator(ref item) => f.node(item),
-    		&VariableDeclaratorList::List(ref item, ref list) => {
+    	match *self {
+    		VariableDeclaratorList::Declarator(ref item) => f.node(item),
+    		VariableDeclaratorList::List(ref item, ref list) => {
     			f.node(item)?;
     			f.node(list)
     		}
@@ -154,11 +154,11 @@ nodes!{
 	}
   impl display::NodeDisplay for ForInit {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&ForInit::Var(ref item) => f.node(item),
-    		&ForInit::Let(ref item) => f.node(item),
-    		&ForInit::Const(ref item) => f.node(item),
-    		&ForInit::Expression(ref item) => f.node(item),
+    	match *self {
+    		ForInit::Var(ref item) => f.node(item),
+    		ForInit::Let(ref item) => f.node(item),
+    		ForInit::Const(ref item) => f.node(item),
+    		ForInit::Expression(ref item) => f.node(item),
     	}
     }
   }
@@ -194,11 +194,11 @@ nodes!{
 	}
   impl display::NodeDisplay for ForInInit {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&ForInInit::Var(ref decl) => f.node(decl),
-    		&ForInInit::Let(ref pat) => f.node(pat),
-    		&ForInInit::Const(ref pat) => f.node(pat),
-    		&ForInInit::Complex(ref pat) => f.node(pat),
+    	match *self {
+    		ForInInit::Var(ref decl) => f.node(decl),
+    		ForInInit::Let(ref pat) => f.node(pat),
+    		ForInInit::Const(ref pat) => f.node(pat),
+    		ForInInit::Complex(ref pat) => f.node(pat),
     	}
     }
   }
@@ -260,11 +260,11 @@ nodes!{
 	}
   impl display::NodeDisplay for ForOfInit {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&ForOfInit::Var(ref pat) => f.node(pat),
-    		&ForOfInit::Let(ref pat) => f.node(pat),
-    		&ForOfInit::Const(ref pat) => f.node(pat),
-    		&ForOfInit::Complex(ref pat) => f.node(pat),
+    	match *self {
+    		ForOfInit::Var(ref pat) => f.node(pat),
+    		ForOfInit::Let(ref pat) => f.node(pat),
+    		ForOfInit::Const(ref pat) => f.node(pat),
+    		ForOfInit::Complex(ref pat) => f.node(pat),
     	}
     }
   }

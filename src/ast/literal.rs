@@ -70,4 +70,18 @@ nodes!{
       }
   }
   impl misc::FirstSpecialToken for String {}
+
+  // /foo/g
+  pub struct RegularExpressionLiteral {
+    value: string::String,
+    flags: Vec<char>,
+  }
+  impl display::NodeDisplay for RegularExpressionLiteral {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+      f.regexp(&self.value, &self.flags)
+    }
+  }
+  impl misc::FirstSpecialToken for RegularExpressionLiteral {}
+  impl misc::HasInOperator for RegularExpressionLiteral {}
+
 }

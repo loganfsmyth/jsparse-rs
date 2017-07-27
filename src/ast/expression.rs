@@ -44,7 +44,7 @@ nodes!{
 			f.token(display::Token::SquareL)?;
 
 			for el in self.elements.iter() {
-				if let &Some(ref expr) = el {
+				if let Some(ref expr) = *el {
 					f.with_precedence(display::Precedence::Assignment, |f| f.node(expr))?;
 				}
 				f.token(display::Token::Comma)?;
@@ -94,9 +94,9 @@ nodes!{
 	}
 	impl display::NodeDisplay for ObjectProperty {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&ObjectProperty::Method(ref method) => f.node(method),
-				&ObjectProperty::Value(ref id, ref expr) => {
+			match *self {
+				ObjectProperty::Method(ref method) => f.node(method),
+				ObjectProperty::Value(ref id, ref expr) => {
 					f.node(id)?;
 					f.token(display::Token::Colon)?;
 					f.with_precedence(display::Precedence::Assignment, |f| f.node(expr))
@@ -213,19 +213,6 @@ nodes!{
 	}
 	impl misc::HasInOperator for ClassExpression {}
 
-	// /foo/g
-	pub struct RegularExpressionLiteral {
-		value: string::String,
-		flags: Vec<char>,
-	}
-	impl display::NodeDisplay for RegularExpressionLiteral {
-		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.regexp(&self.value, &self.flags)
-		}
-	}
-	impl misc::FirstSpecialToken for RegularExpressionLiteral {}
-	impl misc::HasInOperator for RegularExpressionLiteral {}
-
 	// fn`content`
 	pub struct TaggedTemplateLiteral {
 		tag: Box<alias::Expression>,
@@ -261,15 +248,15 @@ nodes!{
 	impl display::NodeDisplay for TemplateLiteral {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			// TODO: Handle initial backtick here
-			match self {
-				&TemplateLiteral::Piece(ref part, ref expr, ref next_literal) => {
+			match *self {
+				TemplateLiteral::Piece(ref part, ref expr, ref next_literal) => {
 					f.node(part)?;
 					f.token(display::Token::TemplateClose)?;
 					f.with_precedence(display::Precedence::Normal, |f| f.node(expr))?;
 					f.token(display::Token::TemplateOpen)?;
 					f.node(next_literal)
 				}
-				&TemplateLiteral::End(ref part) => {
+				TemplateLiteral::End(ref part) => {
 					f.node(part)?;
 					f.token(display::Token::TemplateTick)
 				}
@@ -373,9 +360,9 @@ nodes!{
 	}
 	impl display::NodeDisplay for MemberProperty {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&MemberProperty::Normal(ref id) => f.node(id),
-				&MemberProperty::Private(ref prop) => f.node(prop),
+			match *self {
+				MemberProperty::Normal(ref id) => f.node(id),
+				MemberProperty::Private(ref prop) => f.node(prop),
 			}
 		}
 	}
@@ -872,15 +859,15 @@ nodes!{
 	}
 	impl display::NodeDisplay for ArrowFunctionBody {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&ArrowFunctionBody::Expression(ref expr) => {
+			match *self {
+				ArrowFunctionBody::Expression(ref expr) => {
     			if let misc::SpecialToken::Object = expr.first_special_token() {
 						f.with_parens(|f| f.node(expr))
 					} else {
 						f.node(expr)
 					}
 				}
-				&ArrowFunctionBody::Block(ref body) => f.node(body),
+				ArrowFunctionBody::Block(ref body) => f.node(body),
 			}
 		}
 	}

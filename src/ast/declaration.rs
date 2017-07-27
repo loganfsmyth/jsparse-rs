@@ -12,9 +12,9 @@ enum DeclaratorList<T: display::NodeDisplay> {
 }
 impl<T: display::NodeDisplay> display::NodeDisplay for DeclaratorList<T> {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match self {
-            &DeclaratorList::Last(ref decl) => f.node(decl),
-            &DeclaratorList::List(ref decl, ref list) => {
+        match *self {
+            DeclaratorList::Last(ref decl) => f.node(decl),
+            DeclaratorList::List(ref decl, ref list) => {
                 f.node(decl)?;
                 f.token(display::Token::Comma)?;
                 f.node(list)

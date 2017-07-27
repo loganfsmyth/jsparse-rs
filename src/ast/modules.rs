@@ -27,9 +27,9 @@ nodes!{
   }
   impl display::NodeDisplay for FlowImportKind {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      match self {
-        &FlowImportKind::Type => f.token(display::Token::Type),
-        &FlowImportKind::Typeof => f.token(display::Token::Typeof),
+      match *self {
+        FlowImportKind::Type => f.token(display::Token::Type),
+        FlowImportKind::Typeof => f.token(display::Token::Typeof),
       }
     }
   }
@@ -40,11 +40,11 @@ nodes!{
   }
   impl display::NodeDisplay for ImportSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      match self {
-        &ImportSpecifier::Named(ref id) => {
+      match *self {
+        ImportSpecifier::Named(ref id) => {
           f.node(id)
         }
-        &ImportSpecifier::NamedAndAliased(ref module, ref id) => {
+        ImportSpecifier::NamedAndAliased(ref module, ref id) => {
           f.node(module)?;
           f.token(display::Token::As)?;
           f.node(id)
@@ -58,15 +58,15 @@ nodes!{
   }
   impl display::NodeDisplay for TypedImportSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      match self {
-        &TypedImportSpecifier::Named(ref kind, ref id) => {
-          if let &Some(ref kind) = kind {
+      match *self {
+        TypedImportSpecifier::Named(ref kind, ref id) => {
+          if let Some(ref kind) = *kind {
             f.node(kind)?;
           }
           f.node(id)
         }
-        &TypedImportSpecifier::NamedAndAliased(ref kind, ref module, ref id) => {
-          if let &Some(ref kind) = kind {
+        TypedImportSpecifier::NamedAndAliased(ref kind, ref module, ref id) => {
+          if let Some(ref kind) = *kind {
             f.node(kind)?;
           }
           f.node(module)?;
@@ -224,9 +224,9 @@ nodes!{
   // import typeof foo, {bar} from "";
   // import typeof foo, {bar as bar} from "";
   pub struct ImportNamedAndSpecifiersTypeDeclaration {
+    kind: FlowImportKind,
     default: misc::BindingIdentifier,
     specifiers: Vec<ImportSpecifier>,
-    kind: FlowImportKind,
     source: literal::String,
   }
   impl display::NodeDisplay for ImportNamedAndSpecifiersTypeDeclaration {
@@ -254,8 +254,8 @@ nodes!{
   // import typeof {bar} from "";
   // import typeof {bar as bar} from "";
   pub struct ImportSpecifiersTypeDeclaration {
-    specifiers: Vec<ImportSpecifier>,
     kind: FlowImportKind,
+    specifiers: Vec<ImportSpecifier>,
     source: literal::String,
   }
   impl display::NodeDisplay for ImportSpecifiersTypeDeclaration {
@@ -444,9 +444,9 @@ nodes!{
   }
   impl display::NodeDisplay for LocalExportSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      match self {
-        &LocalExportSpecifier::Named(ref id) => f.node(id),
-        &LocalExportSpecifier::NamedAndAliased(ref id, ref mod_id) => {
+      match *self {
+        LocalExportSpecifier::Named(ref id) => f.node(id),
+        LocalExportSpecifier::NamedAndAliased(ref id, ref mod_id) => {
           f.node(id)?;
           f.token(display::Token::As)?;
           f.node(mod_id)
@@ -490,9 +490,9 @@ nodes!{
   }
   impl display::NodeDisplay for SourceExportSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      match self {
-        &SourceExportSpecifier::Named(ref id) => f.node(id),
-        &SourceExportSpecifier::NamedAndAliased(ref id, ref mod_id) => {
+      match *self {
+        SourceExportSpecifier::Named(ref id) => f.node(id),
+        SourceExportSpecifier::NamedAndAliased(ref id, ref mod_id) => {
           f.node(id)?;
           f.token(display::Token::As)?;
           f.node(mod_id)
@@ -507,15 +507,15 @@ nodes!{
   }
   impl display::NodeDisplay for TypedSourceExportSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      match self {
-        &TypedSourceExportSpecifier::Named(ref kind, ref id) => {
-          if let &Some(ref kind) = kind {
+      match *self {
+        TypedSourceExportSpecifier::Named(ref kind, ref id) => {
+          if let Some(ref kind) = *kind {
             f.node(kind)?;
           }
           f.node(id)
         }
-        &TypedSourceExportSpecifier::NamedAndAliased(ref kind, ref id, ref mod_id) => {
-          if let &Some(ref kind) = kind {
+        TypedSourceExportSpecifier::NamedAndAliased(ref kind, ref id, ref mod_id) => {
+          if let Some(ref kind) = *kind {
             f.node(kind)?;
           }
           f.node(id)?;

@@ -279,7 +279,7 @@ nodes!{
     	match self {
     		&ObjectPatternProperty::Identifier(ref id, ref expr) => {
     			f.node(id)?;
-    			if let &Some(ref expr) = expr {
+    			if let Some(ref expr) = *expr {
     				f.token(display::Token::Eq)?;
     				f.node(expr)?;
     			}
@@ -290,7 +290,7 @@ nodes!{
     			f.node(prop)?;
     			f.token(display::Token::Colon)?;
     			f.node(pattern)?;
-    			if let &Some(ref expr) = expr {
+    			if let Some(ref expr) = *expr {
     				f.token(display::Token::Eq)?;
     				f.node(expr)?;
     			}
@@ -311,7 +311,7 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::SquareL)?;
     	for prop in self.items.iter() {
-    		if let &Some(ref prop) = prop {
+    		if let Some(ref prop) = *prop {
 	    		f.node(prop)?;
 	    	}
 

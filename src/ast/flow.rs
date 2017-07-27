@@ -22,19 +22,19 @@ nodes!{
 	}
 	impl display::NodeDisplay for Annotation {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&Annotation::Primitive(ref anno) => f.node(anno),
-				&Annotation::Literal(ref anno) => f.node(anno),
-				&Annotation::Special(ref anno) => f.node(anno),
-				&Annotation::Maybe(ref anno) => f.node(anno),
-				&Annotation::Function(ref anno) => f.node(anno),
-				&Annotation::Object(ref anno) => f.node(anno),
-				&Annotation::ArrayShorthand(ref anno) => f.node(anno),
-				&Annotation::Tuple(ref anno) => f.node(anno),
-				&Annotation::Binding(ref anno) => f.node(anno),
-				&Annotation::Union(ref anno) => f.node(anno),
-				&Annotation::Intersection(ref anno) => f.node(anno),
-				&Annotation::Typeof(ref anno) => f.node(anno),
+			match *self {
+				Annotation::Primitive(ref anno) => f.node(anno),
+				Annotation::Literal(ref anno) => f.node(anno),
+				Annotation::Special(ref anno) => f.node(anno),
+				Annotation::Maybe(ref anno) => f.node(anno),
+				Annotation::Function(ref anno) => f.node(anno),
+				Annotation::Object(ref anno) => f.node(anno),
+				Annotation::ArrayShorthand(ref anno) => f.node(anno),
+				Annotation::Tuple(ref anno) => f.node(anno),
+				Annotation::Binding(ref anno) => f.node(anno),
+				Annotation::Union(ref anno) => f.node(anno),
+				Annotation::Intersection(ref anno) => f.node(anno),
+				Annotation::Typeof(ref anno) => f.node(anno),
 			}
 		}
 	}
@@ -101,12 +101,12 @@ nodes!{
 	}
 	impl display::NodeDisplay for PrimitiveAnnotation {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&PrimitiveAnnotation::Boolean => f.token(display::Token::Boolean),
-				&PrimitiveAnnotation::String => f.token(display::Token::String),
-				&PrimitiveAnnotation::Number => f.token(display::Token::Number),
-				&PrimitiveAnnotation::Null => f.token(display::Token::Null),
-				&PrimitiveAnnotation::Void => f.token(display::Token::Void),
+			match *self {
+				PrimitiveAnnotation::Boolean => f.token(display::Token::Boolean),
+				PrimitiveAnnotation::String => f.token(display::Token::String),
+				PrimitiveAnnotation::Number => f.token(display::Token::Number),
+				PrimitiveAnnotation::Null => f.token(display::Token::Null),
+				PrimitiveAnnotation::Void => f.token(display::Token::Void),
 			}
 		}
 	}
@@ -117,10 +117,10 @@ nodes!{
 	}
 	impl display::NodeDisplay for LiteralAnnotation {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&LiteralAnnotation::Boolean(ref id) => f.node(id),
-				&LiteralAnnotation::String(ref id) => f.node(id),
-				&LiteralAnnotation::Number(ref id) => f.node(id),
+			match *self {
+				LiteralAnnotation::Boolean(ref id) => f.node(id),
+				LiteralAnnotation::String(ref id) => f.node(id),
+				LiteralAnnotation::Number(ref id) => f.node(id),
 			}
 		}
 	}
@@ -135,10 +135,10 @@ nodes!{
 	}
 	impl display::NodeDisplay for SpecialAnnotation {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&SpecialAnnotation::Any => f.token(display::Token::Any),
-				&SpecialAnnotation::Mixed => f.token(display::Token::Mixed),
-				&SpecialAnnotation::Existential => f.token(display::Token::Star),
+			match *self {
+				SpecialAnnotation::Any => f.token(display::Token::Any),
+				SpecialAnnotation::Mixed => f.token(display::Token::Mixed),
+				SpecialAnnotation::Existential => f.token(display::Token::Star),
 			}
 		}
 	}
@@ -250,10 +250,10 @@ nodes!{
 	}
 	impl display::NodeDisplay for ObjectItem {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&ObjectItem::Method(ref item) => f.node(item),
-				&ObjectItem::Property(ref item) => f.node(item),
-				&ObjectItem::MapProperty(ref item) => f.node(item),
+			match *self {
+				ObjectItem::Method(ref item) => f.node(item),
+				ObjectItem::Property(ref item) => f.node(item),
+				ObjectItem::MapProperty(ref item) => f.node(item),
 			}
 		}
 	}
@@ -275,9 +275,9 @@ nodes!{
 	}
 	impl display::NodeDisplay for ObjectMethodId {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&ObjectMethodId::Literal(ref id) => f.node(id),
-				&ObjectMethodId::String(ref id) => f.node(id),
+			match *self {
+				ObjectMethodId::Literal(ref id) => f.node(id),
+				ObjectMethodId::String(ref id) => f.node(id),
 			}
 		}
 	}
@@ -358,9 +358,9 @@ nodes!{
 	}
 	impl display::NodeDisplay for BindingIdentifierAnnotationList {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&BindingIdentifierAnnotationList::Identifier(ref id) => f.node(id),
-				&BindingIdentifierAnnotationList::List(ref id, ref next) => {
+			match *self {
+				BindingIdentifierAnnotationList::Identifier(ref id) => f.node(id),
+				BindingIdentifierAnnotationList::List(ref id, ref next) => {
 					f.node(id)?;
 					f.token(display::Token::Comma)?;
 					f.node(next)
@@ -416,10 +416,10 @@ nodes!{
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.token(display::Token::Typeof)?;
 
-			match self {
-				&TypeofAnnotation::Literal(ref id) => f.node(id),
-				&TypeofAnnotation::Identifier(ref id) => f.node(id),
-				&TypeofAnnotation::Member(ref id) => f.node(id),
+			match *self {
+				TypeofAnnotation::Literal(ref id) => f.node(id),
+				TypeofAnnotation::Identifier(ref id) => f.node(id),
+				TypeofAnnotation::Member(ref id) => f.node(id),
 			}
 		}
 	}
@@ -430,9 +430,9 @@ nodes!{
 	}
 	impl display::NodeDisplay for MemberExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&MemberExpression::Identifier(ref id) => f.node(id),
-				&MemberExpression::Member(ref obj, ref id) => {
+			match *self {
+				MemberExpression::Identifier(ref id) => f.node(id),
+				MemberExpression::Member(ref obj, ref id) => {
 					f.node(obj)?;
 					f.token(display::Token::Period)?;
 					f.node(id)
@@ -448,10 +448,10 @@ nodes!{
 	}
 	impl display::NodeDisplay for Variance {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&Variance::None => Ok(()),
-				&Variance::Covariant => f.token(display::Token::Plus),
-				&Variance::Contravariant => f.token(display::Token::Minus),
+			match *self {
+				Variance::None => Ok(()),
+				Variance::Covariant => f.token(display::Token::Plus),
+				Variance::Contravariant => f.token(display::Token::Minus),
 			}
 		}
 	}
@@ -786,19 +786,19 @@ nodes!{
 	}
 	impl display::NodeDisplay for ModuleItem {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			match self {
-				&ModuleItem::Function(ref item) => f.node(item),
-				&ModuleItem::Class(ref item) => f.node(item),
-				&ModuleItem::Variable(ref item) => f.node(item),
-				&ModuleItem::Alias(ref item) => f.node(item),
-				&ModuleItem::ExportFunction(ref item) => f.node(item),
-				&ModuleItem::ExportClass(ref item) => f.node(item),
-				&ModuleItem::ExportDefaultFunction(ref item) => f.node(item),
-				&ModuleItem::ExportDefaultClass(ref item) => f.node(item),
-				&ModuleItem::ExportVariable(ref item) => f.node(item),
-				&ModuleItem::ExportAlias(ref item) => f.node(item),
-				&ModuleItem::ExportDefaultType(ref item) => f.node(item),
-				&ModuleItem::CommonJSExport(ref item) => f.node(item),
+			match *self {
+				ModuleItem::Function(ref item) => f.node(item),
+				ModuleItem::Class(ref item) => f.node(item),
+				ModuleItem::Variable(ref item) => f.node(item),
+				ModuleItem::Alias(ref item) => f.node(item),
+				ModuleItem::ExportFunction(ref item) => f.node(item),
+				ModuleItem::ExportClass(ref item) => f.node(item),
+				ModuleItem::ExportDefaultFunction(ref item) => f.node(item),
+				ModuleItem::ExportDefaultClass(ref item) => f.node(item),
+				ModuleItem::ExportVariable(ref item) => f.node(item),
+				ModuleItem::ExportAlias(ref item) => f.node(item),
+				ModuleItem::ExportDefaultType(ref item) => f.node(item),
+				ModuleItem::CommonJSExport(ref item) => f.node(item),
 			}
 		}
 	}
