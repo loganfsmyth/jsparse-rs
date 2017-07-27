@@ -1,5 +1,10 @@
 extern crate ucd;
 
+#[macro_use]
+extern crate custom_derive;
+#[macro_use]
+extern crate enum_derive;
+
 mod ast;
 
 pub use ast::misc;

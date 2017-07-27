@@ -1280,7 +1280,7 @@ impl Tokenizer {
                             count += 1;
 
                             TState::Start
-                        },
+                        }
                     }
                 }
                 // foo..3
@@ -1293,7 +1293,10 @@ impl Tokenizer {
                             tokens[0].tok = TokenType::Period;
                             count += 1;
 
-                            TState::Integer(append(String::from("."), c), append(String::from("."), c))
+                            TState::Integer(
+                                append(String::from("."), c),
+                                append(String::from("."), c),
+                            )
                         }
                         '.' => TState::Ellipsis,
                         _ => {
@@ -1413,12 +1416,8 @@ impl Tokenizer {
                                 raw: r.into(),
                                 value: {
                                     match u64::from_str_radix(&s, 8) {
-                                        Ok(n) => {
-                                            n as f64
-                                        }
-                                        Err(_) => {
-                                            f64::INFINITY
-                                        }
+                                        Ok(n) => n as f64,
+                                        Err(_) => f64::INFINITY,
                                     }
                                 },
                             };
@@ -1514,9 +1513,7 @@ impl Tokenizer {
                     }
                 }
 
-                TState::DChars(r, s) => {
-                    double_chars!(r, s, c)
-                }
+                TState::DChars(r, s) => double_chars!(r, s, c),
                 TState::DCharEnd(r, s) => {
                     if tokens.len() == 0 {
                         return None;
@@ -1530,9 +1527,7 @@ impl Tokenizer {
                     TState::Start
                 }
 
-                TState::SChars(r, s) => {
-                    single_chars!(r, s, c)
-                }
+                TState::SChars(r, s) => single_chars!(r, s, c),
                 TState::SCharEnd(r, s) => {
                     if tokens.len() == 0 {
                         return None;
@@ -1612,16 +1607,32 @@ impl Tokenizer {
                     TState::Start
                 }
 
-                TState::TemplateChars(r, rv, s) => {
-                    template_chars!(r, rv, s, c)
-                }
+                TState::TemplateChars(r, rv, s) => template_chars!(r, rv, s, c),
                 TState::TemplateDollarChar(r, rv, s) => {
                     match c {
                         '`' => TState::TemplateCharEnd(r, rv, s),
                         '{' => TState::TemplateCharEnd(r, rv, s),
-                        '$' => TState::TemplateDollarChar(append(r, '$'), append(rv, '$'), append(s, '$')),
-                        '\\' => TState::TemplateEscapeSequenceOrContinuation(append(r, c), append(rv, c), s),
-                        '\r' => TState::TemplateCharLineTerminator(append(r, c), append(rv, c), append(s, c)),
+                        '$' => {
+                            TState::TemplateDollarChar(
+                                append(r, '$'),
+                                append(rv, '$'),
+                                append(s, '$'),
+                            )
+                        }
+                        '\\' => {
+                            TState::TemplateEscapeSequenceOrContinuation(
+                                append(r, c),
+                                append(rv, c),
+                                s,
+                            )
+                        }
+                        '\r' => {
+                            TState::TemplateCharLineTerminator(
+                                append(r, c),
+                                append(rv, c),
+                                append(s, c),
+                            )
+                        }
                         _ => TState::TemplateChars(append(r, c), append(rv, c), append(s, c)),
                     }
                 }
@@ -1629,9 +1640,27 @@ impl Tokenizer {
                 TState::TemplateCharLineTerminator(r, rv, s) => {
                     match c {
                         '\n' => TState::TemplateChars(append(r, c), append(rv, c), append(s, c)),
-                        '$' => TState::TemplateDollarChar(append(r, '$'), append(rv, '$'), append(s, '$')),
-                        '\\' => TState::TemplateEscapeSequenceOrContinuation(append(r, c), append(rv, c), s),
-                        '\r' => TState::TemplateCharLineTerminator(append(r, c), append(rv, c), append(s, c)),
+                        '$' => {
+                            TState::TemplateDollarChar(
+                                append(r, '$'),
+                                append(rv, '$'),
+                                append(s, '$'),
+                            )
+                        }
+                        '\\' => {
+                            TState::TemplateEscapeSequenceOrContinuation(
+                                append(r, c),
+                                append(rv, c),
+                                s,
+                            )
+                        }
+                        '\r' => {
+                            TState::TemplateCharLineTerminator(
+                                append(r, c),
+                                append(rv, c),
+                                append(s, c),
+                            )
+                        }
                         _ => TState::TemplateChars(append(r, c), append(rv, c), append(s, c)),
                     }
                 }
@@ -1650,8 +1679,6 @@ impl Tokenizer {
                     TState::Start
                 }
 
-
-
                 // IdentEscape
                 TState::IdentEscapeSequence(r, s) => {
                     match c {
@@ -1663,21 +1690,27 @@ impl Tokenizer {
                 TState::IdentEscapeHex1(r, s) => {
                     match c {
                         '{' => TState::IdentEscapeHexStart(append(r, c), s),
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex2(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::IdentEscapeHex2(append(r, c), s, append(String::new(), c))
+                        }
                         // if valid ident char, continue parsing ident, else back to start
                         _ => TState::Unknown,
                     }
                 }
                 TState::IdentEscapeHex2(r, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex3(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::IdentEscapeHex3(append(r, c), s, append(h, c))
+                        }
                         // if valid ident char, continue parsing ident, else back to start
                         _ => TState::Unknown,
                     }
                 }
                 TState::IdentEscapeHex3(r, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex4(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::IdentEscapeHex4(append(r, c), s, append(h, c))
+                        }
                         // if valid ident char, continue parsing ident, else back to start
                         _ => TState::Unknown,
                     }
@@ -1691,15 +1724,11 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::Ident(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
                         // if valid ident char, continue parsing ident, else back to start
@@ -1708,7 +1737,9 @@ impl Tokenizer {
                 }
                 TState::IdentEscapeHexStart(r, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::IdentEscapeHex(append(r, c), s, append(String::new(), c))
+                        }
                         // if valid ident char, continue parsing ident, else back to start
                         _ => TState::Unknown,
                     }
@@ -1721,38 +1752,39 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::Ident(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
-                        },
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::IdentEscapeHex(append(r, c), s, append(h, c)),
+                        }
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::IdentEscapeHex(append(r, c), s, append(h, c))
+                        }
                         // if valid ident char, continue parsing ident, else back to start
                         _ => TState::Unknown,
                     }
                 }
 
-
-
-
                 // SingleEscape
                 TState::SingleEscapeSequenceOrContinuation(r, s) => {
                     match c {
-                        '0'...'3' if flags.annexb => TState::SingleLegacyOctal1(append(r, c), s, append(String::new(), c)),
-                        '4'...'7' if flags.annexb => TState::SingleLegacyOctal2(append(r, c), s, append(String::new(), c)),
+                        '0'...'3' if flags.annexb => {
+                            TState::SingleLegacyOctal1(append(r, c), s, append(String::new(), c))
+                        }
+                        '4'...'7' if flags.annexb => {
+                            TState::SingleLegacyOctal2(append(r, c), s, append(String::new(), c))
+                        }
 
                         // TODO: This needs to actually throw if it has decimals after it
                         '0' => TState::SChars(append(r, c), append(s, '\u{0}')),
                         '1'...'9' => TState::Unknown, // Continue parsing string
                         'u' => TState::SingleEscapeHex1(append(r, c), s),
                         'x' => TState::SingleEscapeSequenceHex1(append(r, c), s),
-                        '\r' => TState::SingleEscapeSequenceMaybeContinuationSequence(append(r, c), s),
+                        '\r' => {
+                            TState::SingleEscapeSequenceMaybeContinuationSequence(append(r, c), s)
+                        }
                         '\n' | '\u{2028}' | '\u{2029}' => TState::SChars(append(r, c), s),
 
                         _ => single_chars!(r, s, c),
@@ -1775,7 +1807,7 @@ impl Tokenizer {
                                             let s = append(s, decoded_c);
 
                                             single_chars!(r, s, c)
-                                        },
+                                        }
                                         None => {
                                             panic!("Unexpected number");
                                         }
@@ -1797,15 +1829,11 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::SChars(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
                         _ => {
@@ -1816,7 +1844,7 @@ impl Tokenizer {
                                             let s = append(s, decoded_c);
 
                                             single_chars!(r, s, c)
-                                        },
+                                        }
                                         None => {
                                             panic!("Unexpected number");
                                         }
@@ -1833,19 +1861,25 @@ impl Tokenizer {
                 TState::SingleEscapeHex1(r, s) => {
                     match c {
                         '{' => TState::SingleEscapeHexStart(append(r, c), s),
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex2(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::SingleEscapeHex2(append(r, c), s, append(String::new(), c))
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
                 TState::SingleEscapeHex2(r, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex3(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::SingleEscapeHex3(append(r, c), s, append(h, c))
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
                 TState::SingleEscapeHex3(r, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex4(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::SingleEscapeHex4(append(r, c), s, append(h, c))
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
@@ -1858,15 +1892,11 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::SChars(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
                         _ => TState::Unknown, // Keep looking for '
@@ -1874,7 +1904,9 @@ impl Tokenizer {
                 }
                 TState::SingleEscapeHexStart(r, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::SingleEscapeHex(append(r, c), s, append(String::new(), c))
+                        }
                         _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
@@ -1886,24 +1918,28 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::SChars(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeHex(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::SingleEscapeHex(append(r, c), s, append(h, c))
+                        }
                         _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
                 TState::SingleEscapeSequenceHex1(r, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::SingleEscapeSequenceHex2(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::SingleEscapeSequenceHex2(
+                                append(r, c),
+                                s,
+                                append(String::new(), c),
+                            )
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
@@ -1916,15 +1952,11 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::SChars(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
                         _ => TState::Unknown, // Keep looking for '
@@ -1934,15 +1966,21 @@ impl Tokenizer {
                 // DoubleEscape
                 TState::DoubleEscapeSequenceOrContinuation(r, s) => {
                     match c {
-                        '0'...'3' if flags.annexb => TState::DoubleLegacyOctal1(append(r, c), s, append(String::new(), c)),
-                        '4'...'7' if flags.annexb => TState::DoubleLegacyOctal2(append(r, c), s, append(String::new(), c)),
+                        '0'...'3' if flags.annexb => {
+                            TState::DoubleLegacyOctal1(append(r, c), s, append(String::new(), c))
+                        }
+                        '4'...'7' if flags.annexb => {
+                            TState::DoubleLegacyOctal2(append(r, c), s, append(String::new(), c))
+                        }
 
                         // TODO: This needs to actually throw if it has decimals after it
                         '0' => TState::DChars(append(r, c), append(s, '\u{0}')),
                         '1'...'9' => TState::Unknown, // Continue parsing string
                         'u' => TState::DoubleEscapeHex1(append(r, c), s),
                         'x' => TState::DoubleEscapeSequenceHex1(append(r, c), s),
-                        '\r' => TState::DoubleEscapeSequenceMaybeContinuationSequence(append(r, c), s),
+                        '\r' => {
+                            TState::DoubleEscapeSequenceMaybeContinuationSequence(append(r, c), s)
+                        }
                         '\n' | '\u{2028}' | '\u{2029}' => TState::DChars(append(r, c), s),
 
                         _ => double_chars!(r, s, c),
@@ -1965,7 +2003,7 @@ impl Tokenizer {
                                             let s = append(s, decoded_c);
 
                                             double_chars!(r, s, c)
-                                        },
+                                        }
                                         None => {
                                             panic!("Unexpected number");
                                         }
@@ -1987,15 +2025,11 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::DChars(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
                         _ => {
@@ -2006,7 +2040,7 @@ impl Tokenizer {
                                             let s = append(s, decoded_c);
 
                                             double_chars!(r, s, c)
-                                        },
+                                        }
                                         None => {
                                             panic!("Unexpected number");
                                         }
@@ -2023,19 +2057,25 @@ impl Tokenizer {
                 TState::DoubleEscapeHex1(r, s) => {
                     match c {
                         '{' => TState::DoubleEscapeHexStart(append(r, c), s),
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex2(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::DoubleEscapeHex2(append(r, c), s, append(String::new(), c))
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
                 TState::DoubleEscapeHex2(r, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex3(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::DoubleEscapeHex3(append(r, c), s, append(h, c))
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
                 TState::DoubleEscapeHex3(r, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex4(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::DoubleEscapeHex4(append(r, c), s, append(h, c))
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
@@ -2048,15 +2088,11 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::DChars(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
                         _ => TState::Unknown, // Keep looking for '
@@ -2064,7 +2100,9 @@ impl Tokenizer {
                 }
                 TState::DoubleEscapeHexStart(r, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::DoubleEscapeHex(append(r, c), s, append(String::new(), c))
+                        }
                         _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
@@ -2076,24 +2114,28 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::DChars(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeHex(append(r, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::DoubleEscapeHex(append(r, c), s, append(h, c))
+                        }
                         _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
                 TState::DoubleEscapeSequenceHex1(r, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::DoubleEscapeSequenceHex2(append(r, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::DoubleEscapeSequenceHex2(
+                                append(r, c),
+                                s,
+                                append(String::new(), c),
+                            )
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
@@ -2106,32 +2148,37 @@ impl Tokenizer {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
                                             TState::DChars(append(r, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
 
-
                 // TemplateEscape
                 TState::TemplateEscapeSequenceOrContinuation(r, rv, s) => {
                     match c {
                         // TODO: This needs to actually throw if it has decimals after it
-                        '0' => TState::TemplateChars(append(r, c), append(rv, c), append(s, '\u{0}')),
+                        '0' => {
+                            TState::TemplateChars(append(r, c), append(rv, c), append(s, '\u{0}'))
+                        }
                         '1'...'9' => TState::Unknown, // Continue parsing string
                         'u' => TState::TemplateEscapeHex1(append(r, c), append(rv, c), s),
                         'x' => TState::TemplateEscapeSequenceHex1(append(r, c), append(rv, c), s),
-                        '\r' => TState::TemplateEscapeSequenceMaybeContinuationSequence(append(r, '\r'), append(rv, '\n'), s),
-                        '\n' | '\u{2028}' | '\u{2029}' => TState::TemplateChars(append(r, c), append(rv, c), s),
+                        '\r' => {
+                            TState::TemplateEscapeSequenceMaybeContinuationSequence(
+                                append(r, '\r'),
+                                append(rv, '\n'),
+                                s,
+                            )
+                        }
+                        '\n' | '\u{2028}' | '\u{2029}' => {
+                            TState::TemplateChars(append(r, c), append(rv, c), s)
+                        }
 
                         _ => template_chars!(r, rv, s, c),
                     }
@@ -2146,19 +2193,30 @@ impl Tokenizer {
                 TState::TemplateEscapeHex1(r, rv, s) => {
                     match c {
                         '{' => TState::TemplateEscapeHexStart(append(r, c), append(rv, c), s),
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex2(append(r, c), append(rv, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::TemplateEscapeHex2(
+                                append(r, c),
+                                append(rv, c),
+                                s,
+                                append(String::new(), c),
+                            )
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
                 TState::TemplateEscapeHex2(r, rv, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex3(append(r, c), append(rv, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::TemplateEscapeHex3(append(r, c), append(rv, c), s, append(h, c))
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
                 TState::TemplateEscapeHex3(r, rv, s, h) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex4(append(r, c), append(rv, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::TemplateEscapeHex4(append(r, c), append(rv, c), s, append(h, c))
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
@@ -2170,16 +2228,16 @@ impl Tokenizer {
                                 Ok(n) => {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
-                                            TState::TemplateChars(append(r, c), append(rv, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
+                                            TState::TemplateChars(
+                                                append(r, c),
+                                                append(rv, c),
+                                                append(s, decoded_c),
+                                            )
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
                         _ => TState::Unknown, // Keep looking for '
@@ -2187,7 +2245,14 @@ impl Tokenizer {
                 }
                 TState::TemplateEscapeHexStart(r, rv, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex(append(r, c), append(rv, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::TemplateEscapeHex(
+                                append(r, c),
+                                append(rv, c),
+                                s,
+                                append(String::new(), c),
+                            )
+                        }
                         _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
@@ -2198,25 +2263,34 @@ impl Tokenizer {
                                 Ok(n) => {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
-                                            TState::TemplateChars(append(r, c), append(rv, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
+                                            TState::TemplateChars(
+                                                append(r, c),
+                                                append(rv, c),
+                                                append(s, decoded_c),
+                                            )
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeHex(append(r, c), append(rv, c), s, append(h, c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::TemplateEscapeHex(append(r, c), append(rv, c), s, append(h, c))
+                        }
                         _ => TState::Unknown, // Keep looking for } or '
                     }
                 }
                 TState::TemplateEscapeSequenceHex1(r, rv, s) => {
                     match c {
-                        '0'...'9' | 'a'...'f' | 'A'...'F' => TState::TemplateEscapeSequenceHex2(append(r, c), append(rv, c), s, append(String::new(), c)),
+                        '0'...'9' | 'a'...'f' | 'A'...'F' => {
+                            TState::TemplateEscapeSequenceHex2(
+                                append(r, c),
+                                append(rv, c),
+                                s,
+                                append(String::new(), c),
+                            )
+                        }
                         _ => TState::Unknown, // Keep looking for '
                     }
                 }
@@ -2228,16 +2302,16 @@ impl Tokenizer {
                                 Ok(n) => {
                                     match char::from_u32(n) {
                                         Some(decoded_c) => {
-                                            TState::TemplateChars(append(r, c), append(rv, c), append(s, decoded_c))
-                                        },
-                                        None => {
-                                            panic!("Unexpected number")
+                                            TState::TemplateChars(
+                                                append(r, c),
+                                                append(rv, c),
+                                                append(s, decoded_c),
+                                            )
                                         }
+                                        None => panic!("Unexpected number"),
                                     }
                                 }
-                                Err(_) => {
-                                    panic!("Unexpected number")
-                                }
+                                Err(_) => panic!("Unexpected number"),
                             }
                         }
                         _ => TState::Unknown, // Keep looking for '
@@ -2440,17 +2514,38 @@ mod tests {
 
     #[test]
     fn it_should_tokenize_newlines() {
-        assert_token!("\u{000A}", TokenType::LineTerminator { value: "\u{000A}".into() });
-        assert_token!("\u{000D}", TokenType::LineTerminator { value: "\u{000D}".into() });
-        assert_token!("\u{2028}", TokenType::LineTerminator { value: "\u{2028}".into() });
-        assert_token!("\u{2029}", TokenType::LineTerminator { value: "\u{2029}".into() });
+        assert_token!(
+            "\u{000A}",
+            TokenType::LineTerminator { value: "\u{000A}".into() }
+        );
+        assert_token!(
+            "\u{000D}",
+            TokenType::LineTerminator { value: "\u{000D}".into() }
+        );
+        assert_token!(
+            "\u{2028}",
+            TokenType::LineTerminator { value: "\u{2028}".into() }
+        );
+        assert_token!(
+            "\u{2029}",
+            TokenType::LineTerminator { value: "\u{2029}".into() }
+        );
     }
 
     #[test]
     fn it_should_tokenize_comments() {
-        assert_token!("// text ", TokenType::LineComment { value: " text ".into() });
-        assert_token!("/* text */", TokenType::BlockComment { value: " text ".into() });
-        assert_token!("/* text **/", TokenType::BlockComment { value: " text *".into() });
+        assert_token!(
+            "// text ",
+            TokenType::LineComment { value: " text ".into() }
+        );
+        assert_token!(
+            "/* text */",
+            TokenType::BlockComment { value: " text ".into() }
+        );
+        assert_token!(
+            "/* text **/",
+            TokenType::BlockComment { value: " text *".into() }
+        );
 
         // TODO:
         // HTMLOpenComment {
@@ -2466,378 +2561,618 @@ mod tests {
     #[test]
     fn it_should_tokenize_numbers() {
         // Decimal
-        assert_token!(".2", TokenType::NumericLiteral {
-            raw: Some(".2".into()),
-            value: 0.2,
-        });
-        assert_token!("8.2", TokenType::NumericLiteral {
-            raw: Some("8.2".into()),
-            value: 8.2,
-        });
-        assert_token!("8.2e1", TokenType::NumericLiteral {
-            raw: Some("8.2e1".into()),
-            value: 82.0,
-        });
-        assert_token!("8.2e2", TokenType::NumericLiteral {
-            raw: Some("8.2e2".into()),
-            value: 820.0,
-        });
-        assert_token!("8.2E2", TokenType::NumericLiteral {
-            raw: Some("8.2E2".into()),
-            value: 820.0,
-        });
-        assert_token!("8.2e+2", TokenType::NumericLiteral {
-            raw: Some("8.2e+2".into()),
-            value: 820.0,
-        });
-        assert_token!("8.2E+2", TokenType::NumericLiteral {
-            raw: Some("8.2E+2".into()),
-            value: 820.0,
-        });
-        assert_token!("8.2e-2", TokenType::NumericLiteral {
-            raw: Some("8.2e-2".into()),
-            value: 0.082,
-        });
-        assert_token!("8.2E-2", TokenType::NumericLiteral {
-            raw: Some("8.2E-2".into()),
-            value: 0.082,
-        });
-        assert_token!("0.e2", TokenType::NumericLiteral {
-            raw: Some("0.e2".into()),
-            value: 0.0,
-        });
-        assert_token!("0.E2", TokenType::NumericLiteral {
-            raw: Some("0.E2".into()),
-            value: 0.0,
-        });
-        assert_token!("0.e-2", TokenType::NumericLiteral {
-            raw: Some("0.e-2".into()),
-            value: 0.0,
-        });
-        assert_token!("0.E2", TokenType::NumericLiteral {
-            raw: Some("0.E2".into()),
-            value: 0.0,
-        });
+        assert_token!(
+            ".2",
+            TokenType::NumericLiteral {
+                raw: Some(".2".into()),
+                value: 0.2,
+            }
+        );
+        assert_token!(
+            "8.2",
+            TokenType::NumericLiteral {
+                raw: Some("8.2".into()),
+                value: 8.2,
+            }
+        );
+        assert_token!(
+            "8.2e1",
+            TokenType::NumericLiteral {
+                raw: Some("8.2e1".into()),
+                value: 82.0,
+            }
+        );
+        assert_token!(
+            "8.2e2",
+            TokenType::NumericLiteral {
+                raw: Some("8.2e2".into()),
+                value: 820.0,
+            }
+        );
+        assert_token!(
+            "8.2E2",
+            TokenType::NumericLiteral {
+                raw: Some("8.2E2".into()),
+                value: 820.0,
+            }
+        );
+        assert_token!(
+            "8.2e+2",
+            TokenType::NumericLiteral {
+                raw: Some("8.2e+2".into()),
+                value: 820.0,
+            }
+        );
+        assert_token!(
+            "8.2E+2",
+            TokenType::NumericLiteral {
+                raw: Some("8.2E+2".into()),
+                value: 820.0,
+            }
+        );
+        assert_token!(
+            "8.2e-2",
+            TokenType::NumericLiteral {
+                raw: Some("8.2e-2".into()),
+                value: 0.082,
+            }
+        );
+        assert_token!(
+            "8.2E-2",
+            TokenType::NumericLiteral {
+                raw: Some("8.2E-2".into()),
+                value: 0.082,
+            }
+        );
+        assert_token!(
+            "0.e2",
+            TokenType::NumericLiteral {
+                raw: Some("0.e2".into()),
+                value: 0.0,
+            }
+        );
+        assert_token!(
+            "0.E2",
+            TokenType::NumericLiteral {
+                raw: Some("0.E2".into()),
+                value: 0.0,
+            }
+        );
+        assert_token!(
+            "0.e-2",
+            TokenType::NumericLiteral {
+                raw: Some("0.e-2".into()),
+                value: 0.0,
+            }
+        );
+        assert_token!(
+            "0.E2",
+            TokenType::NumericLiteral {
+                raw: Some("0.E2".into()),
+                value: 0.0,
+            }
+        );
 
         // Hex
-        assert_token!("0x43", TokenType::NumericLiteral {
-            raw: Some("0x43".into()),
-            value: 67.0,
-        });
-        assert_token!("0X43", TokenType::NumericLiteral {
-            raw: Some("0X43".into()),
-            value: 67.0,
-        });
+        assert_token!(
+            "0x43",
+            TokenType::NumericLiteral {
+                raw: Some("0x43".into()),
+                value: 67.0,
+            }
+        );
+        assert_token!(
+            "0X43",
+            TokenType::NumericLiteral {
+                raw: Some("0X43".into()),
+                value: 67.0,
+            }
+        );
 
         // Octal
-        assert_token!("0o010", TokenType::NumericLiteral {
-            raw: Some("0o010".into()),
-            value: 8.0,
-        });
-        assert_token!("0O010", TokenType::NumericLiteral {
-            raw: Some("0O010".into()),
-            value: 8.0,
-        });
+        assert_token!(
+            "0o010",
+            TokenType::NumericLiteral {
+                raw: Some("0o010".into()),
+                value: 8.0,
+            }
+        );
+        assert_token!(
+            "0O010",
+            TokenType::NumericLiteral {
+                raw: Some("0O010".into()),
+                value: 8.0,
+            }
+        );
 
         // Binary
-        assert_token!("0b010", TokenType::NumericLiteral {
-            raw: Some("0b010".into()),
-            value: 2.0,
-        });
-        assert_token!("0B010", TokenType::NumericLiteral {
-            raw: Some("0B010".into()),
-            value: 2.0,
-        });
+        assert_token!(
+            "0b010",
+            TokenType::NumericLiteral {
+                raw: Some("0b010".into()),
+                value: 2.0,
+            }
+        );
+        assert_token!(
+            "0B010",
+            TokenType::NumericLiteral {
+                raw: Some("0B010".into()),
+                value: 2.0,
+            }
+        );
     }
 
     #[test]
     fn it_should_tokenize_numbers_legacy_octal() {
-        assert_token_annexb!("0333333333", TokenType::NumericLiteral {
-            raw: Some("0333333333".into()),
-            value: 0x36DB6DB as f64,
-        });
-        assert_token_annexb!("0778", TokenType::NumericLiteral {
-            raw: Some("0778".into()),
-            value: 778.0,
-        });
+        assert_token_annexb!(
+            "0333333333",
+            TokenType::NumericLiteral {
+                raw: Some("0333333333".into()),
+                value: 0x36DB6DB as f64,
+            }
+        );
+        assert_token_annexb!(
+            "0778",
+            TokenType::NumericLiteral {
+                raw: Some("0778".into()),
+                value: 778.0,
+            }
+        );
     }
 
     #[test]
     fn it_should_tokenize_regexp_literal() {
-        assert_token!("/omg/g", TokenType::RegularExpressionLiteral {
-            value: "omg".into(),
-            flags: "g".into(),
-        });
-        assert_token!("/o[/]mg/g", TokenType::RegularExpressionLiteral {
-            value: "o[/]mg".into(),
-            flags: "g".into(),
-        });
+        assert_token!(
+            "/omg/g",
+            TokenType::RegularExpressionLiteral {
+                value: "omg".into(),
+                flags: "g".into(),
+            }
+        );
+        assert_token!(
+            "/o[/]mg/g",
+            TokenType::RegularExpressionLiteral {
+                value: "o[/]mg".into(),
+                flags: "g".into(),
+            }
+        );
     }
 
     #[test]
     fn it_should_tokenize_string_literal_single() {
-        assert_token!("'omg'", TokenType::StringLiteral {
-            raw: Some("omg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("'o\\\nmg'", TokenType::StringLiteral {
-            raw: Some("o\\\nmg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("'o\\\rmg'", TokenType::StringLiteral {
-            raw: Some("o\\\rmg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("'o\\\u{2028}mg'", TokenType::StringLiteral {
-            raw: Some("o\\\u{2028}mg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("'o\\\u{2029}mg'", TokenType::StringLiteral {
-            raw: Some("o\\\u{2029}mg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("'o\\\r\nmg'", TokenType::StringLiteral {
-            raw: Some("o\\\r\nmg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("'o\\0mg'", TokenType::StringLiteral {
-            raw: Some("o\\0mg".into()),
-            value: "o\u{0}mg".into(),
-        });
-        assert_token!("'o\\x65mg'", TokenType::StringLiteral {
-            raw: Some("o\\x65mg".into()),
-            value: "o\u{65}mg".into(),
-        });
-        assert_token!("'o\\u0065mg'", TokenType::StringLiteral {
-            raw: Some("o\\u0065mg".into()),
-            value: "o\u{65}mg".into(),
-        });
-        assert_token!("'o\\u{65}mg'", TokenType::StringLiteral {
-            raw: Some("o\\u{65}mg".into()),
-            value: "o\u{65}mg".into(),
-        });
+        assert_token!(
+            "'omg'",
+            TokenType::StringLiteral {
+                raw: Some("omg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "'o\\\nmg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\\nmg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "'o\\\rmg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\\rmg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "'o\\\u{2028}mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\\u{2028}mg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "'o\\\u{2029}mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\\u{2029}mg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "'o\\\r\nmg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\\r\nmg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "'o\\0mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\0mg".into()),
+                value: "o\u{0}mg".into(),
+            }
+        );
+        assert_token!(
+            "'o\\x65mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\x65mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
+        assert_token!(
+            "'o\\u0065mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\u0065mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
+        assert_token!(
+            "'o\\u{65}mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\u{65}mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
     }
 
     #[test]
     fn it_should_tokenize_string_literal_single_legacy_octal() {
-        assert_token_annexb!("'o\\18mg'", TokenType::StringLiteral {
-            raw: Some("o\\18mg".into()),
-            value: "o\u{1}8mg".into(),
-        });
-        assert_token_annexb!("'o\\1mg'", TokenType::StringLiteral {
-            raw: Some("o\\1mg".into()),
-            value: "o\u{1}mg".into(),
-        });
-        assert_token_annexb!("'o\\7mg'", TokenType::StringLiteral {
-            raw: Some("o\\7mg".into()),
-            value: "o\u{7}mg".into(),
-        });
-        assert_token_annexb!("'o\\17mg'", TokenType::StringLiteral {
-            raw: Some("o\\17mg".into()),
-            value: "o\u{F}mg".into(),
-        });
-        assert_token_annexb!("'o\\178mg'", TokenType::StringLiteral {
-            raw: Some("o\\178mg".into()),
-            value: "o\u{F}8mg".into(),
-        });
-        assert_token_annexb!("'o\\77mg'", TokenType::StringLiteral {
-            raw: Some("o\\77mg".into()),
-            value: "o\u{3F}mg".into(),
-        });
-        assert_token_annexb!("'o\\377mg'", TokenType::StringLiteral {
-            raw: Some("o\\377mg".into()),
-            value: "o\u{FF}mg".into(),
-        });
-        assert_token_annexb!("'o\\344mg'", TokenType::StringLiteral {
-            raw: Some("o\\344mg".into()),
-            value: "o\u{E4}mg".into(),
-        });
-        assert_token_annexb!("'o\\477mg'", TokenType::StringLiteral {
-            raw: Some("o\\477mg".into()),
-            value: "o\u{27}7mg".into(),
-        });
-        assert_token_annexb!("'o\\777mg'", TokenType::StringLiteral {
-            raw: Some("o\\777mg".into()),
-            value: "o\u{3F}7mg".into(),
-        });
+        assert_token_annexb!(
+            "'o\\18mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\18mg".into()),
+                value: "o\u{1}8mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "'o\\1mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\1mg".into()),
+                value: "o\u{1}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "'o\\7mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\7mg".into()),
+                value: "o\u{7}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "'o\\17mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\17mg".into()),
+                value: "o\u{F}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "'o\\178mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\178mg".into()),
+                value: "o\u{F}8mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "'o\\77mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\77mg".into()),
+                value: "o\u{3F}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "'o\\377mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\377mg".into()),
+                value: "o\u{FF}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "'o\\344mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\344mg".into()),
+                value: "o\u{E4}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "'o\\477mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\477mg".into()),
+                value: "o\u{27}7mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "'o\\777mg'",
+            TokenType::StringLiteral {
+                raw: Some("o\\777mg".into()),
+                value: "o\u{3F}7mg".into(),
+            }
+        );
     }
 
 
     #[test]
     fn it_should_tokenize_string_literal_double() {
-        assert_token!("\"omg\"", TokenType::StringLiteral {
-            raw: Some("omg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("\"o\\\nmg\"", TokenType::StringLiteral {
-            raw: Some("o\\\nmg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("\"o\\\rmg\"", TokenType::StringLiteral {
-            raw: Some("o\\\rmg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("\"o\\\u{2028}mg\"", TokenType::StringLiteral {
-            raw: Some("o\\\u{2028}mg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("\"o\\\u{2029}mg\"", TokenType::StringLiteral {
-            raw: Some("o\\\u{2029}mg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("\"o\\\r\nmg\"", TokenType::StringLiteral {
-            raw: Some("o\\\r\nmg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("\"o\\0mg\"", TokenType::StringLiteral {
-            raw: Some("o\\0mg".into()),
-            value: "o\u{0}mg".into(),
-        });
-        assert_token!("\"o\\x65mg\"", TokenType::StringLiteral {
-            raw: Some("o\\x65mg".into()),
-            value: "o\u{65}mg".into(),
-        });
-        assert_token!("\"o\\u0065mg\"", TokenType::StringLiteral {
-            raw: Some("o\\u0065mg".into()),
-            value: "o\u{65}mg".into(),
-        });
-        assert_token!("\"o\\u{65}mg\"", TokenType::StringLiteral {
-            raw: Some("o\\u{65}mg".into()),
-            value: "o\u{65}mg".into(),
-        });
+        assert_token!(
+            "\"omg\"",
+            TokenType::StringLiteral {
+                raw: Some("omg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "\"o\\\nmg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\\nmg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "\"o\\\rmg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\\rmg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "\"o\\\u{2028}mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\\u{2028}mg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "\"o\\\u{2029}mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\\u{2029}mg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "\"o\\\r\nmg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\\r\nmg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "\"o\\0mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\0mg".into()),
+                value: "o\u{0}mg".into(),
+            }
+        );
+        assert_token!(
+            "\"o\\x65mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\x65mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
+        assert_token!(
+            "\"o\\u0065mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\u0065mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
+        assert_token!(
+            "\"o\\u{65}mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\u{65}mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
     }
 
     #[test]
     fn it_should_tokenize_string_literal_double_legacy_octal() {
-        assert_token_annexb!("\"o\\18mg\"", TokenType::StringLiteral {
-            raw: Some("o\\18mg".into()),
-            value: "o\u{1}8mg".into(),
-        });
-        assert_token_annexb!("\"o\\1mg\"", TokenType::StringLiteral {
-            raw: Some("o\\1mg".into()),
-            value: "o\u{1}mg".into(),
-        });
-        assert_token_annexb!("\"o\\7mg\"", TokenType::StringLiteral {
-            raw: Some("o\\7mg".into()),
-            value: "o\u{7}mg".into(),
-        });
-        assert_token_annexb!("\"o\\17mg\"", TokenType::StringLiteral {
-            raw: Some("o\\17mg".into()),
-            value: "o\u{F}mg".into(),
-        });
-        assert_token_annexb!("\"o\\178mg\"", TokenType::StringLiteral {
-            raw: Some("o\\178mg".into()),
-            value: "o\u{F}8mg".into(),
-        });
-        assert_token_annexb!("\"o\\77mg\"", TokenType::StringLiteral {
-            raw: Some("o\\77mg".into()),
-            value: "o\u{3F}mg".into(),
-        });
-        assert_token_annexb!("\"o\\377mg\"", TokenType::StringLiteral {
-            raw: Some("o\\377mg".into()),
-            value: "o\u{FF}mg".into(),
-        });
-        assert_token_annexb!("\"o\\344mg\"", TokenType::StringLiteral {
-            raw: Some("o\\344mg".into()),
-            value: "o\u{E4}mg".into(),
-        });
-        assert_token_annexb!("\"o\\477mg\"", TokenType::StringLiteral {
-            raw: Some("o\\477mg".into()),
-            value: "o\u{27}7mg".into(),
-        });
-        assert_token_annexb!("\"o\\777mg\"", TokenType::StringLiteral {
-            raw: Some("o\\777mg".into()),
-            value: "o\u{3F}7mg".into(),
-        });
+        assert_token_annexb!(
+            "\"o\\18mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\18mg".into()),
+                value: "o\u{1}8mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "\"o\\1mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\1mg".into()),
+                value: "o\u{1}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "\"o\\7mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\7mg".into()),
+                value: "o\u{7}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "\"o\\17mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\17mg".into()),
+                value: "o\u{F}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "\"o\\178mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\178mg".into()),
+                value: "o\u{F}8mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "\"o\\77mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\77mg".into()),
+                value: "o\u{3F}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "\"o\\377mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\377mg".into()),
+                value: "o\u{FF}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "\"o\\344mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\344mg".into()),
+                value: "o\u{E4}mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "\"o\\477mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\477mg".into()),
+                value: "o\u{27}7mg".into(),
+            }
+        );
+        assert_token_annexb!(
+            "\"o\\777mg\"",
+            TokenType::StringLiteral {
+                raw: Some("o\\777mg".into()),
+                value: "o\u{3F}7mg".into(),
+            }
+        );
     }
 
     #[test]
     fn it_should_tokenize_identifier() {
-        assert_token!("omg", TokenType::IdentifierName {
-            raw: Some("omg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("o\\u{1234}mg", TokenType::IdentifierName {
-            raw: Some("o\\u{1234}mg".into()),
-            value: "o\u{1234}mg".into(),
-        });
-        assert_token!("o\\u{65}mg", TokenType::IdentifierName {
-            raw: Some("o\\u{65}mg".into()),
-            value: "o\u{65}mg".into(),
-        });
-        assert_token!("o\\u1234mg", TokenType::IdentifierName {
-            raw: Some("o\\u1234mg".into()),
-            value: "o\u{1234}mg".into(),
-        });
+        assert_token!(
+            "omg",
+            TokenType::IdentifierName {
+                raw: Some("omg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "o\\u{1234}mg",
+            TokenType::IdentifierName {
+                raw: Some("o\\u{1234}mg".into()),
+                value: "o\u{1234}mg".into(),
+            }
+        );
+        assert_token!(
+            "o\\u{65}mg",
+            TokenType::IdentifierName {
+                raw: Some("o\\u{65}mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
+        assert_token!(
+            "o\\u1234mg",
+            TokenType::IdentifierName {
+                raw: Some("o\\u1234mg".into()),
+                value: "o\u{1234}mg".into(),
+            }
+        );
     }
 
     #[test]
     fn it_should_tokenize_template_literal() {
-        assert_token!("`omg`", TokenType::TemplatePart {
-            raw: Some("omg".into()),
-            raw_value: Some("omg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("`omg${", TokenType::TemplatePart {
-            raw: Some("omg".into()),
-            raw_value: Some("omg".into()),
-            value: "omg".into(),
-        });
-        assert_template!("}omg${", TokenType::TemplatePart {
-            raw: Some("omg".into()),
-            raw_value: Some("omg".into()),
-            value: "omg".into(),
-        });
-        assert_template!("}omg`", TokenType::TemplatePart {
-            raw: Some("omg".into()),
-            raw_value: Some("omg".into()),
-            value: "omg".into(),
-        });
+        assert_token!(
+            "`omg`",
+            TokenType::TemplatePart {
+                raw: Some("omg".into()),
+                raw_value: Some("omg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "`omg${",
+            TokenType::TemplatePart {
+                raw: Some("omg".into()),
+                raw_value: Some("omg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_template!(
+            "}omg${",
+            TokenType::TemplatePart {
+                raw: Some("omg".into()),
+                raw_value: Some("omg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_template!(
+            "}omg`",
+            TokenType::TemplatePart {
+                raw: Some("omg".into()),
+                raw_value: Some("omg".into()),
+                value: "omg".into(),
+            }
+        );
 
-        assert_token!("`o\\\nmg`", TokenType::TemplatePart {
-            raw: Some("o\\\nmg".into()),
-            raw_value: Some("o\\\nmg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("`o\\\rmg`", TokenType::TemplatePart {
-            raw: Some("o\\\rmg".into()),
-            raw_value: Some("o\\\nmg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("`o\\\u{2028}mg`", TokenType::TemplatePart {
-            raw: Some("o\\\u{2028}mg".into()),
-            raw_value: Some("o\\\u{2028}mg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("`o\\\u{2029}mg`", TokenType::TemplatePart {
-            raw: Some("o\\\u{2029}mg".into()),
-            raw_value: Some("o\\\u{2029}mg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("`o\\\r\nmg`", TokenType::TemplatePart {
-            raw: Some("o\\\r\nmg".into()),
-            raw_value: Some("o\\\nmg".into()),
-            value: "omg".into(),
-        });
-        assert_token!("`o\\0mg`", TokenType::TemplatePart {
-            raw: Some("o\\0mg".into()),
-            raw_value: Some("o\\0mg".into()),
-            value: "o\u{0}mg".into(),
-        });
-        assert_token!("`o\\x65mg`", TokenType::TemplatePart {
-            raw: Some("o\\x65mg".into()),
-            raw_value: Some("o\\x65mg".into()),
-            value: "o\u{65}mg".into(),
-        });
-        assert_token!("`o\\u0065mg`", TokenType::TemplatePart {
-            raw: Some("o\\u0065mg".into()),
-            raw_value: Some("o\\u0065mg".into()),
-            value: "o\u{65}mg".into(),
-        });
-        assert_token!("`o\\u{65}mg`", TokenType::TemplatePart {
-            raw: Some("o\\u{65}mg".into()),
-            raw_value: Some("o\\u{65}mg".into()),
-            value: "o\u{65}mg".into(),
-        });
+        assert_token!(
+            "`o\\\nmg`",
+            TokenType::TemplatePart {
+                raw: Some("o\\\nmg".into()),
+                raw_value: Some("o\\\nmg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "`o\\\rmg`",
+            TokenType::TemplatePart {
+                raw: Some("o\\\rmg".into()),
+                raw_value: Some("o\\\nmg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "`o\\\u{2028}mg`",
+            TokenType::TemplatePart {
+                raw: Some("o\\\u{2028}mg".into()),
+                raw_value: Some("o\\\u{2028}mg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "`o\\\u{2029}mg`",
+            TokenType::TemplatePart {
+                raw: Some("o\\\u{2029}mg".into()),
+                raw_value: Some("o\\\u{2029}mg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "`o\\\r\nmg`",
+            TokenType::TemplatePart {
+                raw: Some("o\\\r\nmg".into()),
+                raw_value: Some("o\\\nmg".into()),
+                value: "omg".into(),
+            }
+        );
+        assert_token!(
+            "`o\\0mg`",
+            TokenType::TemplatePart {
+                raw: Some("o\\0mg".into()),
+                raw_value: Some("o\\0mg".into()),
+                value: "o\u{0}mg".into(),
+            }
+        );
+        assert_token!(
+            "`o\\x65mg`",
+            TokenType::TemplatePart {
+                raw: Some("o\\x65mg".into()),
+                raw_value: Some("o\\x65mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
+        assert_token!(
+            "`o\\u0065mg`",
+            TokenType::TemplatePart {
+                raw: Some("o\\u0065mg".into()),
+                raw_value: Some("o\\u0065mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
+        assert_token!(
+            "`o\\u{65}mg`",
+            TokenType::TemplatePart {
+                raw: Some("o\\u{65}mg".into()),
+                raw_value: Some("o\\u{65}mg".into()),
+                value: "o\u{65}mg".into(),
+            }
+        );
     }
 }

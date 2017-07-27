@@ -4,52 +4,71 @@ use super::flow;
 use super::alias;
 use super::statement;
 use super::literal;
+use super::display;
+
+enum DeclaratorList<T: display::NodeDisplay> {
+	Last(T),
+	List(T, Box<DeclaratorList<T>>),
+}
+impl<T: display::NodeDisplay> display::NodeDisplay for DeclaratorList<T> {
+	fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+		match self {
+			&DeclaratorList::Last(ref decl) => f.node(decl),
+			&DeclaratorList::List(ref decl, ref list) => {
+				f.node(decl)?;
+				f.token(display::Token::Comma)?;
+				f.node(list)
+			}
+		}
+	}
+}
 
 nodes!{
 	// let foo, bar;
-	pub struct LexicalDeclaration {
-		kind: LexicalKind,
-		declarators: LexicalDeclaratorList,
+	pub struct LetDeclaration {
+		declarators: DeclaratorList<LetDeclarator>,
 	}
-	pub enum LexicalKind {
-		Let,
-		Const,
-	}
-	impl misc::NodeDisplay for ArrayExpression {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			match self.kind {
-				LexicalKind::Let => f.token(misc::Token::Let)?,
-				LexicalKind::Const => f.token(misc::Token::Const)?,
-			}
-			misc::NodeDisplay::fmt(self.declarators)
+	impl display::NodeDisplay for LetDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Let)?;
+			f.node(&self.declarators)
 		}
 	}
-
-	pub enum LexicalDeclaratorList {
-		Declarator(LexicalDeclarator),
-		List(LexicalDeclarator, Box<LexicalDeclaratorList>),
-	}
-	impl misc::NodeDisplay for ArrayExpression {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			match self {
-				LexicalDeclaratorList::Declarator(ref decl) => f.node(decl),
-				LexicalDeclaratorList::List(ref decl, ref list) => {
-					f.node(decl)?;
-					f.token(misc::Token::Comma)?;
-					f.node(list)?;
-				}
-			}
-		}
-	}
-	pub struct LexicalDeclarator {
+	pub struct LetDeclarator {
 		id: misc::Pattern,
 		init: Option<alias::Expression>,
 	}
-	impl misc::NodeDisplay for ArrayExpression {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.id)?;
-			f.token(misc::Token::Eq)?;
-			f.node(self.init)?;
+	impl display::NodeDisplay for LetDeclarator {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.id)?;
+			if let Some(ref init) = self.init {
+				f.token(display::Token::Eq)?;
+				f.node(init)?;
+			}
+			Ok(())
+		}
+	}
+
+
+	// const foo = 4, bar = 5;
+	pub struct ConstDeclaration {
+		declarators: DeclaratorList<ConstDeclarator>,
+	}
+	impl display::NodeDisplay for ConstDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Const)?;
+			f.node(&self.declarators)
+		}
+	}
+	pub struct ConstDeclarator {
+		id: misc::Pattern,
+		init: alias::Expression,
+	}
+	impl display::NodeDisplay for ConstDeclarator {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.id)?;
+			f.token(display::Token::Eq)?;
+			f.node(&self.init)
 		}
 	}
 
@@ -65,18 +84,22 @@ nodes!{
 		type_parameters: Option<flow::Parameters>,
 		return_type: Option<Box<flow::Annotation>>,
 	}
-	impl misc::NodeDisplay for ExportDefaultFunctionDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Export)?;
-			f.token(misc::Token::Default)?;
-			f.token(misc::Token::Function)?;
-			if let Some(id) = self.id {
+	impl display::NodeDisplay for ExportDefaultFunctionDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Export)?;
+			f.token(display::Token::Default)?;
+			f.token(display::Token::Function)?;
+			if let Some(ref id) = self.id {
 				f.node(id)?;
 			}
-			f.node(&self.type_parameters)?;
+			if let Some(ref type_parameters) = self.type_parameters {
+				f.node(type_parameters)?;
+			}
 			f.node(&self.params)?;
-			f.node(&self.return_type)?;
-			f.node(&self.body)?;
+			if let Some(ref return_type) = self.return_type {
+				f.node(return_type)?;
+			}
+			f.node(&self.body)
 		}
 	}
 
@@ -91,14 +114,18 @@ nodes!{
 		type_parameters: Option<flow::Parameters>,
 		return_type: Option<Box<flow::Annotation>>,
 	}
-	impl misc::NodeDisplay for ExportDefaultFunctionDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Function)?;
+	impl display::NodeDisplay for FunctionDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Function)?;
 			f.node(&self.id)?;
-			f.node(&self.type_parameters)?;
+			if let Some(ref type_parameters) = self.type_parameters {
+				f.node(type_parameters)?;
+			}
 			f.node(&self.params)?;
-			f.node(&self.return_type)?;
-			f.node(&self.body)?;
+			if let Some(ref return_type) = self.return_type {
+				f.node(return_type)?;
+			}
+			f.node(&self.body)
 		}
 	}
 
@@ -106,24 +133,23 @@ nodes!{
 	pub struct ExportDefaultClassDeclaration {
 		decorators: Vec<misc::Decorator>, // experimental
 		id: Option<misc::BindingIdentifier>,
+		type_parameters: Option<Box<flow::Parameters>>,
 		extends: Option<Box<alias::Expression>>,
 		implements: Option<flow::BindingIdentifierAnnotationList>,
 		body: misc::ClassBody,
-
-		type_parameters: Option<flow::Parameters>,
 	}
-	impl misc::NodeDisplay for ExportDefaultClassDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Export)?;
-			f.token(misc::Token::Default)?;
-			f.token(misc::Token::Class)?;
-			if let Some(id) = self.id {
+	impl display::NodeDisplay for ExportDefaultClassDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Export)?;
+			f.token(display::Token::Default)?;
+			f.token(display::Token::Class)?;
+			if let Some(ref id) = self.id {
 				f.node(id)?;
 			}
-			f.node(&self.type_parameters)?;
-			f.node(&self.params)?;
-			f.node(&self.return_type)?;
-			f.node(&self.body)?;
+			if let Some(ref type_parameters) = self.type_parameters {
+	 			f.node(type_parameters)?;
+	 		}
+			f.node(&self.body)
 		}
 	}
 
@@ -136,6 +162,12 @@ nodes!{
 		body: misc::ClassBody,
 
 		type_parameters: Option<flow::Parameters>,
+	}
+	impl display::NodeDisplay for ClassDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			// TODO
+			Ok(())
+		}
 	}
 
 
@@ -155,11 +187,11 @@ nodes!{
 		// Flow extension
 		Typeof,
 	}
-	impl misc::NodeDisplay for ImportDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Import)?;
+	impl display::NodeDisplay for ImportDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Import)?;
 			f.node(&self.specifiers)?;
-			f.token(misc::Token::From)?;
+			f.token(display::Token::From)?;
 			f.node(&self.source)
 		}
 	}
@@ -219,6 +251,11 @@ nodes!{
 			kind: FlowImportKind,
 		},
 	}
+	impl display::NodeDisplay for ImportSpecifiers {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			Ok(())
+		}
+	}
 	pub enum ImportSpecifier {
 		Named {
 			local: misc::BindingIdentifier,
@@ -236,6 +273,13 @@ nodes!{
 	pub struct ExportDeclaration {
 		decl_type: ExportType,
 	}
+	impl display::NodeDisplay for ExportDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			// TODO
+			Ok(())
+		}
+	}
+
 	pub enum ExportType {
 		// export default class {}
 		DefaultClass(ExportDefaultClassDeclaration),
@@ -252,7 +296,8 @@ nodes!{
 		Function(FunctionDeclaration),
 		// export var foo;
 		Variable(statement::VariableStatement),
-		Lexical(LexicalDeclaration),
+		Let(LetDeclaration),
+		Const(ConstDeclaration),
 
 		// export {foo}
 		// export {foo as bar}

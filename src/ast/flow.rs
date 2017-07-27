@@ -1,7 +1,9 @@
 use super::alias;
 use super::misc;
 use super::literal;
+use super::display;
 
+use super::misc::FirstSpecialToken;
 
 nodes!{
 	pub enum Annotation {
@@ -18,21 +20,21 @@ nodes!{
 		Intersection(IntersectionAnnotation),
 		Typeof(TypeofAnnotation),
 	}
-	impl misc::NodeDisplay for Annotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for Annotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
-				Annotation::Primitive(ref anno) => f.node(anno),
-				Annotation::Literal(ref anno) => f.node(anno),
-				Annotation::Special(ref anno) => f.node(anno),
-				Annotation::Maybe(ref anno) => f.node(anno),
-				Annotation::Function(ref anno) => f.node(anno),
-				Annotation::Object(ref anno) => f.node(anno),
-				Annotation::ArrayShorthand(ref anno) => f.node(anno),
-				Annotation::Tuple(ref anno) => f.node(anno),
-				Annotation::Binding(ref anno) => f.node(anno),
-				Annotation::Union(ref anno) => f.node(anno),
-				Annotation::Intersection(ref anno) => f.node(anno),
-				Annotation::Typeof(ref anno) => f.node(anno),
+				&Annotation::Primitive(ref anno) => f.node(anno),
+				&Annotation::Literal(ref anno) => f.node(anno),
+				&Annotation::Special(ref anno) => f.node(anno),
+				&Annotation::Maybe(ref anno) => f.node(anno),
+				&Annotation::Function(ref anno) => f.node(anno),
+				&Annotation::Object(ref anno) => f.node(anno),
+				&Annotation::ArrayShorthand(ref anno) => f.node(anno),
+				&Annotation::Tuple(ref anno) => f.node(anno),
+				&Annotation::Binding(ref anno) => f.node(anno),
+				&Annotation::Union(ref anno) => f.node(anno),
+				&Annotation::Intersection(ref anno) => f.node(anno),
+				&Annotation::Typeof(ref anno) => f.node(anno),
 			}
 		}
 	}
@@ -42,32 +44,38 @@ nodes!{
 		expression: Box<alias::Expression>,
 		type_annotation: Annotation,
 	}
-	impl misc::NodeDisplay for CastExpression {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::ParenL)?;
-			f.node(self.expression)?;
-			f.node(self.type_annotation)?;
-			f.token(misc::Token::ParenR)
+	impl display::NodeDisplay for CastExpression {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::ParenL)?;
+			f.node(&self.expression)?;
+			f.node(&self.type_annotation)?;
+			f.token(display::Token::ParenR)
 		}
 	}
+	impl misc::HasInOperator for CastExpression {
+	    fn has_in_operator(&self) -> bool {
+	        false
+	    }
+	}
+	impl misc::FirstSpecialToken for CastExpression {}
 
 
 	// <T, U>
 	pub struct Parameters {
 		parameters: Vec<Parameter>,
 	}
-	impl misc::NodeDisplay for Parameters {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::AngleL)?;
+	impl display::NodeDisplay for Parameters {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::AngleL)?;
 
 			for (i, param) in self.parameters.iter().enumerate() {
 				if i != 0 {
-					f.token(misc::Token::Comma)?;
+					f.token(display::Token::Comma)?;
 				}
 
 				f.node(param)?;
 			}
-			f.token(misc::Token::AngleR)?;
+			f.token(display::Token::AngleR)
 		}
 	}
 	pub struct Parameter {
@@ -76,11 +84,12 @@ nodes!{
 		bound: Option<Box<Annotation>>,
 		default: Option<Box<Annotation>>,
 	}
-	impl misc::NodeDisplay for Parameter {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.variance)?;
+	impl display::NodeDisplay for Parameter {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.variance)?;
 
-
+			// TODO
+			Ok(())
 		}
 	}
 	pub enum PrimitiveAnnotation {
@@ -90,14 +99,14 @@ nodes!{
 		Null,
 		Void,
 	}
-	impl misc::NodeDisplay for PrimitiveAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for PrimitiveAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
-				PrimitiveAnnotation::Boolean => f.token(misc::Token::Boolean),
-				PrimitiveAnnotation::String => f.token(misc::Token::String),
-				PrimitiveAnnotation::Number => f.token(misc::Token::Number),
-				PrimitiveAnnotation::Null => f.token(misc::Token::Null),
-				PrimitiveAnnotation::Void => f.token(misc::Token::Void),
+				&PrimitiveAnnotation::Boolean => f.token(display::Token::Boolean),
+				&PrimitiveAnnotation::String => f.token(display::Token::String),
+				&PrimitiveAnnotation::Number => f.token(display::Token::Number),
+				&PrimitiveAnnotation::Null => f.token(display::Token::Null),
+				&PrimitiveAnnotation::Void => f.token(display::Token::Void),
 			}
 		}
 	}
@@ -106,33 +115,30 @@ nodes!{
 		String(literal::String),
 		Number(literal::Numeric),
 	}
-	impl misc::NodeDisplay for LiteralAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for LiteralAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
-				LiteralAnnotation::Boolean(ref id) => f.node(id),
-				LiteralAnnotation::String(ref id) => f.node(id),
-				LiteralAnnotation::Number(ref id) => f.node(id),
+				&LiteralAnnotation::Boolean(ref id) => f.node(id),
+				&LiteralAnnotation::String(ref id) => f.node(id),
+				&LiteralAnnotation::Number(ref id) => f.node(id),
 			}
 		}
 	}
 
 	pub enum SpecialAnnotation {
 		// any
-		Any {
-		},
+		Any,
 		// mixed
-		Mixed {
-		},
+		Mixed,
 		// *
-		Existential {
-		},
+		Existential,
 	}
-	impl misc::NodeDisplay for SpecialAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for SpecialAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
-				SpecialAnnotation::Any => f.token(misc::Token::Any),
-				SpecialAnnotation::Mixed => f.token(misc::Token::Mixed),
-				SpecialAnnotation::Existential => f.token(misc::Token::Star),
+				&SpecialAnnotation::Any => f.token(display::Token::Any),
+				&SpecialAnnotation::Mixed => f.token(display::Token::Mixed),
+				&SpecialAnnotation::Existential => f.token(display::Token::Star),
 			}
 		}
 	}
@@ -140,10 +146,10 @@ nodes!{
 	pub struct MaybeAnnotation {
 		argument: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for MaybeAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.argument)?;
-			f.token(misc::Token::Question)
+	impl display::NodeDisplay for MaybeAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.argument)?;
+			f.token(display::Token::Question)
 		}
 	}
 
@@ -151,11 +157,11 @@ nodes!{
 		params: FunctionParams,
 		return_type: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for FunctionAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.params)?;
-			f.node(self.return_type)?;
-			f.token(misc::Token::Semicolon)
+	impl display::NodeDisplay for FunctionAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.params)?;
+			f.node(&self.return_type)?;
+			f.token(display::Token::Semicolon)
 		}
 	}
 
@@ -163,18 +169,19 @@ nodes!{
 		params: Vec<FunctionParam>,
 		rest: Option<FunctionRestParam>,
 	}
-	impl misc::NodeDisplay for FunctionParams {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for FunctionParams {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			for param in self.params.iter() {
 				f.node(param)?;
 
-				f.token(misc::Token::Comma)?;
+				f.token(display::Token::Comma)?;
 			}
 
-			if let Some(rest) = self.rest {
-				f.token(misc::Token::Ellipsis)?;
+			if let Some(ref rest) = self.rest {
+				f.token(display::Token::Ellipsis)?;
 				f.node(rest)?;
 			}
+			Ok(())
 		}
 	}
 
@@ -184,17 +191,17 @@ nodes!{
 
 		optional: bool,
 	}
-	impl misc::NodeDisplay for FunctionParam {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			if let Some(id) = self.id {
+	impl display::NodeDisplay for FunctionParam {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			if let Some(ref id) = self.id {
 				f.node(id)?;
 
 				if self.optional {
-					f.token(misc::Token::Question)?;
+					f.token(display::Token::Question)?;
 				}
-				f.token(misc::Token::Colon)?;
+				f.token(display::Token::Colon)?;
 			}
-			f.node(self.type_annotation)?;
+			f.node(&self.type_annotation)?;
 
 			Ok(())
 		}
@@ -203,16 +210,16 @@ nodes!{
 		type_annotation: Box<Annotation>,
 		id: Option<misc::BindingIdentifier>,
 	}
-	impl misc::NodeDisplay for FunctionRestParam {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Ellipsis)?;
+	impl display::NodeDisplay for FunctionRestParam {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Ellipsis)?;
 
-			if let Some(id) = self.id {
+			if let Some(ref id) = self.id {
 				f.node(id)?;
 
-				f.token(misc::Token::Colon)?;
+				f.token(display::Token::Colon)?;
 			}
-			f.node(self.type_annotation)?;
+			f.node(&self.type_annotation)?;
 
 			Ok(())
 		}
@@ -223,16 +230,16 @@ nodes!{
 		exact: bool,
 		properties: Vec<ObjectItem>,
 	}
-	impl misc::NodeDisplay for ObjectAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Ellipsis)?;
+	impl display::NodeDisplay for ObjectAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Ellipsis)?;
 			for prop in self.properties.iter() {
 				f.node(prop)?;
 
-				f.token(misc::Token::Comma)?;
+				f.token(display::Token::Comma)?;
 			}
 
-			f.token(misc::Token::Ellipsis)
+			f.token(display::Token::Ellipsis)
 		}
 	}
 
@@ -241,12 +248,12 @@ nodes!{
 		Property(ObjectProperty),
 		MapProperty(ObjectMapProperty),
 	}
-	impl misc::NodeDisplay for ObjectItem {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for ObjectItem {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
-				ObjectItem::Method(ref item) => f.node(item),
-				ObjectItem::Property(ref item) => f.node(item),
-				ObjectItem::MapProperty(ref item) => f.node(item),
+				&ObjectItem::Method(ref item) => f.node(item),
+				&ObjectItem::Property(ref item) => f.node(item),
+				&ObjectItem::MapProperty(ref item) => f.node(item),
 			}
 		}
 	}
@@ -255,22 +262,22 @@ nodes!{
 		params: FunctionParams,
 		return_type: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for ObjectMethod {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.id)?;
-			f.node(self.params)?;
-			f.node(self.return_type)
+	impl display::NodeDisplay for ObjectMethod {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.id)?;
+			f.node(&self.params)?;
+			f.node(&self.return_type)
 		}
 	}
 	pub enum ObjectMethodId {
 		Literal(misc::PropertyIdentifier),
 		String(literal::String),
 	}
-	impl misc::NodeDisplay for ObjectMethodId {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for ObjectMethodId {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
-				ObjectMethodId::Literal(ref id) => f.node(id),
-				ObjectMethodId::String(ref id) => f.node(id),
+				&ObjectMethodId::Literal(ref id) => f.node(id),
+				&ObjectMethodId::String(ref id) => f.node(id),
 			}
 		}
 	}
@@ -281,15 +288,15 @@ nodes!{
 		optional: bool,
 		value: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for ObjectProperty {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.variance)?;
-			f.node(self.id)?;
+	impl display::NodeDisplay for ObjectProperty {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.variance)?;
+			f.node(&self.id)?;
 			if self.optional {
-				f.token(misc::Token::Question)?;
+				f.token(display::Token::Question)?;
 			}
-			f.token(misc::Token::Colon)?;
-			f.node(self.value)
+			f.token(display::Token::Colon)?;
+			f.node(&self.value)
 		}
 	}
 
@@ -298,20 +305,20 @@ nodes!{
 		key: Box<Annotation>,
 		value: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for ObjectMapProperty {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::SquareL)?;
+	impl display::NodeDisplay for ObjectMapProperty {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::SquareL)?;
 
-			if let Some(id) = self.id {
+			if let Some(ref id) = self.id {
 				f.node(id)?;
-				f.token(misc::Token::Colon)?;
+				f.token(display::Token::Colon)?;
 			}
-			f.node(self.key)?;
+			f.node(&self.key)?;
 
-			f.token(misc::Token::SquareR)?;
-			f.token(misc::Token::Colon)?;
+			f.token(display::Token::SquareR)?;
+			f.token(display::Token::Colon)?;
 
-			f.node(self.value)
+			f.node(&self.value)
 		}
 	}
 
@@ -319,11 +326,11 @@ nodes!{
 	pub struct ArrayShorthandAnnotation {
 		type_annotation: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for ArrayShorthandAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.type_annotation)?;
-			f.token(misc::Token::SquareL)?;
-			f.token(misc::Token::SquareR)
+	impl display::NodeDisplay for ArrayShorthandAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.type_annotation)?;
+			f.token(display::Token::SquareL)?;
+			f.token(display::Token::SquareR)
 		}
 	}
 
@@ -331,16 +338,16 @@ nodes!{
 	pub struct TupleAnnotation {
 		items: Vec<Annotation>,
 	}
-	impl misc::NodeDisplay for TupleAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::SquareL)?;
+	impl display::NodeDisplay for TupleAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::SquareL)?;
 			for (i, anno) in self.items.iter().enumerate() {
 				if i != 0 {
-					f.token(misc::Token::Comma)?;
+					f.token(display::Token::Comma)?;
 				}
 				f.node(anno)?;
 			}
-			f.token(misc::Token::SquareR)?;
+			f.token(display::Token::SquareR)
 		}
 	}
 
@@ -349,13 +356,13 @@ nodes!{
 		Identifier(BindingIdentifierAnnotation),
 		List(BindingIdentifierAnnotation, Box<BindingIdentifierAnnotationList>),
 	}
-	impl misc::NodeDisplay for BindingIdentifierAnnotationList {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for BindingIdentifierAnnotationList {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
-				BindingIdentifierAnnotationList::Identifier(ref id) => f.node(id),
-				BindingIdentifierAnnotationList::List(ref id, ref next) => {
+				&BindingIdentifierAnnotationList::Identifier(ref id) => f.node(id),
+				&BindingIdentifierAnnotationList::List(ref id, ref next) => {
 					f.node(id)?;
-					f.token(misc::Token::Comma)?;
+					f.token(display::Token::Comma)?;
 					f.node(next)
 				}
 			}
@@ -367,10 +374,10 @@ nodes!{
 		id: misc::BindingIdentifier,
 		type_parameters: Option<Parameters>,
 	}
-	impl misc::NodeDisplay for BindingIdentifierAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.id)?;
-			if let Some(param) = self.type_parameters {
+	impl display::NodeDisplay for BindingIdentifierAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.id)?;
+			if let Some(ref param) = self.type_parameters {
 				f.node(param)?;
 			}
 			Ok(())
@@ -381,22 +388,22 @@ nodes!{
 		left: Box<Annotation>,
 		right: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for UnionAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.left)?;
-			f.token(misc::Token::Amp)?;
-			f.node(self.right)?;
+	impl display::NodeDisplay for UnionAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.left)?;
+			f.token(display::Token::Amp)?;
+			f.node(&self.right)
 		}
 	}
 	pub struct IntersectionAnnotation {
 		left: Box<Annotation>,
 		right: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for IntersectionAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.node(self.left)?;
-			f.token(misc::Token::Bar)?;
-			f.node(self.right)?;
+	impl display::NodeDisplay for IntersectionAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.node(&self.left)?;
+			f.token(display::Token::Bar)?;
+			f.node(&self.right)
 		}
 	}
 
@@ -405,14 +412,14 @@ nodes!{
 		Identifier(misc::BindingIdentifier),
 		Member(MemberExpression),
 	}
-	impl misc::NodeDisplay for TypeofAnnotation {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Typeof)?;
+	impl display::NodeDisplay for TypeofAnnotation {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Typeof)?;
 
 			match self {
-				TypeofAnnotation::Literal(ref id) => f.node(id),
-				TypeofAnnotation::Identifier(ref id) => f.node(id),
-				TypeofAnnotation::Member(ref id) => f.node(id),
+				&TypeofAnnotation::Literal(ref id) => f.node(id),
+				&TypeofAnnotation::Identifier(ref id) => f.node(id),
+				&TypeofAnnotation::Member(ref id) => f.node(id),
 			}
 		}
 	}
@@ -421,13 +428,13 @@ nodes!{
 		Identifier(misc::BindingIdentifier),
 		Member(Box<MemberExpression>, misc::PropertyIdentifier),
 	}
-	impl misc::NodeDisplay for MemberExpression {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for MemberExpression {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
-				MemberExpression::Identifier(ref id) => f.node(id),
-				MemberExpression::Member(ref obj, ref id) => {
+				&MemberExpression::Identifier(ref id) => f.node(id),
+				&MemberExpression::Member(ref obj, ref id) => {
 					f.node(obj)?;
-					f.token(misc::Token::Period)?;
+					f.token(display::Token::Period)?;
 					f.node(id)
 				}
 			}
@@ -439,12 +446,12 @@ nodes!{
 		Covariant,
 		Contravariant,
 	}
-	impl misc::NodeDisplay for Variance {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
+	impl display::NodeDisplay for Variance {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			match self {
-				Variance::None => Ok(()),
-				Variance::Covariant => f.token(misc::Token::Plus),
-				Variance::Contravariant => f.token(misc::Token::Minus),
+				&Variance::None => Ok(()),
+				&Variance::Covariant => f.token(display::Token::Plus),
+				&Variance::Contravariant => f.token(display::Token::Minus),
 			}
 		}
 	}
@@ -454,19 +461,19 @@ nodes!{
 		type_parameters: Option<Parameters>,
 		items: Vec<ObjectItem>,
 	}
-	impl misc::NodeDisplay for Interface {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Interface)?;
-			f.node(self.id)?;
-			if let Some(param) = self.type_parameters {
+	impl display::NodeDisplay for Interface {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Interface)?;
+			f.node(&self.id)?;
+			if let Some(ref param) = self.type_parameters {
 				f.node(param)?;
 			}
-			f.token(misc::Token::CurlyL)?;
+			f.token(display::Token::CurlyL)?;
 
 			for item in self.items.iter() {
 				f.node(item)?;
 			}
-			f.token(misc::Token::CurlyR)
+			f.token(display::Token::CurlyR)
 		}
 	}
 
@@ -477,20 +484,16 @@ nodes!{
 
 		type_annotation: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for AliasDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Type)?;
-			f.node(self.id)?;
-			if let Some(param) = self.type_parameters {
+	impl display::NodeDisplay for AliasDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Type)?;
+			f.node(&self.id)?;
+			if let Some(ref param) = self.type_parameters {
 				f.node(param)?;
 			}
-			f.token(misc::Token::Eq)?;
-			f.token(misc::Token::CurlyL)?;
+			f.token(display::Token::Eq)?;
 
-			for item in self.items.iter() {
-				f.node(item)?;
-			}
-			f.token(misc::Token::CurlyR)
+			f.node(&self.type_annotation)
 		}
 	}
 
@@ -502,6 +505,13 @@ nodes!{
 		return_type: Box<Annotation>,
 
 	}
+	impl display::NodeDisplay for DeclareFunctionDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			// TODO
+			Ok(())
+		}
+	}
+
 	// declare class Foo {}
 	pub struct DeclareClassDeclaration {
 		id: misc::BindingIdentifier,
@@ -512,19 +522,25 @@ nodes!{
 		extends: Option<Box<alias::Expression>>,
 		implements: Option<BindingIdentifierAnnotationList>,
 		items: Vec<ObjectItem>,
-
 	}
+	impl display::NodeDisplay for DeclareClassDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			// TODO
+			Ok(())
+		}
+	}
+
 	// declare var foo: number;
 	pub struct DeclareVariableDeclaration {
 		id: misc::BindingIdentifier,
 		type_annotation: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for DeclareVariableDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Var)?;
+	impl display::NodeDisplay for DeclareVariableDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Var)?;
 			f.node(&self.id)?;
-			f.token(misc::Token::Colon)?;
+			f.token(display::Token::Colon)?;
 			f.node(&self.type_annotation)
 		}
 	}
@@ -535,17 +551,17 @@ nodes!{
 		type_parameters: Option<Box<Parameters>>,
 		type_annotation: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for DeclareAliasDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Type)?;
+	impl display::NodeDisplay for DeclareAliasDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Type)?;
 
 			f.node(&self.id)?;
-			if let Some(param) = self.type_parameters {
+			if let Some(ref param) = self.type_parameters {
 				f.node(param)?;
 			}
 
-			f.token(misc::Token::Eq)?;
+			f.token(display::Token::Eq)?;
 			f.node(&self.type_annotation)
 		}
 	}
@@ -555,17 +571,17 @@ nodes!{
 		source: literal::String,
 		items: Vec<ModuleItem>,
 	}
-	impl misc::NodeDisplay for DeclareModuleDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Module)?;
-			misc::NodeDisplay::fmt(&self.source)?;
+	impl display::NodeDisplay for DeclareModuleDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Module)?;
+			f.node(&self.source)?;
 
-			f.token(misc::Token::CurlyL)?;
+			f.token(display::Token::CurlyL)?;
 			for item in self.items.iter() {
 				f.node(item)?;
 			}
-			f.token(misc::Token::CurlyR)
+			f.token(display::Token::CurlyR)
 		}
 	}
 
@@ -576,17 +592,17 @@ nodes!{
 		params: FunctionParams,
 		return_type: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for DeclareExportFunctionDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Export)?;
-			f.token(misc::Token::Function)?;
+	impl display::NodeDisplay for DeclareExportFunctionDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Export)?;
+			f.token(display::Token::Function)?;
 			f.node(&self.id)?;
-			if let Some(param) = self.type_parameters {
+			if let Some(ref param) = self.type_parameters {
 				f.node(param)?;
 			}
 			f.node(&self.params)?;
-			f.token(misc::Token::Colon)?;
+			f.token(display::Token::Colon)?;
 			f.node(&self.return_type)
 		}
 	}
@@ -601,28 +617,28 @@ nodes!{
 		implements: Option<BindingIdentifierAnnotationList>,
 		items: Vec<ObjectItem>,
 	}
-	impl misc::NodeDisplay for DeclareExportClassDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Export)?;
-			f.token(misc::Token::Class)?;
+	impl display::NodeDisplay for DeclareExportClassDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Export)?;
+			f.token(display::Token::Class)?;
 			f.node(&self.id)?;
-			if let Some(param) = self.type_parameters {
+			if let Some(ref param) = self.type_parameters {
 				f.node(param)?;
 			}
-			if let Some(extends) = self.extends {
-				f.token(misc::Token::Extends)?;
+			if let Some(ref extends) = self.extends {
+				f.token(display::Token::Extends)?;
 				f.node(extends)?;
 			}
-			if let Some(implements) = self.implements {
-				f.token(misc::Token::Implements)?;
+			if let Some(ref implements) = self.implements {
+				f.token(display::Token::Implements)?;
 				f.node(implements)?;
 			}
-			f.token(misc::Token::CurlyL)?;
+			f.token(display::Token::CurlyL)?;
 			for item in self.items.iter() {
 				f.node(item)?;
 			}
-			f.token(misc::Token::CurlyR)
+			f.token(display::Token::CurlyR)
 		}
 	}
 
@@ -633,20 +649,20 @@ nodes!{
 		params: FunctionParams,
 		return_type: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for DeclareExportDefaultFunctionDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Export)?;
-			f.token(misc::Token::Default)?;
-			f.token(misc::Token::Function)?;
-			if let Some(id) = self.id {
+	impl display::NodeDisplay for DeclareExportDefaultFunctionDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Export)?;
+			f.token(display::Token::Default)?;
+			f.token(display::Token::Function)?;
+			if let Some(ref id) = self.id {
 				f.node(id)?;
 			}
-			if let Some(param) = self.type_parameters {
+			if let Some(ref param) = self.type_parameters {
 				f.node(param)?;
 			}
 			f.node(&self.params)?;
-			f.token(misc::Token::Colon)?;
+			f.token(display::Token::Colon)?;
 			f.node(&self.return_type)
 		}
 	}
@@ -662,31 +678,31 @@ nodes!{
 		implements: Option<BindingIdentifierAnnotationList>,
 		items: Vec<ObjectItem>,
 	}
-	impl misc::NodeDisplay for DeclareExportDefaultClassDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Export)?;
-			f.token(misc::Token::Default)?;
-			f.token(misc::Token::Class)?;
-			if let Some(id) = self.id {
+	impl display::NodeDisplay for DeclareExportDefaultClassDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Export)?;
+			f.token(display::Token::Default)?;
+			f.token(display::Token::Class)?;
+			if let Some(ref id) = self.id {
 				f.node(id)?;
 			}
-			if let Some(param) = self.type_parameters {
+			if let Some(ref param) = self.type_parameters {
 				f.node(param)?;
 			}
-			if let Some(extends) = self.extends {
-				f.token(misc::Token::Extends)?;
+			if let Some(ref extends) = self.extends {
+				f.token(display::Token::Extends)?;
 				f.node(extends)?;
 			}
-			if let Some(implements) = self.implements {
-				f.token(misc::Token::Implements)?;
+			if let Some(ref implements) = self.implements {
+				f.token(display::Token::Implements)?;
 				f.node(implements)?;
 			}
-			f.token(misc::Token::CurlyL)?;
+			f.token(display::Token::CurlyL)?;
 			for item in self.items.iter() {
 				f.node(item)?;
 			}
-			f.token(misc::Token::CurlyR)
+			f.token(display::Token::CurlyR)
 		}
 	}
 
@@ -696,15 +712,15 @@ nodes!{
 		id: misc::BindingIdentifier,
 		type_annotation: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for DeclareExportVariableDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Export)?;
-			f.token(misc::Token::Var)?;
+	impl display::NodeDisplay for DeclareExportVariableDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Export)?;
+			f.token(display::Token::Var)?;
 			f.node(&self.id)?;
-			f.token(misc::Token::Colon)?;
+			f.token(display::Token::Colon)?;
 			f.node(&self.type_annotation)?;
-			f.token(misc::Token::Semicolon)
+			f.token(display::Token::Semicolon)
 		}
 	}
 
@@ -713,15 +729,15 @@ nodes!{
 		id: misc::BindingIdentifier,
 		type_annotation: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for DeclareExportAliasDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Export)?;
-			f.token(misc::Token::Type)?;
+	impl display::NodeDisplay for DeclareExportAliasDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Export)?;
+			f.token(display::Token::Type)?;
 			f.node(&self.id)?;
-			f.token(misc::Token::Eq)?;
+			f.token(display::Token::Eq)?;
 			f.node(&self.type_annotation)?;
-			f.token(misc::Token::Semicolon)
+			f.token(display::Token::Semicolon)
 		}
 	}
 
@@ -729,13 +745,13 @@ nodes!{
 	pub struct DeclareExportDefaultTypeDeclaration {
 		type_annotation: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for DeclareExportDefaultTypeDeclaration {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Export)?;
-			f.token(misc::Token::Default)?;
+	impl display::NodeDisplay for DeclareExportDefaultTypeDeclaration {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Export)?;
+			f.token(display::Token::Default)?;
 			f.node(&self.type_annotation)?;
-			f.token(misc::Token::Semicolon)
+			f.token(display::Token::Semicolon)
 		}
 	}
 
@@ -743,13 +759,13 @@ nodes!{
 	pub struct DeclareExportCommonJS {
 		type_annotation: Box<Annotation>,
 	}
-	impl misc::NodeDisplay for DeclareExportCommonJS {
-		fn fmt(&self, f: &mut NodeFormatter) -> misc::NodeDisplayResult {
-			f.token(misc::Token::Declare)?;
-			f.token(misc::Token::Module)?;
-			f.token(misc::Token::Period)?;
-			f.token(misc::Token::Exports)?;
-			f.token(misc::Token::Colon)?;
+	impl display::NodeDisplay for DeclareExportCommonJS {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			f.token(display::Token::Declare)?;
+			f.token(display::Token::Module)?;
+			f.token(display::Token::Period)?;
+			f.token(display::Token::Exports)?;
+			f.token(display::Token::Colon)?;
 			f.node(&self.type_annotation)
 		}
 	}
@@ -759,7 +775,6 @@ nodes!{
 		Class(DeclareClassDeclaration),
 		Variable(DeclareVariableDeclaration),
 		Alias(DeclareAliasDeclaration),
-
 		ExportFunction(DeclareExportFunctionDeclaration),
 		ExportClass(DeclareExportClassDeclaration),
 		ExportDefaultFunction(DeclareExportDefaultFunctionDeclaration),
@@ -768,5 +783,23 @@ nodes!{
 		ExportAlias(DeclareExportAliasDeclaration),
 		ExportDefaultType(DeclareExportDefaultTypeDeclaration),
 		CommonJSExport(DeclareExportCommonJS),
+	}
+	impl display::NodeDisplay for ModuleItem {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			match self {
+				&ModuleItem::Function(ref item) => f.node(item),
+				&ModuleItem::Class(ref item) => f.node(item),
+				&ModuleItem::Variable(ref item) => f.node(item),
+				&ModuleItem::Alias(ref item) => f.node(item),
+				&ModuleItem::ExportFunction(ref item) => f.node(item),
+				&ModuleItem::ExportClass(ref item) => f.node(item),
+				&ModuleItem::ExportDefaultFunction(ref item) => f.node(item),
+				&ModuleItem::ExportDefaultClass(ref item) => f.node(item),
+				&ModuleItem::ExportVariable(ref item) => f.node(item),
+				&ModuleItem::ExportAlias(ref item) => f.node(item),
+				&ModuleItem::ExportDefaultType(ref item) => f.node(item),
+				&ModuleItem::CommonJSExport(ref item) => f.node(item),
+			}
+		}
 	}
 }
