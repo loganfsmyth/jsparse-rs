@@ -250,13 +250,14 @@ nodes!{
   impl display::NodeDisplay for ObjectPattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::CurlyL)?;
-    	for prop in self.properties.iter() {
-    		f.node(prop)?;
 
-    		f.token(display::Token::Comma)?;
-    	}
+    	f.node_list(&self.properties)?;
 
     	if let Some(ref p) = self.rest {
+    		if !self.properties.is_empty() {
+    			f.token(display::Token::Comma)?;
+    		}
+
     		f.token(display::Token::Ellipsis)?;
 
     		f.node(p)?;
@@ -310,15 +311,22 @@ nodes!{
   impl display::NodeDisplay for ArrayPattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::SquareL)?;
-    	for prop in self.items.iter() {
+
+    	for (i, prop) in self.items.iter().enumerate() {
+    		if i != 0 {
+	    		f.token(display::Token::Comma)?;
+    		}
+
     		if let Some(ref prop) = *prop {
 	    		f.node(prop)?;
 	    	}
-
-    		f.token(display::Token::Comma)?;
     	}
 
     	if let Some(ref p) = self.rest {
+    		if !self.items.is_empty() {
+    			f.token(display::Token::Comma)?;
+    		}
+
     		f.token(display::Token::Ellipsis)?;
 
     		f.node(p)?;
@@ -422,11 +430,9 @@ nodes!{
   impl display::NodeDisplay for CallArguments {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::ParenL)?;
-    	for arg in self.args.iter() {
-    		f.node(arg)?;
 
-    		f.token(display::Token::Comma)?;
-    	}
+    	f.node_list(&self.args)?;
+
     	f.token(display::Token::ParenR)
     }
   }
@@ -597,13 +603,13 @@ nodes!{
   }
   impl display::NodeDisplay for FunctionParams {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	for param in self.params.iter() {
-    		f.node(param)?;
-
-    		f.token(display::Token::Comma)?;
-    	}
+    	f.node_list(&self.params)?;
 
     	if let Some(ref param) = self.rest {
+    		if !self.params.is_empty() {
+    			f.token(display::Token::Comma)?;
+    		}
+
     		f.token(display::Token::Ellipsis)?;
     		f.node(param)?;
     	}

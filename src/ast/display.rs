@@ -174,7 +174,7 @@ impl NodeFormatter {
         let in_operator = self.in_operator;
         self.in_operator = true;
 
-        let result = cb(self);
+        cb(self)?;
 
         self.in_operator = in_operator;
 
@@ -204,10 +204,10 @@ impl NodeFormatter {
             f.prec = Precedence::Normal;
 
             f.token(Token::ParenL)?;
-            let result = cb(f)?;
+            cb(f)?;
             f.token(Token::ParenR)?;
 
-            Ok(result)
+            Ok(())
         })
     }
 
@@ -220,6 +220,17 @@ impl NodeFormatter {
         self.prec = prec;
 
         Ok(result)
+    }
+
+    pub fn node_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
+        for (i, item) in list.iter().enumerate() {
+            if i != 0 {
+                self.token(Token::Comma)?;
+            }
+            self.node(item)?;
+        }
+
+        Ok(())
     }
 
     pub fn node_with_precedence<T: NodeDisplay>(
@@ -248,7 +259,7 @@ impl NodeFormatter {
         }
     }
 
-    pub fn identifier(&mut self, name: &str, raw: Option<&str>) -> NodeDisplayResult {
+    pub fn identifier(&mut self, _name: &str, raw: Option<&str>) -> NodeDisplayResult {
         if let Some(_raw) = raw {
             // Write raw value as-is
         } else {
@@ -256,7 +267,7 @@ impl NodeFormatter {
         }
         Ok(())
     }
-    pub fn string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+    pub fn string(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
         //write!(self, "\'")?;
         if let Some(ref _raw) = raw {
             // Ensure that single-quotes are escaped
@@ -265,7 +276,7 @@ impl NodeFormatter {
         }
         Ok(()) //write!(self, "\'")?;
     }
-    pub fn number(&mut self, value: &f64, raw: Option<&str>) -> NodeDisplayResult {
+    pub fn number(&mut self, _value: &f64, raw: Option<&str>) -> NodeDisplayResult {
         if let Some(ref _raw) = raw {
             // Write raw value as-is, possibly setting flag
             self.ends_with_integer = true;
@@ -277,7 +288,7 @@ impl NodeFormatter {
         Ok(())
     }
 
-    pub fn template_part(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+    pub fn template_part(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
         if let Some(ref _raw) = raw {
             // Write raw value as-is
         } else {
@@ -286,7 +297,7 @@ impl NodeFormatter {
         Ok(())
     }
 
-    pub fn regexp(&mut self, value: &str, flags: &[char]) -> NodeDisplayResult {
+    pub fn regexp(&mut self, _value: &str, flags: &[char]) -> NodeDisplayResult {
         self.token(Token::Slash)?;
         // self.template_part(value)?;
         self.token(Token::Slash)?;
@@ -294,7 +305,7 @@ impl NodeFormatter {
         Ok(())
     }
 
-    pub fn jsx_identifier(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+    pub fn jsx_identifier(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
         if let Some(ref _raw) = raw {
             // Write raw value as-is
         } else {
@@ -302,7 +313,7 @@ impl NodeFormatter {
         }
         Ok(())
     }
-    pub fn jsx_string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+    pub fn jsx_string(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
         if let Some(ref _raw) = raw {
             // Write raw value as-is
         } else {
@@ -310,7 +321,7 @@ impl NodeFormatter {
         }
         Ok(())
     }
-    pub fn jsx_text(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+    pub fn jsx_text(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
         if let Some(ref _raw) = raw {
             // Write raw value as-is
         } else {

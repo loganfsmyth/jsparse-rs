@@ -67,14 +67,7 @@ nodes!{
 	impl display::NodeDisplay for Parameters {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.token(display::Token::AngleL)?;
-
-			for (i, param) in self.parameters.iter().enumerate() {
-				if i != 0 {
-					f.token(display::Token::Comma)?;
-				}
-
-				f.node(param)?;
-			}
+			f.node_list(&self.parameters)?;
 			f.token(display::Token::AngleR)
 		}
 	}
@@ -171,11 +164,7 @@ nodes!{
 	}
 	impl display::NodeDisplay for FunctionParams {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			for param in self.params.iter() {
-				f.node(param)?;
-
-				f.token(display::Token::Comma)?;
-			}
+			f.node_list(&self.params)?;
 
 			if let Some(ref rest) = self.rest {
 				f.token(display::Token::Ellipsis)?;
@@ -232,14 +221,9 @@ nodes!{
 	}
 	impl display::NodeDisplay for ObjectAnnotation {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.token(display::Token::Ellipsis)?;
-			for prop in self.properties.iter() {
-				f.node(prop)?;
-
-				f.token(display::Token::Comma)?;
-			}
-
-			f.token(display::Token::Ellipsis)
+			f.token(display::Token::CurlyL)?;
+			f.node_list(&self.properties)?;
+			f.token(display::Token::CurlyR)
 		}
 	}
 
@@ -341,12 +325,7 @@ nodes!{
 	impl display::NodeDisplay for TupleAnnotation {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.token(display::Token::SquareL)?;
-			for (i, anno) in self.items.iter().enumerate() {
-				if i != 0 {
-					f.token(display::Token::Comma)?;
-				}
-				f.node(anno)?;
-			}
+			f.node_list(&self.items)?;
 			f.token(display::Token::SquareR)
 		}
 	}

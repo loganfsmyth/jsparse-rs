@@ -143,13 +143,7 @@ nodes!{
       f.node(&self.default)?;
       f.token(display::Token::Comma)?;
       f.token(display::Token::CurlyL)?;
-      for (i, spec) in self.specifiers.iter().enumerate() {
-        if i != 0 {
-          f.token(display::Token::Comma)?;
-        }
-
-        f.node(spec)?;
-      }
+      f.node_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
       f.token(display::Token::From)?;
       f.node(&self.source)
@@ -170,13 +164,7 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
       f.token(display::Token::Import)?;
       f.token(display::Token::CurlyL)?;
-      for (i, spec) in self.specifiers.iter().enumerate() {
-        if i != 0 {
-          f.token(display::Token::Comma)?;
-        }
-
-        f.node(spec)?;
-      }
+      f.node_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
       f.token(display::Token::From)?;
       f.node(&self.source)
@@ -236,13 +224,7 @@ nodes!{
       f.node(&self.default)?;
       f.token(display::Token::Comma)?;
       f.token(display::Token::CurlyL)?;
-      for (i, spec) in self.specifiers.iter().enumerate() {
-        if i != 0 {
-          f.token(display::Token::Comma)?;
-        }
-
-        f.node(spec)?;
-      }
+      f.node_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
       f.token(display::Token::From)?;
       f.node(&self.source)
@@ -263,13 +245,7 @@ nodes!{
       f.token(display::Token::Import)?;
       f.node(&self.kind)?;
       f.token(display::Token::CurlyL)?;
-      for (i, spec) in self.specifiers.iter().enumerate() {
-        if i != 0 {
-          f.token(display::Token::Comma)?;
-        }
-
-        f.node(spec)?;
-      }
+      f.node_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
       f.token(display::Token::From)?;
       f.node(&self.source)
@@ -428,13 +404,7 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
       f.token(display::Token::Export)?;
       f.token(display::Token::CurlyL)?;
-      for (i, spec) in self.specifiers.iter().enumerate() {
-        if i != 0 {
-          f.token(display::Token::Comma)?;
-        }
-
-        f.node(spec)?;
-      }
+      f.node_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)
     }
   }
@@ -470,13 +440,7 @@ nodes!{
       f.token(display::Token::Export)?;
 
       f.token(display::Token::CurlyL)?;
-      for (i, spec) in self.specifiers.iter().enumerate() {
-        if i != 0 {
-          f.token(display::Token::Comma)?;
-        }
-
-        f.node(spec)?;
-      }
+      f.node_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
 
       f.token(display::Token::From)?;
@@ -539,13 +503,7 @@ nodes!{
       f.node(&self.kind)?;
 
       f.token(display::Token::CurlyL)?;
-      for (i, spec) in self.specifiers.iter().enumerate() {
-        if i != 0 {
-          f.token(display::Token::Comma)?;
-        }
-
-        f.node(spec)?;
-      }
+      f.node_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
 
       f.token(display::Token::From)?;
@@ -631,13 +589,7 @@ nodes!{
       f.token(display::Token::Comma)?;
 
       f.token(display::Token::CurlyL)?;
-      for (i, spec) in self.specifiers.iter().enumerate() {
-        if i != 0 {
-          f.token(display::Token::Comma)?;
-        }
-
-        f.node(spec)?;
-      }
+      f.node_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
 
       f.token(display::Token::From)?;

@@ -69,12 +69,13 @@ nodes!{
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.token(display::Token::SquareL)?;
 
-			for prop in self.properties.iter() {
-				f.node(prop)?;
-				f.token(display::Token::Comma)?;
-			}
+			f.node_list(&self.properties)?;
 
 			if let Some(ref expr) = self.spread {
+				if !self.properties.is_empty() {
+					f.token(display::Token::Comma)?;
+				}
+
 				f.with_precedence(display::Precedence::Assignment, |f| f.node(expr))?;
 			}
 
