@@ -3,7 +3,6 @@ use std::fmt;
 
 use super::misc;
 use super::alias;
-use super::flow;
 use super::display;
 use super::literal;
 use super::statement;
@@ -71,8 +70,7 @@ nodes!{
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.token(display::Token::SquareL)?;
 
-			// TODO: These will render without the right precedence
-			f.node_list(&self.properties)?;
+			f.comma_list(&self.properties)?;
 
 			if let Some(ref expr) = self.spread {
 				if !self.properties.is_empty() {
@@ -132,9 +130,6 @@ nodes!{
 
 			f.node(&self.id)?;
 			f.node(&self.params)?;
-			if let Some(ref return_type) = self.return_type {
-				f.node(return_type)?;
-			}
 			f.node(&self.body)
 		}
 	}
@@ -155,13 +150,7 @@ nodes!{
 			if let Some(ref id) = self.id {
 				f.node(id)?;
 			}
-			if let Some(ref type_parameters) = self.type_parameters {
-				f.node(type_parameters)?;
-			}
 			f.node(&self.params)?;
-			if let Some(ref return_type) = self.return_type {
-				f.node(return_type)?;
-			}
 			f.node(&self.body)
 		}
 	}
@@ -188,15 +177,10 @@ nodes!{
 
 			if let Some(ref id) = self.id {
 				f.node(id)?;
-				// f.node(&self.type_parameters)?;
 			}
 			if let Some(ref expr) = self.extends {
 				f.token(display::Token::Extends)?;
 				f.require_precedence(display::Precedence::LeftHand).node(expr)?;
-			}
-			if let Some(ref anno) = self.implements {
-				f.token(display::Token::Implements)?;
-				f.node(anno)?;
 			}
 
 			f.node(&self.body)

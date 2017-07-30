@@ -1,6 +1,5 @@
 use std::string;
 use super::misc;
-use super::flow;
 use super::alias;
 use super::statement;
 use super::literal;
@@ -83,13 +82,7 @@ nodes!{
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.token(display::Token::Function)?;
 			f.node(&self.id)?;
-			if let Some(ref type_parameters) = self.type_parameters {
-				f.node(type_parameters)?;
-			}
 			f.node(&self.params)?;
-			if let Some(ref return_type) = self.return_type {
-				f.node(return_type)?;
-			}
 			f.node(&self.body)
 		}
 	}

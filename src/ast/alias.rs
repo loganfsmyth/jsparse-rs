@@ -4,7 +4,6 @@ use enum_derive;
 use super::statement;
 use super::declaration;
 use super::expression;
-use super::flow;
 use super::jsx;
 use super::misc;
 use super::literal;
@@ -95,9 +94,7 @@ custom_derive!{
         ExportLet(modules::ExportLetDeclaration),
         ExportConst(modules::ExportConstDeclaration),
         ExportLocalBindings(modules::ExportLocalBindings),
-        ExportFlowDeclaration(modules::ExportFlowAlias),
         ExportSourceSpecifiers(modules::ExportSourceSpecifiers),
-        ExportSourceSpecifiersFlow(modules::ExportFlowtypeSourceSpecifiers),
         ExportAll(modules::ExportAllSpecifiers),
         ExportNamed(modules::ExportNamedSpecifier),
         ExportNamedAndNamespace(modules::ExportNamedAndNamespace),
@@ -110,10 +107,6 @@ custom_derive!{
         ImportNamespace(modules::ImportNamespaceDeclaration),
         ImportNamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
         ImportSpecifiers(modules::ImportSpecifiersDeclaration),
-        ImportNamedType(modules::ImportNamedTypeDeclaration),
-        ImportNamespaceTypeof(modules::ImportNamespaceTypeofDeclaration),
-        ImportNamedAndSpecifiersType(modules::ImportNamedAndSpecifiersTypeDeclaration),
-        ImportSpecifiersType(modules::ImportSpecifiersTypeDeclaration),
     }
 }
 impl display::NodeDisplay for ModuleStatementItem {
@@ -146,12 +139,6 @@ impl display::NodeDisplay for ModuleStatementItem {
             ModuleStatementItem::Class(ref n) => f.node(n),
             ModuleStatementItem::Let(ref n) => f.node(n),
             ModuleStatementItem::Const(ref n) => f.node(n),
-            ModuleStatementItem::FlowTypeDeclareModule(ref n) => f.node(n),
-            ModuleStatementItem::FlowTypeDeclareFunction(ref n) => f.node(n),
-            ModuleStatementItem::FlowTypeDeclareClass(ref n) => f.node(n),
-            ModuleStatementItem::FlowTypeDeclareVariable(ref n) => f.node(n),
-            ModuleStatementItem::FlowTypeDeclareAlias(ref n) => f.node(n),
-            ModuleStatementItem::FlowTypeAlias(ref n) => f.node(n),
 
             // ExportDeclaration
             ModuleStatementItem::ExportDefaultClass(ref n) => f.node(n),
@@ -163,9 +150,7 @@ impl display::NodeDisplay for ModuleStatementItem {
             ModuleStatementItem::ExportLet(ref n) => f.node(n),
             ModuleStatementItem::ExportConst(ref n) => f.node(n),
             ModuleStatementItem::ExportLocalBindings(ref n) => f.node(n),
-            ModuleStatementItem::ExportFlowDeclaration(ref n) => f.node(n),
             ModuleStatementItem::ExportSourceSpecifiers(ref n) => f.node(n),
-            ModuleStatementItem::ExportSourceSpecifiersFlow(ref n) => f.node(n),
             ModuleStatementItem::ExportAll(ref n) => f.node(n),
             ModuleStatementItem::ExportNamed(ref n) => f.node(n),
             ModuleStatementItem::ExportNamedAndNamespace(ref n) => f.node(n),
@@ -178,10 +163,6 @@ impl display::NodeDisplay for ModuleStatementItem {
             ModuleStatementItem::ImportNamespace(ref n) => f.node(n),
             ModuleStatementItem::ImportNamedAndSpecifiers(ref n) => f.node(n),
             ModuleStatementItem::ImportSpecifiers(ref n) => f.node(n),
-            ModuleStatementItem::ImportNamedType(ref n) => f.node(n),
-            ModuleStatementItem::ImportNamespaceTypeof(ref n) => f.node(n),
-            ModuleStatementItem::ImportNamedAndSpecifiersType(ref n) => f.node(n),
-            ModuleStatementItem::ImportSpecifiersType(ref n) => f.node(n),
         }
     }
 }
@@ -248,12 +229,6 @@ impl display::NodeDisplay for StatementItem {
             StatementItem::Class(ref n) => f.node(n),
             StatementItem::Let(ref n) => f.node(n),
             StatementItem::Const(ref n) => f.node(n),
-            StatementItem::FlowTypeDeclareModule(ref n) => f.node(n),
-            StatementItem::FlowTypeDeclareFunction(ref n) => f.node(n),
-            StatementItem::FlowTypeDeclareClass(ref n) => f.node(n),
-            StatementItem::FlowTypeDeclareVariable(ref n) => f.node(n),
-            StatementItem::FlowTypeDeclareAlias(ref n) => f.node(n),
-            StatementItem::FlowTypeAlias(ref n) => f.node(n),
         }
     }
 }
@@ -421,7 +396,6 @@ impl display::NodeDisplay for Expression {
             Expression::Sequence(ref n) => f.node(n),
             Expression::Arrow(ref n) => f.node(n),
             Expression::Do(ref n) => f.node(n),
-            Expression::FlowTypeCast(ref n) => f.node(n),
             Expression::JSX(ref n) => f.node(n),
         }
     }
@@ -454,7 +428,6 @@ impl misc::FirstSpecialToken for Expression {
             Expression::Sequence(ref node) => node.first_special_token(),
             Expression::Arrow(ref node) => node.first_special_token(),
             Expression::Do(ref node) => node.first_special_token(),
-            Expression::FlowTypeCast(ref node) => node.first_special_token(),
             Expression::JSX(ref node) => node.first_special_token(),
         }
     }
@@ -487,7 +460,6 @@ impl misc::HasInOperator for Expression {
             Expression::Sequence(ref node) => node.has_in_operator(),
             Expression::Arrow(ref node) => node.has_in_operator(),
             Expression::Do(ref node) => node.has_in_operator(),
-            Expression::FlowTypeCast(ref node) => node.has_in_operator(),
             Expression::JSX(ref node) => node.has_in_operator(),
         }
     }
@@ -506,7 +478,6 @@ custom_derive!{
         Const(modules::ExportConstDeclaration),
         LocalBindings(modules::ExportLocalBindings),
         SourceSpecifiers(modules::ExportSourceSpecifiers),
-        SourceSpecifiersFlow(modules::ExportFlowtypeSourceSpecifiers),
         All(modules::ExportAllSpecifiers),
 
         // experimental
@@ -528,9 +499,7 @@ impl display::NodeDisplay for ExportDeclaration {
             ExportDeclaration::Let(ref n) => f.node(n),
             ExportDeclaration::Const(ref n) => f.node(n),
             ExportDeclaration::LocalBindings(ref n) => f.node(n),
-            ExportDeclaration::FlowDeclaration(ref n) => f.node(n),
             ExportDeclaration::SourceSpecifiers(ref n) => f.node(n),
-            ExportDeclaration::SourceSpecifiersFlow(ref n) => f.node(n),
             ExportDeclaration::All(ref n) => f.node(n),
             ExportDeclaration::Named(ref n) => f.node(n),
             ExportDeclaration::NamedAndNamespace(ref n) => f.node(n),
@@ -549,10 +518,6 @@ custom_derive!{
         Namespace(modules::ImportNamespaceDeclaration),
         NamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
         Specifiers(modules::ImportSpecifiersDeclaration),
-        NamedType(modules::ImportNamedTypeDeclaration),
-        NamespaceTypeof(modules::ImportNamespaceTypeofDeclaration),
-        NamedAndSpecifiersType(modules::ImportNamedAndSpecifiersTypeDeclaration),
-        SpecifiersType(modules::ImportSpecifiersTypeDeclaration),
     }
 }
 impl display::NodeDisplay for ImportDeclaration {
@@ -563,10 +528,6 @@ impl display::NodeDisplay for ImportDeclaration {
             ImportDeclaration::Namespace(ref n) => f.node(n),
             ImportDeclaration::NamedAndSpecifiers(ref n) => f.node(n),
             ImportDeclaration::Specifiers(ref n) => f.node(n),
-            ImportDeclaration::NamedType(ref n) => f.node(n),
-            ImportDeclaration::NamespaceTypeof(ref n) => f.node(n),
-            ImportDeclaration::NamedAndSpecifiersType(ref n) => f.node(n),
-            ImportDeclaration::SpecifiersType(ref n) => f.node(n),
         }
     }
 }

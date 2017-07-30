@@ -2,7 +2,6 @@ use std::fmt;
 use std::string;
 
 use super::alias;
-use super::flow;
 use super::literal;
 use super::display;
 use super::expression;
@@ -268,7 +267,7 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::CurlyL)?;
 
-    	f.node_list(&self.properties)?;
+    	f.comma_list(&self.properties)?;
 
     	if let Some(ref p) = self.rest {
     		if !self.properties.is_empty() {
@@ -448,7 +447,7 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::ParenL)?;
 
-    	f.node_list(&self.args)?;
+    	f.comma_list(&self.args)?;
 
     	f.token(display::Token::ParenR)
     }
@@ -595,9 +594,6 @@ nodes!{
     		f.token(display::Token::Static)?;
     	}
 
-    	if let Some(ref var) = self.type_variance {
-    		f.node(var)?;
-    	}
     	f.node(&self.id)?;
 
     	if let Some(ref val) = self.value {
@@ -615,7 +611,7 @@ nodes!{
   }
   impl display::NodeDisplay for FunctionParams {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.node_list(&self.params)?;
+    	f.comma_list(&self.params)?;
 
     	if let Some(ref param) = self.rest {
     		if !self.params.is_empty() {
@@ -640,12 +636,6 @@ nodes!{
     	}
 
     	f.node(&self.id)?;
-    	if self.optional {
-    		f.token(display::Token::Question)?;
-    	}
-    	if let Some(ref anno) = self.type_annotation {
-    		f.node(anno)?;
-    	}
 
     	if let Some(ref init) = self.init {
     		f.node(init)?;
@@ -660,9 +650,6 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.node(&self.id)?;
 
-    	if let Some(ref anno) = self.type_annotation {
-    		f.node(anno)?;
-    	}
     	Ok(())
     }
   }

@@ -158,7 +158,6 @@ pub struct NodeFormatter {
     prec: Precedence,
     in_operator: bool,
 
-    state_stack: Vec<(Precedence, bool)>,
     ends_with_integer: bool,
 
     pub output: String,
@@ -169,45 +168,41 @@ impl NodeFormatter {
             current_depth: 0,
             prec: Precedence::Normal,
             in_operator: true,
-            state_stack: Vec::with_capacity(50),
             ends_with_integer: false,
             output: String::with_capacity(512 * 1024),
         }
     }
 
-    pub fn precedence(&mut self, p: Precedence) -> Option<WrapParens> {
-        if (p as u32) > (self.prec as u32) {
-            Some(WrapParens::new(self))
-        } else {
-            None
-        }
+    pub fn precedence(&mut self, p: Precedence) -> WrapParens {
+        let skip = (p as u32) <= (self.prec as u32);
+        WrapParens::new(self, skip)
     }
     pub fn require_precedence(&mut self, p: Precedence) -> CachePrecedence {
-        let lock = CachePrecedence::new(self);
-        self.prec = p;
+        let mut lock = CachePrecedence::new(self);
+        lock.prec = p;
         lock
     }
 
     pub fn allow_in(&mut self) -> CacheIn {
-        let lock = CacheIn::new(self);
-        self.in_operator = true;
+        let mut lock = CacheIn::new(self);
+        lock.in_operator = true;
         lock
     }
     pub fn disallow_in(&mut self) -> CacheIn {
-        let lock = CacheIn::new(self);
-        self.in_operator = false;
+        let mut lock = CacheIn::new(self);
+        lock.in_operator = false;
         lock
     }
 
-    pub fn with_parens(&mut self) -> WrapParens {
-        WrapParens::new(self)
+    pub fn wrap_parens(&mut self) -> WrapParens {
+        WrapParens::new(self, false)
     }
 
-    pub fn with_block(&mut self) -> WrapBlock {
+    pub fn wrap_block(&mut self) -> WrapBlock {
         WrapBlock::new(self)
     }
 
-    pub fn with_square(&mut self) -> WrapSquare {
+    pub fn wrap_square(&mut self) -> WrapSquare {
         WrapSquare::new(self)
     }
 
@@ -215,26 +210,19 @@ impl NodeFormatter {
         Ok(())
     }
 
-
-    pub fn node_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
+    pub fn comma_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
         for (i, item) in list.iter().enumerate() {
             if i != 0 {
                 self.token(Token::Comma)?;
             }
-            self.node(item)?;
+            self.require_precedence(Precedence::Assignment).node(item)?;
         }
 
         Ok(())
     }
 
     pub fn node<T: NodeDisplay>(&mut self, s: &T) -> NodeDisplayResult {
-        self.state_stack.push((self.prec, self.in_operator));
-
-        let result = s.fmt(self);
-
-        self.state_stack.pop();
-
-        result
+        s.fmt(self)
     }
     pub fn token(&mut self, t: Token) -> NodeDisplayResult {
         match t {
@@ -354,22 +342,25 @@ impl<'a> ::std::ops::Drop for CacheIn<'a> {
 }
 
 pub struct WrapParens<'a> {
+  skip: bool,
   fmt: &'a mut NodeFormatter,
 }
 impl<'a> WrapParens<'a> {
-    fn new(fmt: &mut NodeFormatter) -> WrapParens {
+    fn new(fmt: &mut NodeFormatter, skip: bool) -> WrapParens {
         fmt.token(Token::ParenL);
 
         WrapParens {
+            skip,
             fmt,
         }
     }
 }
 impl<'a> ::std::ops::Drop for WrapParens<'a> {
   fn drop(&mut self) {
-    self.fmt.token(Token::ParenR);
+    if !self.skip { self.fmt.token(Token::ParenR); }
   }
 }
+
 pub struct WrapSquare<'a> {
   fmt: &'a mut NodeFormatter,
 }

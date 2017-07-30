@@ -1,6 +1,5 @@
 use std::string;
 use super::misc;
-use super::flow;
 use super::alias;
 use super::statement;
 use super::declaration;
@@ -20,20 +19,6 @@ nodes!{
     }
   }
 
-  pub enum FlowImportKind {
-    // Flow extension
-    Type,
-    Typeof,
-  }
-  impl display::NodeDisplay for FlowImportKind {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      match *self {
-        FlowImportKind::Type => f.token(display::Token::Type),
-        FlowImportKind::Typeof => f.token(display::Token::Typeof),
-      }
-    }
-  }
-
   pub enum ImportSpecifier {
     Named(misc::BindingIdentifier),
     NamedAndAliased(ModuleIdentifier, misc::BindingIdentifier),
@@ -45,30 +30,6 @@ nodes!{
           f.node(id)
         }
         ImportSpecifier::NamedAndAliased(ref module, ref id) => {
-          f.node(module)?;
-          f.token(display::Token::As)?;
-          f.node(id)
-        }
-      }
-    }
-  }
-  pub enum TypedImportSpecifier {
-    Named(Option<FlowImportKind>, ModuleIdentifier),
-    NamedAndAliased(Option<FlowImportKind>, ModuleIdentifier, ModuleIdentifier),
-  }
-  impl display::NodeDisplay for TypedImportSpecifier {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      match *self {
-        TypedImportSpecifier::Named(ref kind, ref id) => {
-          if let Some(ref kind) = *kind {
-            f.node(kind)?;
-          }
-          f.node(id)
-        }
-        TypedImportSpecifier::NamedAndAliased(ref kind, ref module, ref id) => {
-          if let Some(ref kind) = *kind {
-            f.node(kind)?;
-          }
           f.node(module)?;
           f.token(display::Token::As)?;
           f.node(id)
@@ -128,13 +89,9 @@ nodes!{
 
   // import foo, {bar} from "";
   // import foo, {bar as bar} from "";
-  // import foo, {type bar} from "";
-  // import foo, {type bar as bar} from "";
-  // import foo, {typeof bar} from "";
-  // import foo, {typeof bar as bar} from "";
   pub struct ImportNamedAndSpecifiersDeclaration {
     default: misc::BindingIdentifier,
-    specifiers: Vec<TypedImportSpecifier>,
+    specifiers: Vec<ImportSpecifier>,
     source: literal::String,
   }
   impl display::NodeDisplay for ImportNamedAndSpecifiersDeclaration {
@@ -143,7 +100,7 @@ nodes!{
       f.node(&self.default)?;
       f.token(display::Token::Comma)?;
       f.token(display::Token::CurlyL)?;
-      f.node_list(&self.specifiers)?;
+      f.comma_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
       f.token(display::Token::From)?;
       f.node(&self.source)
@@ -152,106 +109,20 @@ nodes!{
 
   // import {bar} from "";
   // import {bar as bar} from "";
-  // import {type bar} from "";
-  // import {type bar as bar} from "";
-  // import {typeof bar} from "";
-  // import {typeof bar as bar} from "";
   pub struct ImportSpecifiersDeclaration {
-    specifiers: Vec<TypedImportSpecifier>,
+    specifiers: Vec<ImportSpecifier>,
     source: literal::String,
   }
   impl display::NodeDisplay for ImportSpecifiersDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
       f.token(display::Token::Import)?;
       f.token(display::Token::CurlyL)?;
-      f.node_list(&self.specifiers)?;
+      f.comma_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
       f.token(display::Token::From)?;
       f.node(&self.source)
     }
   }
-
-  // import type foo from "";
-  // import typeof foo from "";
-  pub struct ImportNamedTypeDeclaration {
-    kind: FlowImportKind,
-    default: misc::BindingIdentifier,
-    source: literal::String,
-  }
-  impl display::NodeDisplay for ImportNamedTypeDeclaration {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::Import)?;
-
-      f.node(&self.kind)?;
-      f.node(&self.default)?;
-
-      f.token(display::Token::From)?;
-      f.node(&self.source)
-    }
-  }
-
-  // import typeof * as bar from "";
-  pub struct ImportNamespaceTypeofDeclaration {
-    namespace: misc::BindingIdentifier,
-    source: literal::String,
-  }
-  impl display::NodeDisplay for ImportNamespaceTypeofDeclaration {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::Import)?;
-      f.token(display::Token::Typeof)?;
-      f.token(display::Token::Star)?;
-      f.token(display::Token::As)?;
-      f.node(&self.namespace)?;
-      f.token(display::Token::From)?;
-      f.node(&self.source)
-    }
-  }
-
-  // import type foo, {bar} from "";
-  // import type foo, {bar as bar} from "";
-  // import typeof foo, {bar} from "";
-  // import typeof foo, {bar as bar} from "";
-  pub struct ImportNamedAndSpecifiersTypeDeclaration {
-    kind: FlowImportKind,
-    default: misc::BindingIdentifier,
-    specifiers: Vec<ImportSpecifier>,
-    source: literal::String,
-  }
-  impl display::NodeDisplay for ImportNamedAndSpecifiersTypeDeclaration {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::Import)?;
-      f.node(&self.kind)?;
-      f.node(&self.default)?;
-      f.token(display::Token::Comma)?;
-      f.token(display::Token::CurlyL)?;
-      f.node_list(&self.specifiers)?;
-      f.token(display::Token::CurlyR)?;
-      f.token(display::Token::From)?;
-      f.node(&self.source)
-    }
-  }
-
-  // import type {bar} from "";
-  // import type {bar as bar} from "";
-  // import typeof {bar} from "";
-  // import typeof {bar as bar} from "";
-  pub struct ImportSpecifiersTypeDeclaration {
-    kind: FlowImportKind,
-    specifiers: Vec<ImportSpecifier>,
-    source: literal::String,
-  }
-  impl display::NodeDisplay for ImportSpecifiersTypeDeclaration {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::Import)?;
-      f.node(&self.kind)?;
-      f.token(display::Token::CurlyL)?;
-      f.node_list(&self.specifiers)?;
-      f.token(display::Token::CurlyR)?;
-      f.token(display::Token::From)?;
-      f.node(&self.source)
-    }
-  }
-
 
   // export default function name() {}
   pub struct ExportDefaultFunctionDeclaration {
@@ -268,13 +139,7 @@ nodes!{
       if let Some(ref id) = self.id {
         f.node(id)?;
       }
-      if let Some(ref type_parameters) = self.type_parameters {
-        f.node(type_parameters)?;
-      }
       f.node(&self.params)?;
-      if let Some(ref return_type) = self.return_type {
-        f.node(return_type)?;
-      }
       f.node(&self.body)
     }
   }
@@ -293,9 +158,6 @@ nodes!{
       f.token(display::Token::Class)?;
       if let Some(ref id) = self.id {
         f.node(id)?;
-      }
-      if let Some(ref type_parameters) = self.type_parameters {
-        f.node(type_parameters)?;
       }
       f.node(&self.body)
     }
@@ -387,7 +249,7 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
       f.token(display::Token::Export)?;
       f.token(display::Token::CurlyL)?;
-      f.node_list(&self.specifiers)?;
+      f.comma_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)
     }
   }
@@ -410,12 +272,8 @@ nodes!{
 
   // export {foo} from "";
   // export {foo as bar} from "";
-  // export {type foo} from "";
-  // export {type foo as bar} from "";
-  // export {typeof foo} from "";
-  // export {typeof foo as bar} from "";
   pub struct ExportSourceSpecifiers {
-      specifiers: Vec<TypedSourceExportSpecifier>,
+      specifiers: Vec<SourceExportSpecifier>,
       source: literal::String,
   }
   impl display::NodeDisplay for ExportSourceSpecifiers {
@@ -423,7 +281,7 @@ nodes!{
       f.token(display::Token::Export)?;
 
       f.token(display::Token::CurlyL)?;
-      f.node_list(&self.specifiers)?;
+      f.comma_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
 
       f.token(display::Token::From)?;
@@ -445,52 +303,6 @@ nodes!{
           f.node(mod_id)
         }
       }
-    }
-  }
-
-  pub enum TypedSourceExportSpecifier {
-    Named(Option<FlowImportKind>, ModuleIdentifier),
-    NamedAndAliased(Option<FlowImportKind>, ModuleIdentifier, ModuleIdentifier),
-  }
-  impl display::NodeDisplay for TypedSourceExportSpecifier {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      match *self {
-        TypedSourceExportSpecifier::Named(ref kind, ref id) => {
-          if let Some(ref kind) = *kind {
-            f.node(kind)?;
-          }
-          f.node(id)
-        }
-        TypedSourceExportSpecifier::NamedAndAliased(ref kind, ref id, ref mod_id) => {
-          if let Some(ref kind) = *kind {
-            f.node(kind)?;
-          }
-          f.node(id)?;
-          f.token(display::Token::As)?;
-          f.node(mod_id)
-        }
-      }
-    }
-  }
-
-  // export type {foo} from "";
-  // export type {foo as bar} from "";
-  pub struct ExportFlowtypeSourceSpecifiers {
-      kind: FlowImportKind,
-      specifiers: Vec<SourceExportSpecifier>,
-      source: literal::String,
-  }
-  impl display::NodeDisplay for ExportFlowtypeSourceSpecifiers {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::Export)?;
-      f.node(&self.kind)?;
-
-      f.token(display::Token::CurlyL)?;
-      f.node_list(&self.specifiers)?;
-      f.token(display::Token::CurlyR)?;
-
-      f.token(display::Token::From)?;
-      f.node(&self.source)
     }
   }
 
@@ -558,11 +370,9 @@ nodes!{
 
   // export foo, {foo} from "";
   // export foo, {foo as bar} from "";
-  // export foo, {type foo} from "";
-  // export foo, {type foo as bar} from "";
   pub struct ExportNamedAndSpecifiers {
       default: ModuleIdentifier,
-      specifiers: Vec<TypedSourceExportSpecifier>,
+      specifiers: Vec<SourceExportSpecifier>,
       source: literal::String,
   }
   impl display::NodeDisplay for ExportNamedAndSpecifiers {
@@ -572,7 +382,7 @@ nodes!{
       f.token(display::Token::Comma)?;
 
       f.token(display::Token::CurlyL)?;
-      f.node_list(&self.specifiers)?;
+      f.comma_list(&self.specifiers)?;
       f.token(display::Token::CurlyR)?;
 
       f.token(display::Token::From)?;
