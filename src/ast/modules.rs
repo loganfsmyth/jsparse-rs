@@ -259,10 +259,6 @@ nodes!{
     params: misc::FunctionParams,
     body: misc::FunctionBody,
     fn_kind: misc::FunctionKind,
-
-    // Flow extension
-    type_parameters: Option<flow::Parameters>,
-    return_type: Option<Box<flow::Annotation>>,
   }
   impl display::NodeDisplay for ExportDefaultFunctionDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -287,9 +283,7 @@ nodes!{
   pub struct ExportDefaultClassDeclaration {
     decorators: Vec<misc::Decorator>, // experimental
     id: Option<misc::BindingIdentifier>,
-    type_parameters: Option<Box<flow::Parameters>>,
     extends: Option<Box<alias::Expression>>,
-    implements: Option<flow::BindingIdentifierAnnotationList>,
     body: misc::ClassBody,
   }
   impl display::NodeDisplay for ExportDefaultClassDeclaration {
@@ -318,7 +312,7 @@ nodes!{
       f.token(display::Token::Default)?;
 
       if let misc::SpecialToken::Declaration = self.expression.first_special_token() {
-        f.with_parens(|f| f.node(&self.expression))?;
+        f.wrap_parens().node(&self.expression)?;
       } else {
         f.node(&self.expression)?;
       }
@@ -377,17 +371,6 @@ nodes!{
     exported: declaration::ConstDeclaration,
   }
   impl display::NodeDisplay for ExportConstDeclaration {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::Export)?;
-
-      f.node(&self.exported)
-    }
-  }
-  // export type Foo = {};
-  pub struct ExportFlowAlias {
-    exported: flow::AliasDeclaration,
-  }
-  impl display::NodeDisplay for ExportFlowAlias {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
       f.token(display::Token::Export)?;
 

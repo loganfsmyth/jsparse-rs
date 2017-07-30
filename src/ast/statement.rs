@@ -73,7 +73,7 @@ nodes!{
     	if let misc::SpecialToken::None = self.expression.first_special_token() {
     		f.node(&self.expression)?;
     	} else {
-    		f.with_parens(|f| f.node(&self.expression))?;
+    		f.wrap_parens().node(&self.expression)?;
     	}
     	f.token(display::Token::Semicolon)
     }

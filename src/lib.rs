@@ -1,3 +1,7 @@
+// Alias enums are too many items for the macro
+#![recursion_limit="128"]
+
+
 extern crate ucd;
 
 #[macro_use]

@@ -78,10 +78,6 @@ nodes!{
 		params: misc::FunctionParams,
 		body: misc::FunctionBody,
 		fn_kind: misc::FunctionKind,
-
-		// Flow extension
-		type_parameters: Option<flow::Parameters>,
-		return_type: Option<Box<flow::Annotation>>,
 	}
 	impl display::NodeDisplay for FunctionDeclaration {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -103,10 +99,7 @@ nodes!{
 		decorators: Vec<misc::Decorator>, // experimental
 		id: misc::BindingIdentifier,
 		extends: Option<Box<alias::Expression>>,
-		implements: Option<flow::BindingIdentifierAnnotationList>,
 		body: misc::ClassBody,
-
-		type_parameters: Option<flow::Parameters>,
 	}
 	impl display::NodeDisplay for ClassDeclaration {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {

@@ -28,7 +28,7 @@ nodes!{
 	}
 	impl display::NodeDisplay for ParenthesizedExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.with_parens(|f| f.node(&self.expr))
+			f.wrap_parens().node(&self.expr)
 		}
 	}
 	impl misc::FirstSpecialToken for ParenthesizedExpression {}
@@ -41,17 +41,19 @@ nodes!{
 	}
 	impl display::NodeDisplay for ArrayExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			let mut f = f.precedence(display::Precedence::Primary);
+
 			f.token(display::Token::SquareL)?;
 
 			for el in self.elements.iter() {
 				if let Some(ref expr) = *el {
-					f.with_precedence(display::Precedence::Assignment, |f| f.node(expr))?;
+					f.require_precedence(display::Precedence::Assignment).node(expr)?;
 				}
 				f.token(display::Token::Comma)?;
 			}
 
 			if let Some(ref expr) = self.spread {
-				f.with_precedence(display::Precedence::Assignment, |f| f.node(expr))?;
+				f.require_precedence(display::Precedence::Assignment).node(expr)?
 			}
 
 			Ok(())
@@ -69,6 +71,7 @@ nodes!{
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.token(display::Token::SquareL)?;
 
+			// TODO: These will render without the right precedence
 			f.node_list(&self.properties)?;
 
 			if let Some(ref expr) = self.spread {
@@ -76,7 +79,7 @@ nodes!{
 					f.token(display::Token::Comma)?;
 				}
 
-				f.with_precedence(display::Precedence::Assignment, |f| f.node(expr))?;
+				f.require_precedence(display::Precedence::Assignment).node(expr)?;
 			}
 
 			Ok(())
@@ -100,7 +103,7 @@ nodes!{
 				ObjectProperty::Value(ref id, ref expr) => {
 					f.node(id)?;
 					f.token(display::Token::Colon)?;
-					f.with_precedence(display::Precedence::Assignment, |f| f.node(expr))
+					f.require_precedence(display::Precedence::Assignment).node(expr)
 				}
 			}
 		}
@@ -112,8 +115,6 @@ nodes!{
 		params: misc::FunctionParams,
 		body: misc::FunctionBody,
 		fn_kind: misc::FunctionKind,
-
-		return_type: Option<Box<flow::Annotation>>,
 	}
 	impl display::NodeDisplay for ObjectMethod {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -145,10 +146,6 @@ nodes!{
 		params: misc::FunctionParams,
 		body: misc::FunctionBody,
 		fn_kind: misc::FunctionKind,
-
-		// Flow extension
-		type_parameters: Option<flow::Parameters>,
-		return_type: Option<Box<flow::Annotation>>,
 	}
 	impl display::NodeDisplay for FunctionExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -178,11 +175,7 @@ nodes!{
 		decorators: Vec<misc::Decorator>, // experimental
 		id: Option<misc::BindingIdentifier>,
 		extends: Option<Box<alias::Expression>>,
-		implements: Option<flow::BindingIdentifierAnnotationList>,
 		body: misc::ClassBody,
-
-		// Flow extension
-		type_parameters: Option<flow::Parameters>,
 	}
 	impl display::NodeDisplay for ClassExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -199,7 +192,7 @@ nodes!{
 			}
 			if let Some(ref expr) = self.extends {
 				f.token(display::Token::Extends)?;
-				f.with_precedence(display::Precedence::LeftHand, |f| f.node(expr))?;
+				f.require_precedence(display::Precedence::LeftHand).node(expr)?;
 			}
 			if let Some(ref anno) = self.implements {
 				f.token(display::Token::Implements)?;
@@ -221,7 +214,7 @@ nodes!{
 	}
 	impl display::NodeDisplay for TaggedTemplateLiteral {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.with_precedence(display::Precedence::Member, |f| f.node(&self.tag))?;
+			f.require_precedence(display::Precedence::Member).node(&self.tag)?;
 			f.node(&self.template)
 		}
 	}
@@ -253,7 +246,7 @@ nodes!{
 				TemplateLiteral::Piece(ref part, ref expr, ref next_literal) => {
 					f.node(part)?;
 					f.token(display::Token::TemplateClose)?;
-					f.with_precedence(display::Precedence::Normal, |f| f.node(expr))?;
+					f.require_precedence(display::Precedence::Normal).node(expr)?;
 					f.token(display::Token::TemplateOpen)?;
 					f.node(next_literal)
 				}
@@ -286,7 +279,7 @@ nodes!{
 	}
 	impl display::NodeDisplay for CallExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.with_precedence(display::Precedence::New, |f| f.node(&self.callee))?;
+			f.require_precedence(display::Precedence::New).node(&self.callee)?;
 			if self.optional {
 				f.token(display::Token::Question)?;
 			}
@@ -306,7 +299,7 @@ nodes!{
 	impl display::NodeDisplay for NewExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.token(display::Token::New)?;
-			f.with_precedence(display::Precedence::New, |f| f.node(&self.callee))?;
+			f.require_precedence(display::Precedence::New).node(&self.callee)?;
 			f.node(&self.arguments)
 		}
 	}
@@ -322,7 +315,7 @@ nodes!{
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.token(display::Token::Import)?;
 			f.token(display::Token::ParenL)?;
-			f.with_precedence(display::Precedence::Assignment, |f| f.node(&self.argument))?;
+			f.require_precedence(display::Precedence::Assignment).node(&self.argument)?;
 			f.token(display::Token::ParenR)?;
 			Ok(())
 		}
@@ -341,7 +334,7 @@ nodes!{
 	}
 	impl display::NodeDisplay for MemberExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.with_precedence(display::Precedence::Member, |f| f.node(&self.object))?;
+			f.require_precedence(display::Precedence::Member).node(&self.object)?;
 			if self.optional {
 				f.token(display::Token::Question)?;
 			}
@@ -410,18 +403,18 @@ nodes!{
 				UpdateOperator::PreIncrement => {
 					f.token(display::Token::PlusPlus)?;
 					f.node(&self.value)?;
-					f.with_precedence(display::Precedence::Unary, |f| f.node(&self.value))
+					f.require_precedence(display::Precedence::Unary).node(&self.value)
 				}
 				UpdateOperator::PreDecrement => {
 					f.token(display::Token::MinusMinus)?;
-					f.with_precedence(display::Precedence::Unary, |f| f.node(&self.value))
+					f.require_precedence(display::Precedence::Unary).node(&self.value)
 				}
 				UpdateOperator::PostIncrement => {
-					f.with_precedence(display::Precedence::LeftHand, |f| f.node(&self.value))?;
+					f.require_precedence(display::Precedence::LeftHand).node(&self.value)?;
 					f.token(display::Token::PlusPlus)
 				}
 				UpdateOperator::PostDecrement => {
-					f.with_precedence(display::Precedence::LeftHand, |f| f.node(&self.value))?;
+					f.require_precedence(display::Precedence::LeftHand).node(&self.value)?;
 					f.token(display::Token::MinusMinus)
 				}
 			}
@@ -477,7 +470,7 @@ nodes!{
 				UnaryOperator::Bind => f.token(display::Token::Bind)?,
 			}
 
-			f.node_with_precedence(display::Precedence::Unary, &self.value)
+			f.require_precedence(display::Precedence::Unary).node(&self.value)
 		}
 	}
 	impl misc::FirstSpecialToken for UnaryExpression {}
@@ -523,126 +516,151 @@ nodes!{
 	// 4 + 5 * (3 + 2)
 	impl display::NodeDisplay for BinaryExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+
 			match self.operator {
 				BinaryOperator::Add => {
-					f.node_with_precedence(display::Precedence::Additive, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Additive);
+					f.node(&self.left)?;
 					f.token(display::Token::Plus)?;
-					f.node_with_precedence(display::Precedence::Multiplicative, &self.right)?;
+					f.require_precedence(display::Precedence::Multiplicative).node(&self.right)?;
 				}
 				BinaryOperator::Subtract => {
-					f.node_with_precedence(display::Precedence::Additive, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Additive);
+					f.node(&self.left)?;
 					f.token(display::Token::Minus)?;
-					f.node_with_precedence(display::Precedence::Multiplicative, &self.right)?;
+					f.require_precedence(display::Precedence::Multiplicative).node(&self.right)?;
 				}
 				BinaryOperator::LeftShift => {
-					f.node_with_precedence(display::Precedence::Shift, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Shift);
+					f.node(&self.left)?;
 					f.token(display::Token::LAngleAngle)?;
-					f.node_with_precedence(display::Precedence::Additive, &self.right)?;
+					f.require_precedence(display::Precedence::Additive).node(&self.right)?;
 				}
 				BinaryOperator::RightShift => {
-					f.node_with_precedence(display::Precedence::Shift, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Shift);
+					f.node(&self.left)?;
 					f.token(display::Token::RAngleAngle)?;
-					f.node_with_precedence(display::Precedence::Additive, &self.right)?;
+					f.require_precedence(display::Precedence::Additive).node(&self.right)?;
 				}
 				BinaryOperator::RightShiftSigned => {
-					f.node_with_precedence(display::Precedence::Shift, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Shift);
+					f.node(&self.left)?;
 					f.token(display::Token::RAngleAngleAngle)?;
-					f.node_with_precedence(display::Precedence::Additive, &self.right)?;
+					f.require_precedence(display::Precedence::Additive).node(&self.right)?;
 				}
 				BinaryOperator::Divide => {
-					f.node_with_precedence(display::Precedence::Multiplicative, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Multiplicative);
+					f.node(&self.left)?;
 					f.token(display::Token::Slash)?;
-					f.node_with_precedence(display::Precedence::Exponential, &self.right)?;
+					f.require_precedence(display::Precedence::Exponential).node(&self.right)?;
 				}
 				BinaryOperator::Multiply => {
-					f.node_with_precedence(display::Precedence::Multiplicative, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Multiplicative);
+					f.node(&self.left)?;
 					f.token(display::Token::Star)?;
-					f.node_with_precedence(display::Precedence::Exponential, &self.right)?;
+					f.require_precedence(display::Precedence::Exponential).node(&self.right)?;
 				}
 				BinaryOperator::Modulus => {
-					f.node_with_precedence(display::Precedence::Multiplicative, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Multiplicative);
+					f.node(&self.left)?;
 					f.token(display::Token::Mod)?;
-					f.node_with_precedence(display::Precedence::Exponential, &self.right)?;
+					f.require_precedence(display::Precedence::Exponential).node(&self.right)?;
 				}
 				BinaryOperator::BitAnd => {
-					f.node_with_precedence(display::Precedence::BitwiseAnd, &self.left)?;
+					let mut f = f.precedence(display::Precedence::BitwiseAnd);
+					f.node(&self.left)?;
 					f.token(display::Token::Amp)?;
-					f.node_with_precedence(display::Precedence::Equality, &self.right)?;
+					f.require_precedence(display::Precedence::Equality).node(&self.right)?;
 				}
 				BinaryOperator::BitOr => {
-					f.node_with_precedence(display::Precedence::BitwiseOr, &self.left)?;
+					let mut f = f.precedence(display::Precedence::BitwiseOr);
+					f.node(&self.left)?;
 					f.token(display::Token::Bar)?;
-					f.node_with_precedence(display::Precedence::BitwiseXOr, &self.right)?;
+					f.require_precedence(display::Precedence::BitwiseXOr).node(&self.right)?;
 				}
 				BinaryOperator::BitXor => {
-					f.node_with_precedence(display::Precedence::BitwiseXOr, &self.left)?;
+					let mut f = f.precedence(display::Precedence::BitwiseXOr);
+					f.node(&self.left)?;
 					f.token(display::Token::Caret)?;
-					f.node_with_precedence(display::Precedence::BitwiseAnd, &self.right)?;
+					f.require_precedence(display::Precedence::BitwiseAnd).node(&self.right)?;
 				}
 				BinaryOperator::Power => {
-					f.node_with_precedence(display::Precedence::Update, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Update);
+					f.node(&self.left)?;
 					f.token(display::Token::StarStar)?;
-					f.node_with_precedence(display::Precedence::Exponential, &self.right)?;
+					f.require_precedence(display::Precedence::Exponential).node(&self.right)?;
 				}
 				BinaryOperator::Compare => {
-					f.node_with_precedence(display::Precedence::Equality, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Equality);
+					f.node(&self.left)?;
 					f.token(display::Token::EqEq)?;
-					f.node_with_precedence(display::Precedence::Relational, &self.right)?;
+					f.require_precedence(display::Precedence::Relational).node(&self.right)?;
 				}
 				BinaryOperator::StrictCompare => {
-					f.node_with_precedence(display::Precedence::Equality, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Equality);
+					f.node(&self.left)?;
 					f.token(display::Token::EqEqEq)?;
-					f.node_with_precedence(display::Precedence::Relational, &self.right)?;
+					f.require_precedence(display::Precedence::Relational).node(&self.right)?;
 				}
 				BinaryOperator::NegateCompare => {
-					f.node_with_precedence(display::Precedence::Equality, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Equality);
+					f.node(&self.left)?;
 					f.token(display::Token::Neq)?;
-					f.node_with_precedence(display::Precedence::Relational, &self.right)?;
+					f.require_precedence(display::Precedence::Relational).node(&self.right)?;
 				}
 				BinaryOperator::NegateStrictCompare => {
-					f.node_with_precedence(display::Precedence::Equality, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Equality);
+					f.node(&self.left)?;
 					f.token(display::Token::NeqEq)?;
-					f.node_with_precedence(display::Precedence::Relational, &self.right)?;
+					f.require_precedence(display::Precedence::Relational).node(&self.right)?;
 				}
 				BinaryOperator::LessThan => {
-					f.node_with_precedence(display::Precedence::Relational, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Relational);
+					f.node(&self.left)?;
 					f.token(display::Token::LAngle)?;
-					f.node_with_precedence(display::Precedence::Shift, &self.right)?;
+					f.require_precedence(display::Precedence::Shift).node(&self.right)?;
 				}
 				BinaryOperator::LessThanEq => {
-					f.node_with_precedence(display::Precedence::Relational, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Relational);
+					f.node(&self.left)?;
 					f.token(display::Token::LAngleEq)?;
-					f.node_with_precedence(display::Precedence::Shift, &self.right)?;
+					f.require_precedence(display::Precedence::Shift).node(&self.right)?;
 				}
 				BinaryOperator::GreaterThan => {
-					f.node_with_precedence(display::Precedence::Relational, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Relational);
+					f.node(&self.left)?;
 					f.token(display::Token::RAngle)?;
-					f.node_with_precedence(display::Precedence::Shift, &self.right)?;
+					f.require_precedence(display::Precedence::Shift).node(&self.right)?;
 				}
 				BinaryOperator::GreaterThanEq => {
-					f.node_with_precedence(display::Precedence::Relational, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Relational);
+					f.node(&self.left)?;
 					f.token(display::Token::RAngleEq)?;
-					f.node_with_precedence(display::Precedence::Shift, &self.right)?;
+					f.require_precedence(display::Precedence::Shift).node(&self.right)?;
 				}
 				BinaryOperator::In => {
-					f.node_with_precedence(display::Precedence::Relational, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Relational);
+					f.node(&self.left)?;
 					f.token(display::Token::In)?;
-					f.node_with_precedence(display::Precedence::Shift, &self.right)?;
+					f.require_precedence(display::Precedence::Shift).node(&self.right)?;
 				}
 				BinaryOperator::Instanceof => {
-					f.node_with_precedence(display::Precedence::Relational, &self.left)?;
+					let mut f = f.precedence(display::Precedence::Relational);
+					f.node(&self.left)?;
 					f.token(display::Token::Instanceof)?;
-					f.node_with_precedence(display::Precedence::Shift, &self.right)?;
+					f.require_precedence(display::Precedence::Shift).node(&self.right)?;
 				}
 				BinaryOperator::And => {
-					f.node_with_precedence(display::Precedence::LogicalAnd, &self.left)?;
+					let mut f = f.precedence(display::Precedence::LogicalAnd);
+					f.node(&self.left)?;
 					f.token(display::Token::AmpAmp)?;
-					f.node_with_precedence(display::Precedence::BitwiseOr, &self.right)?;
+					f.require_precedence(display::Precedence::BitwiseOr).node(&self.right)?;
 				}
 				BinaryOperator::Or => {
-					f.node_with_precedence(display::Precedence::LogicalOr, &self.left)?;
+					let mut f = f.precedence(display::Precedence::LogicalOr);
+					f.node(&self.left)?;
 					f.token(display::Token::BarBar)?;
-					f.node_with_precedence(display::Precedence::LogicalAnd, &self.right)?;
+					f.require_precedence(display::Precedence::LogicalAnd).node(&self.right)?;
 				}
 				BinaryOperator::Bind => {
 					f.node(&self.left)?;
@@ -699,11 +717,11 @@ nodes!{
 	}
 	impl display::NodeDisplay for ConditionalExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.node_with_precedence(display::Precedence::LogicalOr, &self.test)?;
+			f.require_precedence(display::Precedence::LogicalOr).node(&self.test)?;
 			f.token(display::Token::Question)?;
-			f.node_with_precedence(display::Precedence::Assignment, &self.consequent)?;
+			f.require_precedence(display::Precedence::Assignment).node(&self.consequent)?;
 			f.token(display::Token::Colon)?;
-			f.node_with_precedence(display::Precedence::Assignment, &self.alternate)
+			f.require_precedence(display::Precedence::Assignment).node(&self.alternate)
 		}
 	}
 	impl misc::FirstSpecialToken for ConditionalExpression {
@@ -722,9 +740,9 @@ nodes!{
 	}
 	impl display::NodeDisplay for AssignmentExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.node_with_precedence(display::Precedence::LeftHand, &self.left)?;
+			f.require_precedence(display::Precedence::LeftHand).node(&self.left)?;
 			f.token(display::Token::Eq)?;
-			f.node_with_precedence(display::Precedence::Assignment, &self.right)
+			f.require_precedence(display::Precedence::Assignment).node(&self.right)
 		}
 	}
 	impl misc::FirstSpecialToken for AssignmentExpression {
@@ -758,7 +776,7 @@ nodes!{
 	}
 	impl display::NodeDisplay for AssignmentUpdateExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.node_with_precedence(display::Precedence::LeftHand, &self.left)?;
+			f.require_precedence(display::Precedence::LeftHand).node(&self.left)?;
 			match self.operator {
 				AssignmentUpdateOperator::Add => f.token(display::Token::Plus)?,
 				AssignmentUpdateOperator::Subtract => f.token(display::Token::Subtract)?,
@@ -774,7 +792,7 @@ nodes!{
 				AssignmentUpdateOperator::Power => f.token(display::Token::StarStar)?,
 			}
 			f.token(display::Token::Eq)?;
-			f.node_with_precedence(display::Precedence::Assignment, &self.right)
+			f.require_precedence(display::Precedence::Assignment).node(&self.right)
 		}
 	}
 	impl misc::FirstSpecialToken for AssignmentUpdateExpression {
@@ -796,10 +814,10 @@ nodes!{
 	}
 	impl display::NodeDisplay for SequenceExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.node_with_precedence(display::Precedence::Normal, &self.left)?;
+			f.require_precedence(display::Precedence::Normal).node(&self.left)?;
 			f.token(display::Token::Comma)?;
 			// TODO: This precedence may not be strictly needed?
-			f.node_with_precedence(display::Precedence::Assignment, &self.right)
+			f.require_precedence(display::Precedence::Assignment).node(&self.right)
 		}
 	}
 	impl misc::FirstSpecialToken for SequenceExpression {
@@ -816,10 +834,6 @@ nodes!{
 		params: misc::FunctionParams,
 		body: ArrowFunctionBody,
 		fn_kind: ArrowFunctionKind,
-
-		// Flow extension
-		type_parameters: Option<flow::Parameters>,
-		return_type: Option<Box<flow::Annotation>>,
 	}
 	pub enum ArrowFunctionKind {
 		Normal,
@@ -863,7 +877,7 @@ nodes!{
 			match *self {
 				ArrowFunctionBody::Expression(ref expr) => {
     			if let misc::SpecialToken::Object = expr.first_special_token() {
-						f.with_parens(|f| f.node(expr))
+						f.wrap_parens().node(expr)
 					} else {
 						f.node(expr)
 					}

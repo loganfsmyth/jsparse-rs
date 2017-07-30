@@ -1,86 +1,57 @@
-// extern crate serde;
-// extern crate serde_json;
-
-// // use serde_json::{Value
-
-// fn main() {
-//     use std::fs;
-//     use std::io::Read;
-
-//     let paths = fs::read_dir("/Volumes/Fs/flat-json").unwrap();
-
-//     println!("here we gooo");
-
-//     for path in paths {
-//         let path = path.unwrap().path();
-//         // println!("Name: {}", path.display());
-
-//         let mut file = fs::File::open(path.clone()).unwrap();
-
-//         let mut json = String::new();
-//         file.read_to_string(&mut json).unwrap();
-
-
-
-//         // let res: Result<serde_json::Value, _> = serde_json::from_str(&json);
-//         // if let Ok(p) = res {
-//         //   // println!("Data");
-//         // } else {
-//         //   // println!("woops");
-//         // }
-//     }
-// }
-
 extern crate jsparse;
 
-fn main() {
+
+struct Foo {
 
 }
 
+impl Foo {
+  fn lock(&mut self) -> FooLock {
+    FooLock::new(self)
+  }
+  fn thing(&mut self) {
+    println!("CONTENT");
+  }
+}
 
-// trait Offset: Default {}
+struct FooLock<'a> {
+  f: &'a mut Foo,
+}
 
-// trait Reader {
-//     type Offset: Offset;
-// }
+impl<'a> FooLock<'a> {
+  fn new(f: &'a mut Foo) -> FooLock {
+    println!("(");
+    FooLock { f }
+  }
+}
 
-// impl Offset for usize {}
+impl<'a> std::ops::Drop for FooLock<'a> {
+  fn drop(&mut self) {
+    println!(")");
+  }
+}
 
-// impl<'a> Reader for &'a [u8] {
-//     type Offset = usize;
-// }
+impl<'a> std::ops::Deref for FooLock<'a> {
+  type Target = Foo;
 
-// // OK
-// // struct Header<R: Reader>(R, usize);
+  fn deref(&self) -> &Foo {
+    self.f
+  }
+}
+impl<'a> std::ops::DerefMut for FooLock<'a> {
+  fn deref_mut(&mut self) -> &mut Foo {
+    self.f
+  }
+}
 
-// // Bad
-// struct Header<R: Reader>(R, R::Offset);
 
-// impl <R: Reader<Offset=usize>> Header<R> {
-//     fn new(r: R) -> Self {
-//         Header(r, 0)
-//     }
-// }
+fn main() {
+  let mut f = Foo {};
+  println!("[");
+  {
+    let mut f = f.lock();
 
-// fn test<R1: Reader, R2: Reader>(_: Header<R1>, _: Header<R2>) {}
-
-// fn main() {
-//     let buf1 = [0u8];
-//     {
-//       let slice1 = &buf1[..];
-//       {
-//         let header1 = Header::new(slice1);
-//         {
-//           let buf2 = [0u8];
-//           {
-//             let slice2 = &buf2[..];
-//             {
-//               let header2 = Header::new(slice2);
-
-//               test(header1, header2);
-//             }
-//           }
-//         }
-//       }
-//     }
-// }
+    f.thing();
+  }
+  println!("]");
+}

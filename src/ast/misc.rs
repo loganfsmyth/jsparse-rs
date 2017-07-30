@@ -1,4 +1,6 @@
+use std::fmt;
 use std::string;
+
 use super::alias;
 use super::flow;
 use super::literal;
@@ -17,6 +19,20 @@ macro_rules! node_position {
     }
 	};
 }
+macro_rules! node_display {
+	($id:ident) => {
+		impl fmt::Display for $id {
+		  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		    let mut node_fmt = display::NodeFormatter::new();
+
+		    display::NodeDisplay::fmt(self, &mut node_fmt);
+
+		    write!(f, "{}", node_fmt.output)
+		  }
+		}
+	};
+}
+
 
 macro_rules! nodes {
   () => {};
@@ -32,6 +48,7 @@ macro_rules! nodes {
       position: Option<Box<$crate::ast::NodePosition>>,
     }
     node_position!($id);
+    node_display!($id);
   };
   ($item:item) => {
     $item
@@ -87,9 +104,9 @@ nodes!{
   }
   impl display::NodeDisplay for Ast {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&Ast::Script(ref s) => f.node(s),
-    		&Ast::Module(ref m) => f.node(m),
+    	match *self {
+    		Ast::Script(ref s) => f.node(s),
+    		Ast::Module(ref m) => f.node(m),
     	}
     }
   }
@@ -144,10 +161,10 @@ nodes!{
   }
   impl display::NodeDisplay for Pattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&Pattern::Identifier(ref id) => f.node(id),
-    		&Pattern::Object(ref obj) => f.node(obj),
-    		&Pattern::Array(ref obj) => f.node(obj),
+    	match *self {
+    		Pattern::Identifier(ref id) => f.node(id),
+    		Pattern::Object(ref obj) => f.node(obj),
+    		Pattern::Array(ref obj) => f.node(obj),
     	}
     }
   }
@@ -199,17 +216,17 @@ nodes!{
 	}
   impl display::NodeDisplay for LeftHandSimpleAssign {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&LeftHandSimpleAssign::Identifier(ref s) => f.node(s),
-    		&LeftHandSimpleAssign::Member(ref m) => f.node(m),
+    	match *self {
+    		LeftHandSimpleAssign::Identifier(ref s) => f.node(s),
+    		LeftHandSimpleAssign::Member(ref m) => f.node(m),
     	}
     }
   }
 	impl FirstSpecialToken for LeftHandSimpleAssign {
 	  fn first_special_token(&self) -> SpecialToken {
-    	match self {
-    		&LeftHandSimpleAssign::Identifier(ref s) => s.first_special_token(),
-    		&LeftHandSimpleAssign::Member(ref m) => m.first_special_token(),
+    	match *self {
+    		LeftHandSimpleAssign::Identifier(ref s) => s.first_special_token(),
+    		LeftHandSimpleAssign::Member(ref m) => m.first_special_token(),
     	}
 	  }
 	}
@@ -222,21 +239,21 @@ nodes!{
 	}
   impl display::NodeDisplay for LeftHandComplexAssign {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&LeftHandComplexAssign::Identifier(ref s) => f.node(s),
-    		&LeftHandComplexAssign::Member(ref m) => f.node(m),
-    		&LeftHandComplexAssign::Object(ref m) => f.node(m),
-    		&LeftHandComplexAssign::Array(ref m) => f.node(m),
+    	match *self {
+    		LeftHandComplexAssign::Identifier(ref s) => f.node(s),
+    		LeftHandComplexAssign::Member(ref m) => f.node(m),
+    		LeftHandComplexAssign::Object(ref m) => f.node(m),
+    		LeftHandComplexAssign::Array(ref m) => f.node(m),
     	}
     }
   }
 	impl FirstSpecialToken for LeftHandComplexAssign {
 	  fn first_special_token(&self) -> SpecialToken {
-    	match self {
-    		&LeftHandComplexAssign::Identifier(ref s) => s.first_special_token(),
-    		&LeftHandComplexAssign::Member(ref m) => m.first_special_token(),
-    		&LeftHandComplexAssign::Object(ref m) => m.first_special_token(),
-    		&LeftHandComplexAssign::Array(ref m) => m.first_special_token(),
+    	match *self {
+    		LeftHandComplexAssign::Identifier(ref s) => s.first_special_token(),
+    		LeftHandComplexAssign::Member(ref m) => m.first_special_token(),
+    		LeftHandComplexAssign::Object(ref m) => m.first_special_token(),
+    		LeftHandComplexAssign::Array(ref m) => m.first_special_token(),
     	}
 	  }
 	}
@@ -277,8 +294,8 @@ nodes!{
 	}
   impl display::NodeDisplay for ObjectPatternProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&ObjectPatternProperty::Identifier(ref id, ref expr) => {
+    	match *self {
+    		ObjectPatternProperty::Identifier(ref id, ref expr) => {
     			f.node(id)?;
     			if let Some(ref expr) = *expr {
     				f.token(display::Token::Eq)?;
@@ -287,7 +304,7 @@ nodes!{
 
     			Ok(())
     		}
-    		&ObjectPatternProperty::Pattern(ref prop, ref pattern, ref expr) => {
+    		ObjectPatternProperty::Pattern(ref prop, ref pattern, ref expr) => {
     			f.node(prop)?;
     			f.token(display::Token::Colon)?;
     			f.node(pattern)?;
@@ -386,10 +403,10 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::At)?;
 
-    	match self {
-    		&Decorator::Property(ref expr) => f.node(expr),
-    		&Decorator::Call(ref expr) => f.node(expr),
-    		&Decorator::Expression(ref expr) => f.node(expr),
+    	match *self {
+    		Decorator::Property(ref expr) => f.node(expr),
+    		Decorator::Call(ref expr) => f.node(expr),
+    		Decorator::Expression(ref expr) => f.node(expr),
     	}
     }
   }
@@ -401,9 +418,9 @@ nodes!{
   }
   impl display::NodeDisplay for DecoratorMemberExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&DecoratorMemberExpression::Identifier(ref id) => f.node(id),
-    		&DecoratorMemberExpression::Member(ref member, ref id) => {
+    	match *self {
+    		DecoratorMemberExpression::Identifier(ref id) => f.node(id),
+    		DecoratorMemberExpression::Member(ref member, ref id) => {
     			f.node(member)?;
     			f.token(display::Token::Period)?;
     			f.node(id)
@@ -465,10 +482,10 @@ nodes!{
   }
   impl display::NodeDisplay for ClassItem {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&ClassItem::Method(ref item) => f.node(item),
-    		&ClassItem::Field(ref item) => f.node(item),
-    		&ClassItem::Empty(ref item) => f.node(item),
+    	match *self {
+    		ClassItem::Method(ref item) => f.node(item),
+    		ClassItem::Field(ref item) => f.node(item),
+    		ClassItem::Empty(ref item) => f.node(item),
     	}
     }
   }
@@ -493,20 +510,20 @@ nodes!{
   }
   impl display::NodeDisplay for PropertyId {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&PropertyId::Literal(ref id) => {
+    	match *self {
+    		PropertyId::Literal(ref id) => {
     			f.token(display::Token::Period)?;
     			f.node(id)
     		}
-    		&PropertyId::String(ref id) => {
+    		PropertyId::String(ref id) => {
     			f.token(display::Token::Period)?;
     			f.node(id)
     		}
-    		&PropertyId::Number(ref id) => {
+    		PropertyId::Number(ref id) => {
     			f.token(display::Token::Period)?;
     			f.node(id)
     		}
-    		&PropertyId::Computed(ref expr) => {
+    		PropertyId::Computed(ref expr) => {
     			f.token(display::Token::SquareL)?;
     			f.node(expr)?;
     			f.token(display::Token::SquareR)
@@ -523,8 +540,6 @@ nodes!{
     body: FunctionBody,
     fn_kind: FunctionKind,
     decorators: Vec<Decorator>,
-
-    return_type: Option<Box<flow::Annotation>>,
   }
   impl display::NodeDisplay for ClassMethod {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -555,9 +570,9 @@ nodes!{
   }
   impl display::NodeDisplay for ClassFieldId {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match self {
-    		&ClassFieldId::Public(ref id) => f.node(id),
-    		&ClassFieldId::Private(ref id) => f.node(id),
+    	match *self {
+    		ClassFieldId::Public(ref id) => f.node(id),
+    		ClassFieldId::Private(ref id) => f.node(id),
     	}
     }
   }
@@ -569,9 +584,6 @@ nodes!{
 
     id: ClassFieldId,
     value: Option<alias::Expression>,
-
-    // Flow extension
-    type_variance: Option<flow::Variance>,
   }
   impl display::NodeDisplay for ClassField {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -620,10 +632,6 @@ nodes!{
     decorators: Vec<Decorator>, // experimental
     id: Pattern,
     init: Option<Box<alias::Expression>>,
-
-    // Flow extension
-    type_annotation: Option<Box<flow::Annotation>>,
-    optional: bool,
   }
   impl display::NodeDisplay for FunctionParam {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -647,9 +655,6 @@ nodes!{
   }
   pub struct FunctionRestParam {
     id: Pattern,
-
-    // Flow extensionF
-    type_annotation: Option<Box<flow::Annotation>>,
   }
   impl display::NodeDisplay for FunctionRestParam {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {

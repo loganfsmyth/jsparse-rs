@@ -57,19 +57,131 @@ impl display::NodeDisplay for Method {
 custom_derive!{
     #[derive(EnumFromInner)]
     pub enum ModuleStatementItem {
-        Statement(Statement),
-        Declaration(Declaration),
-        Import(ImportDeclaration),
-        Export(ExportDeclaration),
+        // Statements
+        Block(statement::BlockStatement),
+        Variable(statement::VariableStatement),
+        Empty(statement::EmptyStatement),
+        Expression(statement::ExpressionStatement),
+        If(statement::IfStatement),
+        For(statement::ForStatement),
+        ForIn(statement::ForInStatement),
+        ForOf(statement::ForOfStatement),
+        ForAwait(statement::ForAwaitStatement),
+        While(statement::WhileStatement),
+        DoWhile(statement::DoWhileStatement),
+        Switch(statement::SwitchStatement),
+        Continue(statement::ContinueStatement),
+        Break(statement::BreakStatement),
+        Return(statement::ReturnStatement),
+        With(statement::WithStatement),
+        Labelled(statement::LabelledStatement),
+        Throw(statement::ThrowStatement),
+        Try(statement::TryStatement),
+        Debugger(statement::DebuggerStatement),
+
+        // Declarations
+        Function(declaration::FunctionDeclaration),
+        Class(declaration::ClassDeclaration),
+        Let(declaration::LetDeclaration),
+        Const(declaration::ConstDeclaration),
+
+        // ExportDeclaration
+        ExportDefaultClass(modules::ExportDefaultClassDeclaration),
+        ExportDefaultFunction(modules::ExportDefaultFunctionDeclaration),
+        ExportDefaultExpression(modules::ExportDefaultExpression),
+        ExportClass(modules::ExportClassDeclaration),
+        ExportFunction(modules::ExportFunctionDeclaration),
+        ExportVariable(modules::ExportVarStatement),
+        ExportLet(modules::ExportLetDeclaration),
+        ExportConst(modules::ExportConstDeclaration),
+        ExportLocalBindings(modules::ExportLocalBindings),
+        ExportFlowDeclaration(modules::ExportFlowAlias),
+        ExportSourceSpecifiers(modules::ExportSourceSpecifiers),
+        ExportSourceSpecifiersFlow(modules::ExportFlowtypeSourceSpecifiers),
+        ExportAll(modules::ExportAllSpecifiers),
+        ExportNamed(modules::ExportNamedSpecifier),
+        ExportNamedAndNamespace(modules::ExportNamedAndNamespace),
+        ExportNamespace(modules::ExportNamespace),
+        ExportNamedAndSpecifiers(modules::ExportNamedAndSpecifiers),
+
+        // ImportDeclaration
+        ImportNamed(modules::ImportNamedDeclaration),
+        ImportNamedAndNamespace(modules::ImportNamedAndNamespaceDeclaration),
+        ImportNamespace(modules::ImportNamespaceDeclaration),
+        ImportNamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
+        ImportSpecifiers(modules::ImportSpecifiersDeclaration),
+        ImportNamedType(modules::ImportNamedTypeDeclaration),
+        ImportNamespaceTypeof(modules::ImportNamespaceTypeofDeclaration),
+        ImportNamedAndSpecifiersType(modules::ImportNamedAndSpecifiersTypeDeclaration),
+        ImportSpecifiersType(modules::ImportSpecifiersTypeDeclaration),
     }
 }
 impl display::NodeDisplay for ModuleStatementItem {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            ModuleStatementItem::Statement(ref n) => f.node(n),
-            ModuleStatementItem::Declaration(ref n) => f.node(n),
-            ModuleStatementItem::Import(ref n) => f.node(n),
-            ModuleStatementItem::Export(ref n) => f.node(n),
+            // Statements
+            ModuleStatementItem::Block(ref n) => f.node(n),
+            ModuleStatementItem::Variable(ref n) => f.node(n),
+            ModuleStatementItem::Empty(ref n) => f.node(n),
+            ModuleStatementItem::Expression(ref n) => f.node(n),
+            ModuleStatementItem::If(ref n) => f.node(n),
+            ModuleStatementItem::For(ref n) => f.node(n),
+            ModuleStatementItem::ForIn(ref n) => f.node(n),
+            ModuleStatementItem::ForOf(ref n) => f.node(n),
+            ModuleStatementItem::ForAwait(ref n) => f.node(n),
+            ModuleStatementItem::While(ref n) => f.node(n),
+            ModuleStatementItem::DoWhile(ref n) => f.node(n),
+            ModuleStatementItem::Switch(ref n) => f.node(n),
+            ModuleStatementItem::Continue(ref n) => f.node(n),
+            ModuleStatementItem::Break(ref n) => f.node(n),
+            ModuleStatementItem::Return(ref n) => f.node(n),
+            ModuleStatementItem::With(ref n) => f.node(n),
+            ModuleStatementItem::Labelled(ref n) => f.node(n),
+            ModuleStatementItem::Throw(ref n) => f.node(n),
+            ModuleStatementItem::Try(ref n) => f.node(n),
+            ModuleStatementItem::Debugger(ref n) => f.node(n),
+
+            // Declarations
+            ModuleStatementItem::Function(ref n) => f.node(n),
+            ModuleStatementItem::Class(ref n) => f.node(n),
+            ModuleStatementItem::Let(ref n) => f.node(n),
+            ModuleStatementItem::Const(ref n) => f.node(n),
+            ModuleStatementItem::FlowTypeDeclareModule(ref n) => f.node(n),
+            ModuleStatementItem::FlowTypeDeclareFunction(ref n) => f.node(n),
+            ModuleStatementItem::FlowTypeDeclareClass(ref n) => f.node(n),
+            ModuleStatementItem::FlowTypeDeclareVariable(ref n) => f.node(n),
+            ModuleStatementItem::FlowTypeDeclareAlias(ref n) => f.node(n),
+            ModuleStatementItem::FlowTypeAlias(ref n) => f.node(n),
+
+            // ExportDeclaration
+            ModuleStatementItem::ExportDefaultClass(ref n) => f.node(n),
+            ModuleStatementItem::ExportDefaultFunction(ref n) => f.node(n),
+            ModuleStatementItem::ExportDefaultExpression(ref n) => f.node(n),
+            ModuleStatementItem::ExportClass(ref n) => f.node(n),
+            ModuleStatementItem::ExportFunction(ref n) => f.node(n),
+            ModuleStatementItem::ExportVariable(ref n) => f.node(n),
+            ModuleStatementItem::ExportLet(ref n) => f.node(n),
+            ModuleStatementItem::ExportConst(ref n) => f.node(n),
+            ModuleStatementItem::ExportLocalBindings(ref n) => f.node(n),
+            ModuleStatementItem::ExportFlowDeclaration(ref n) => f.node(n),
+            ModuleStatementItem::ExportSourceSpecifiers(ref n) => f.node(n),
+            ModuleStatementItem::ExportSourceSpecifiersFlow(ref n) => f.node(n),
+            ModuleStatementItem::ExportAll(ref n) => f.node(n),
+            ModuleStatementItem::ExportNamed(ref n) => f.node(n),
+            ModuleStatementItem::ExportNamedAndNamespace(ref n) => f.node(n),
+            ModuleStatementItem::ExportNamespace(ref n) => f.node(n),
+            ModuleStatementItem::ExportNamedAndSpecifiers(ref n) => f.node(n),
+
+            // ImportDeclaration
+            ModuleStatementItem::ImportNamed(ref n) => f.node(n),
+            ModuleStatementItem::ImportNamedAndNamespace(ref n) => f.node(n),
+            ModuleStatementItem::ImportNamespace(ref n) => f.node(n),
+            ModuleStatementItem::ImportNamedAndSpecifiers(ref n) => f.node(n),
+            ModuleStatementItem::ImportSpecifiers(ref n) => f.node(n),
+            ModuleStatementItem::ImportNamedType(ref n) => f.node(n),
+            ModuleStatementItem::ImportNamespaceTypeof(ref n) => f.node(n),
+            ModuleStatementItem::ImportNamedAndSpecifiersType(ref n) => f.node(n),
+            ModuleStatementItem::ImportSpecifiersType(ref n) => f.node(n),
         }
     }
 }
@@ -77,52 +189,101 @@ impl display::NodeDisplay for ModuleStatementItem {
 custom_derive!{
     #[derive(EnumFromInner)]
     pub enum StatementItem {
-        Statement(Statement),
-        Declaration(Declaration),
+        // Statements
+        Block(statement::BlockStatement),
+        Variable(statement::VariableStatement),
+        Empty(statement::EmptyStatement),
+        Expression(statement::ExpressionStatement),
+        If(statement::IfStatement),
+        For(statement::ForStatement),
+        ForIn(statement::ForInStatement),
+        ForOf(statement::ForOfStatement),
+        ForAwait(statement::ForAwaitStatement),
+        While(statement::WhileStatement),
+        DoWhile(statement::DoWhileStatement),
+        Switch(statement::SwitchStatement),
+        Continue(statement::ContinueStatement),
+        Break(statement::BreakStatement),
+        Return(statement::ReturnStatement),
+        With(statement::WithStatement),
+        Labelled(statement::LabelledStatement),
+        Throw(statement::ThrowStatement),
+        Try(statement::TryStatement),
+        Debugger(statement::DebuggerStatement),
+
+        // Declarations
+        Function(declaration::FunctionDeclaration),
+        Class(declaration::ClassDeclaration),
+        Let(declaration::LetDeclaration),
+        Const(declaration::ConstDeclaration),
     }
 }
 impl display::NodeDisplay for StatementItem {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            StatementItem::Statement(ref n) => f.node(n),
-            StatementItem::Declaration(ref n) => f.node(n),
+            // Statements
+            StatementItem::Block(ref n) => f.node(n),
+            StatementItem::Variable(ref n) => f.node(n),
+            StatementItem::Empty(ref n) => f.node(n),
+            StatementItem::Expression(ref n) => f.node(n),
+            StatementItem::If(ref n) => f.node(n),
+            StatementItem::For(ref n) => f.node(n),
+            StatementItem::ForIn(ref n) => f.node(n),
+            StatementItem::ForOf(ref n) => f.node(n),
+            StatementItem::ForAwait(ref n) => f.node(n),
+            StatementItem::While(ref n) => f.node(n),
+            StatementItem::DoWhile(ref n) => f.node(n),
+            StatementItem::Switch(ref n) => f.node(n),
+            StatementItem::Continue(ref n) => f.node(n),
+            StatementItem::Break(ref n) => f.node(n),
+            StatementItem::Return(ref n) => f.node(n),
+            StatementItem::With(ref n) => f.node(n),
+            StatementItem::Labelled(ref n) => f.node(n),
+            StatementItem::Throw(ref n) => f.node(n),
+            StatementItem::Try(ref n) => f.node(n),
+            StatementItem::Debugger(ref n) => f.node(n),
+
+            // Declarations
+            StatementItem::Function(ref n) => f.node(n),
+            StatementItem::Class(ref n) => f.node(n),
+            StatementItem::Let(ref n) => f.node(n),
+            StatementItem::Const(ref n) => f.node(n),
+            StatementItem::FlowTypeDeclareModule(ref n) => f.node(n),
+            StatementItem::FlowTypeDeclareFunction(ref n) => f.node(n),
+            StatementItem::FlowTypeDeclareClass(ref n) => f.node(n),
+            StatementItem::FlowTypeDeclareVariable(ref n) => f.node(n),
+            StatementItem::FlowTypeDeclareAlias(ref n) => f.node(n),
+            StatementItem::FlowTypeAlias(ref n) => f.node(n),
+        }
+    }
+}
+impl From<Statement> for StatementItem {
+    fn from(stmt: Statement) -> StatementItem {
+        match stmt {
+            Statement::Block(n) => n.into(),
+            Statement::Variable(n) => n.into(),
+            Statement::Empty(n) => n.into(),
+            Statement::Expression(n) => n.into(),
+            Statement::If(n) => n.into(),
+            Statement::For(n) => n.into(),
+            Statement::ForIn(n) => n.into(),
+            Statement::ForOf(n) => n.into(),
+            Statement::ForAwait(n) => n.into(),
+            Statement::While(n) => n.into(),
+            Statement::DoWhile(n) => n.into(),
+            Statement::Switch(n) => n.into(),
+            Statement::Continue(n) => n.into(),
+            Statement::Break(n) => n.into(),
+            Statement::Return(n) => n.into(),
+            Statement::With(n) => n.into(),
+            Statement::Labelled(n) => n.into(),
+            Statement::Throw(n) => n.into(),
+            Statement::Try(n) => n.into(),
+            Statement::Debugger(n) => n.into(),
         }
     }
 }
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum Declaration {
-        Function(declaration::FunctionDeclaration),
-        Class(declaration::ClassDeclaration),
-        Let(declaration::LetDeclaration),
-        Const(declaration::ConstDeclaration),
-
-        // Flow extension
-        FlowTypeDeclareModule(flow::DeclareModuleDeclaration),
-        FlowTypeDeclareFunction(flow::DeclareFunctionDeclaration),
-        FlowTypeDeclareClass(flow::DeclareClassDeclaration),
-        FlowTypeDeclareVariable(flow::DeclareVariableDeclaration),
-        FlowTypeDeclareAlias(flow::DeclareAliasDeclaration),
-        FlowTypeAlias(flow::AliasDeclaration),
-    }
-}
-impl display::NodeDisplay for Declaration {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            Declaration::Function(ref n) => f.node(n),
-            Declaration::Class(ref n) => f.node(n),
-            Declaration::Let(ref n) => f.node(n),
-            Declaration::Const(ref n) => f.node(n),
-            Declaration::FlowTypeDeclareModule(ref n) => f.node(n),
-            Declaration::FlowTypeDeclareFunction(ref n) => f.node(n),
-            Declaration::FlowTypeDeclareClass(ref n) => f.node(n),
-            Declaration::FlowTypeDeclareVariable(ref n) => f.node(n),
-            Declaration::FlowTypeDeclareAlias(ref n) => f.node(n),
-            Declaration::FlowTypeAlias(ref n) => f.node(n),
-        }
-    }
-}
 custom_derive!{
     #[derive(EnumFromInner)]
     pub enum Statement {
@@ -142,7 +303,7 @@ custom_derive!{
         Break(statement::BreakStatement),
         Return(statement::ReturnStatement),
         With(statement::WithStatement),
-        Labelled(statement::LabelledStatement), // Technically this is only possible with annexB
+        Labelled(statement::LabelledStatement),
         Throw(statement::ThrowStatement),
         Try(statement::TryStatement),
         Debugger(statement::DebuggerStatement),
@@ -212,31 +373,23 @@ custom_derive!{
         Boolean(literal::Boolean),
         Numeric(literal::Numeric),
         String(literal::String),
-
         Function(expression::FunctionExpression),
         Class(expression::ClassExpression),
         Regex(literal::RegularExpressionLiteral),
         Template(expression::TemplateLiteral),
-
         Member(expression::MemberExpression),
         SuperMember(expression::SuperMemberExpression),
         Binary(expression::BinaryExpression),
         Unary(expression::UnaryExpression),
         Update(expression::UpdateExpression),
-
         Call(expression::CallExpression),
         New(expression::NewExpression),
-
         Conditional(expression::ConditionalExpression),
         Assign(expression::AssignmentExpression),
         AssignUpdate(expression::AssignmentUpdateExpression),
         Sequence(expression::SequenceExpression),
         Arrow(expression::ArrowFunctionExpression),
-
         Do(expression::DoExpression),
-
-        FlowTypeCast(flow::CastExpression),
-
         JSX(jsx::Element),
     }
 }
@@ -352,7 +505,6 @@ custom_derive!{
         Let(modules::ExportLetDeclaration),
         Const(modules::ExportConstDeclaration),
         LocalBindings(modules::ExportLocalBindings),
-        FlowDeclaration(flow::AliasDeclaration),
         SourceSpecifiers(modules::ExportSourceSpecifiers),
         SourceSpecifiersFlow(modules::ExportFlowtypeSourceSpecifiers),
         All(modules::ExportAllSpecifiers),
@@ -391,17 +543,17 @@ impl display::NodeDisplay for ExportDeclaration {
 
 custom_derive!{
     #[derive(EnumFromInner)]
-  pub enum ImportDeclaration {
-    Named(modules::ImportNamedDeclaration),
-    NamedAndNamespace(modules::ImportNamedAndNamespaceDeclaration),
-    Namespace(modules::ImportNamespaceDeclaration),
-    NamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
-    Specifiers(modules::ImportSpecifiersDeclaration),
-    NamedType(modules::ImportNamedTypeDeclaration),
-    NamespaceTypeof(modules::ImportNamespaceTypeofDeclaration),
-    NamedAndSpecifiersType(modules::ImportNamedAndSpecifiersTypeDeclaration),
-    SpecifiersType(modules::ImportSpecifiersTypeDeclaration),
-  }
+    pub enum ImportDeclaration {
+        Named(modules::ImportNamedDeclaration),
+        NamedAndNamespace(modules::ImportNamedAndNamespaceDeclaration),
+        Namespace(modules::ImportNamespaceDeclaration),
+        NamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
+        Specifiers(modules::ImportSpecifiersDeclaration),
+        NamedType(modules::ImportNamedTypeDeclaration),
+        NamespaceTypeof(modules::ImportNamespaceTypeofDeclaration),
+        NamedAndSpecifiersType(modules::ImportNamedAndSpecifiersTypeDeclaration),
+        SpecifiersType(modules::ImportSpecifiersTypeDeclaration),
+    }
 }
 impl display::NodeDisplay for ImportDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
