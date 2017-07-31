@@ -100,7 +100,7 @@ nodes!{
 
     pub enum ObjectProperty {
         Method(ObjectMethod),
-        Value(misc::PropertyId, Box<alias::Expression>),
+        Value(misc::PropertyName, Box<alias::Expression>),
     }
     impl display::NodeDisplay for ObjectProperty {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -121,7 +121,7 @@ nodes!{
 
     pub struct ObjectMethod {
         kind: misc::MethodKind,
-        id: misc::PropertyId,
+        id: misc::PropertyName,
         params: misc::FunctionParams,
         body: misc::FunctionBody,
         fn_kind: misc::FunctionKind,
@@ -354,7 +354,7 @@ nodes!{
 
 
     pub enum MemberProperty {
-        Normal(misc::PropertyId),
+        Normal(misc::PropertyAccess),
         Private(PrivateProperty),
     }
     impl display::NodeDisplay for MemberProperty {
@@ -969,7 +969,7 @@ nodes!{
     // super.foo
     // super[foo]
     pub struct SuperMemberExpression {
-        property: misc::PropertyId,
+        property: misc::PropertyAccess,
     }
     impl display::NodeDisplay for SuperMemberExpression {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {

@@ -294,7 +294,7 @@ nodes!{
   }
   pub enum ObjectPatternProperty {
     Identifier(BindingIdentifier, Option<alias::Expression>),
-    Pattern(PropertyId, LeftHandComplexAssign, Option<alias::Expression>),
+    Pattern(PropertyName, LeftHandComplexAssign, Option<alias::Expression>),
   }
   impl display::NodeDisplay for ObjectPatternProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -514,33 +514,54 @@ nodes!{
     AsyncGenerator, // experimental
   }
 
+
   pub enum MethodKind {
     Normal,
     Get,
     Set,
   }
-  pub enum PropertyId {
+
+
+  pub enum PropertyName {
     Literal(PropertyIdentifier),
     String(String),
     Number(Numeric),
     Computed(Box<alias::Expression>),
   }
-  impl display::NodeDisplay for PropertyId {
+  impl display::NodeDisplay for PropertyName {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
       match *self {
-        PropertyId::Literal(ref id) => {
+        PropertyName::Literal(ref id) => {
+          f.node(id)
+        }
+        PropertyName::String(ref id) => {
+          f.node(id)
+        }
+        PropertyName::Number(ref id) => {
+          f.node(id)
+        }
+        PropertyName::Computed(ref expr) => {
+          let mut f = f.allow_in();
+          f.token(display::Token::SquareL)?;
+          f.require_precedence(display::Precedence::Assignment).node(expr)?;
+          f.token(display::Token::SquareR)
+        }
+      }
+    }
+  }
+
+  pub enum PropertyAccess {
+    Literal(PropertyIdentifier),
+    Computed(Box<alias::Expression>),
+  }
+  impl display::NodeDisplay for PropertyAccess {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+      match *self {
+        PropertyAccess::Literal(ref id) => {
           f.token(display::Token::Period)?;
           f.node(id)
         }
-        PropertyId::String(ref id) => {
-          f.token(display::Token::Period)?;
-          f.node(id)
-        }
-        PropertyId::Number(ref id) => {
-          f.token(display::Token::Period)?;
-          f.node(id)
-        }
-        PropertyId::Computed(ref expr) => {
+        PropertyAccess::Computed(ref expr) => {
           let mut f = f.allow_in();
           f.token(display::Token::SquareL)?;
           f.require_precedence(display::Precedence::Assignment).node(expr)?;
@@ -583,7 +604,7 @@ nodes!{
 
   // experimental
   pub enum ClassFieldId {
-    Public(PropertyId),
+    Public(PropertyName),
     Private(PropertyIdentifier),
   }
   impl display::NodeDisplay for ClassFieldId {
