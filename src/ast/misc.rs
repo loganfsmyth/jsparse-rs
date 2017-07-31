@@ -119,6 +119,7 @@ nodes!{
   }
   impl display::NodeDisplay for Script {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	let mut f = f.allow_in();
     	for d in self.directives.iter() {
     		f.node(d)?;
     	}
@@ -136,6 +137,7 @@ nodes!{
   }
   impl display::NodeDisplay for Module {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	let mut f = f.allow_in();
     	for d in self.directives.iter() {
     		f.node(d)?;
     	}
@@ -387,6 +389,8 @@ nodes!{
   }
   impl display::NodeDisplay for FunctionBody {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	let mut f = f.allow_in();
+
     	for d in self.directives.iter() {
     		f.node(d)?;
     	}

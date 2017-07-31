@@ -13,6 +13,8 @@ nodes!{
 	}
   impl display::NodeDisplay for BlockStatement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	let mut f = f.allow_in();
+
     	f.token(display::Token::CurlyL)?;
     	for item in self.body.iter() {
     		f.node(item)?;
@@ -371,14 +373,21 @@ nodes!{
 	}
   impl display::NodeDisplay for SwitchCase {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+	    let mut f = f.allow_in();
+
     	if let Some(ref expr) = self.test {
-	    	let mut f = f.allow_in();
     		f.token(display::Token::Case)?;
     		f.require_precedence(display::Precedence::Normal).node(expr)?;
     	} else {
     		f.token(display::Token::Default)?;
     	}
-    	f.token(display::Token::Colon)
+    	f.token(display::Token::Colon)?;
+
+    	for stmt in self.consequent.iter() {
+    		f.node(stmt)?;
+    	}
+
+    	Ok(())
     }
   }
 

@@ -22,8 +22,6 @@ impl<T: display::NodeDisplay> display::NodeDisplay for DeclaratorList<T> {
     }
 }
 
-// TODO: Let/Const/Var declarations in standard locations always allow "in" operator
-
 nodes!{
 	// let foo, bar;
 	pub struct LetDeclaration {
