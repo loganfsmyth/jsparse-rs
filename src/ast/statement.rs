@@ -15,11 +15,11 @@ nodes!{
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             let mut f = f.allow_in();
 
-            f.token(display::Token::CurlyL)?;
+            f.punctuator(display::Punctuator::CurlyL)?;
             for item in self.body.iter() {
                 f.node(item)?;
             }
-            f.token(display::Token::CurlyR)
+            f.punctuator(display::Punctuator::CurlyR)
         }
     }
     impl misc::HasOrphanIf for BlockStatement {}
@@ -62,7 +62,7 @@ nodes!{
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             f.node(&self.id);
             if let Some(ref init) = self.init {
-                f.token(display::Token::Eq)?;
+                f.punctuator(display::Punctuator::Eq)?;
                 f.require_precedence(display::Precedence::Assignment).node(init)?;
             }
             Ok(())
@@ -83,7 +83,7 @@ nodes!{
             } else {
                 f.wrap_parens().node(&self.expression)?;
             }
-            f.token(display::Token::Semicolon)
+            f.punctuator(display::Punctuator::Semicolon)
         }
     }
     impl misc::HasOrphanIf for ExpressionStatement {}
@@ -97,18 +97,18 @@ nodes!{
     }
     impl display::NodeDisplay for IfStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::If)?;
-            f.token(display::Token::ParenL)?;
+            f.keyword(display::Keyword::If)?;
+            f.punctuator(display::Punctuator::ParenL)?;
             {
                 let mut f = f.allow_in();
                 f.require_precedence(display::Precedence::Normal).node(&self.test)?;
             }
-            f.token(display::Token::ParenR)?;
+            f.punctuator(display::Punctuator::ParenR)?;
 
             if self.consequent.orphan_if() {
-                f.token(display::Token::CurlyL)?;
+                f.punctuator(display::Punctuator::CurlyL)?;
                 f.node(&self.consequent)?;
-                f.token(display::Token::CurlyR)?;
+                f.punctuator(display::Punctuator::CurlyR)?;
             } else {
                 f.node(&self.consequent)?;
             }
@@ -135,22 +135,22 @@ nodes!{
     }
     impl display::NodeDisplay for ForStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::For)?;
-            f.token(display::Token::ParenL)?;
+            f.keyword(display::Keyword::For)?;
+            f.punctuator(display::Punctuator::ParenL)?;
             if let Some(ref init) = self.init {
                 f.node(init)?;
             }
-            f.token(display::Token::Semicolon)?;
+            f.punctuator(display::Punctuator::Semicolon)?;
             if let Some(ref test) = self.test {
                 let mut f = f.allow_in();
                 f.require_precedence(display::Precedence::Normal).node(test)?;
             }
-            f.token(display::Token::Semicolon)?;
+            f.punctuator(display::Punctuator::Semicolon)?;
             if let Some(ref update) = self.update {
                 let mut f = f.allow_in();
                 f.require_precedence(display::Precedence::Normal).node(update)?;
             }
-            f.token(display::Token::ParenR)?;
+            f.punctuator(display::Punctuator::ParenR)?;
             f.node(&self.body)
         }
     }
@@ -193,15 +193,15 @@ nodes!{
     }
     impl display::NodeDisplay for ForInStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::For)?;
-            f.token(display::Token::ParenL)?;
+            f.keyword(display::Keyword::For)?;
+            f.punctuator(display::Punctuator::ParenL)?;
             f.node(&self.left)?;
-            f.token(display::Token::In)?;
+            f.keyword(display::Keyword::In)?;
             {
                 let mut f = f.allow_in();
                 f.require_precedence(display::Precedence::Normal).node(&self.right)?;
             }
-            f.token(display::Token::ParenR)?;
+            f.punctuator(display::Punctuator::ParenR)?;
 
             f.node(&self.body)
         }
@@ -243,12 +243,12 @@ nodes!{
     }
     impl display::NodeDisplay for ForOfStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::For)?;
-            f.token(display::Token::ParenL)?;
+            f.keyword(display::Keyword::For)?;
+            f.punctuator(display::Punctuator::ParenL)?;
             f.node(&self.left)?;
-            f.token(display::Token::Of)?;
+            f.keyword(display::Keyword::Of)?;
             f.require_precedence(display::Precedence::Normal).node(&self.right)?;
-            f.token(display::Token::ParenR)?;
+            f.punctuator(display::Punctuator::ParenR)?;
 
             f.node(&self.body)
         }
@@ -268,16 +268,16 @@ nodes!{
     }
     impl display::NodeDisplay for ForAwaitStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::For)?;
-            f.token(display::Token::Await)?;
-            f.token(display::Token::ParenL)?;
+            f.keyword(display::Keyword::For)?;
+            f.keyword(display::Keyword::Await)?;
+            f.punctuator(display::Punctuator::ParenL)?;
             f.node(&self.left)?;
-            f.token(display::Token::In)?;
+            f.keyword(display::Keyword::In)?;
             {
                 let mut f = f.allow_in();
                 f.require_precedence(display::Precedence::Normal).node(&self.right)?;
             }
-            f.token(display::Token::ParenR)?;
+            f.punctuator(display::Punctuator::ParenR)?;
 
             f.node(&self.body)
         }
@@ -318,13 +318,13 @@ nodes!{
     }
     impl display::NodeDisplay for WhileStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::While)?;
-            f.token(display::Token::ParenL)?;
+            f.keyword(display::Keyword::While)?;
+            f.punctuator(display::Punctuator::ParenL)?;
             {
                 let mut f = f.allow_in();
                 f.require_precedence(display::Precedence::Normal).node(&self.test)?;
             }
-            f.token(display::Token::ParenR)?;
+            f.punctuator(display::Punctuator::ParenR)?;
             f.node(&self.body)
         }
     }
@@ -342,17 +342,17 @@ nodes!{
     }
     impl display::NodeDisplay for DoWhileStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Do)?;
+            f.keyword(display::Keyword::Do)?;
 
             f.node(&self.body)?;
-            f.token(display::Token::While)?;
-            f.token(display::Token::ParenL)?;
+            f.keyword(display::Keyword::While)?;
+            f.punctuator(display::Punctuator::ParenL)?;
             {
                 let mut f = f.allow_in();
                 f.require_precedence(display::Precedence::Normal).node(&self.test)?;
             }
-            f.token(display::Token::ParenR)?;
-            f.token(display::Token::Semicolon)
+            f.punctuator(display::Punctuator::ParenR)?;
+            f.punctuator(display::Punctuator::Semicolon)
         }
     }
     impl misc::HasOrphanIf for DoWhileStatement {}
@@ -365,18 +365,18 @@ nodes!{
     }
     impl display::NodeDisplay for SwitchStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Switch)?;
-            f.token(display::Token::ParenL)?;
+            f.keyword(display::Keyword::Switch)?;
+            f.punctuator(display::Punctuator::ParenL)?;
             {
                 let mut f = f.allow_in();
                 f.require_precedence(display::Precedence::Normal).node(&self.discriminant)?;
             }
-            f.token(display::Token::ParenR)?;
-            f.token(display::Token::CurlyL)?;
+            f.punctuator(display::Punctuator::ParenR)?;
+            f.punctuator(display::Punctuator::CurlyL)?;
             for c in self.cases.iter() {
                 f.node(c)?;
             }
-            f.token(display::Token::CurlyR)
+            f.punctuator(display::Punctuator::CurlyR)
         }
     }
     impl misc::HasOrphanIf for SwitchStatement {}
@@ -393,12 +393,12 @@ nodes!{
             let mut f = f.allow_in();
 
             if let Some(ref expr) = self.test {
-                f.token(display::Token::Case)?;
+                f.keyword(display::Keyword::Case)?;
                 f.require_precedence(display::Precedence::Normal).node(expr)?;
             } else {
-                f.token(display::Token::Default)?;
+                f.keyword(display::Keyword::Default)?;
             }
-            f.token(display::Token::Colon)?;
+            f.punctuator(display::Punctuator::Colon)?;
 
             for stmt in self.consequent.iter() {
                 f.node(stmt)?;
@@ -416,10 +416,10 @@ nodes!{
     }
     impl display::NodeDisplay for WithStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::With)?;
-            f.token(display::Token::ParenL)?;
+            f.keyword(display::Keyword::With)?;
+            f.punctuator(display::Punctuator::ParenL)?;
             f.require_precedence(display::Precedence::Normal).node(&self.object)?;
-            f.token(display::Token::ParenR)?;
+            f.punctuator(display::Punctuator::ParenR)?;
             f.node(&self.body)
         }
     }
@@ -438,7 +438,7 @@ nodes!{
     impl display::NodeDisplay for LabelledStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             f.node(&self.label)?;
-            f.token(display::Token::Colon)?;
+            f.punctuator(display::Punctuator::Colon)?;
             f.node(&self.body)
         }
     }
@@ -456,7 +456,7 @@ nodes!{
     impl display::NodeDisplay for ThrowStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             let mut f = f.allow_in();
-            f.token(display::Token::Throw)?;
+            f.keyword(display::Keyword::Throw)?;
             f.require_precedence(display::Precedence::Normal).node(&self.argument)?;
 
             Ok(())
@@ -472,7 +472,7 @@ nodes!{
     }
     impl display::NodeDisplay for TryCatchStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Try)?;
+            f.keyword(display::Keyword::Try)?;
             f.node(&self.block)?;
             f.node(&self.handler)
         }
@@ -488,12 +488,12 @@ nodes!{
     }
     impl display::NodeDisplay for TryCatchFinallyStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Try)?;
+            f.keyword(display::Keyword::Try)?;
             f.node(&self.block)?;
 
             f.node(&self.handler)?;
 
-            f.token(display::Token::Finally)?;
+            f.keyword(display::Keyword::Finally)?;
             f.node(&self.finalizer)
         }
     }
@@ -507,10 +507,10 @@ nodes!{
     }
     impl display::NodeDisplay for TryFinallyStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Try)?;
+            f.keyword(display::Keyword::Try)?;
             f.node(&self.block)?;
 
-            f.token(display::Token::Finally)?;
+            f.keyword(display::Keyword::Finally)?;
             f.node(&self.finalizer)
         }
     }
@@ -524,11 +524,11 @@ nodes!{
     }
     impl display::NodeDisplay for CatchClause {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Catch)?;
+            f.keyword(display::Keyword::Catch)?;
             if let Some(ref pat) = self.param {
-                f.token(display::Token::ParenL)?;
+                f.punctuator(display::Punctuator::ParenL)?;
                 f.node(pat)?;
-                f.token(display::Token::ParenR)?;
+                f.punctuator(display::Punctuator::ParenR)?;
             }
             f.node(&self.body)
         }
@@ -542,7 +542,7 @@ nodes!{
     }
     impl display::NodeDisplay for ContinueStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Continue)?;
+            f.keyword(display::Keyword::Continue)?;
             if let Some(ref label) = self.label {
                 f.node(label)?;
             }
@@ -559,7 +559,7 @@ nodes!{
     }
     impl display::NodeDisplay for BreakStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Break)?;
+            f.keyword(display::Keyword::Break)?;
             if let Some(ref label) = self.label {
                 f.node(label)?;
             }
@@ -576,7 +576,7 @@ nodes!{
     }
     impl display::NodeDisplay for ReturnStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Return)?;
+            f.keyword(display::Keyword::Return)?;
             if let Some(ref expr) = self.argument {
                 let mut f = f.allow_in();
                 f.require_precedence(display::Precedence::Normal).node(expr)?;
@@ -591,8 +591,8 @@ nodes!{
     pub struct DebuggerStatement {}
     impl display::NodeDisplay for DebuggerStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Debugger)?;
-            f.token(display::Token::Semicolon)
+            f.keyword(display::Keyword::Debugger)?;
+            f.punctuator(display::Punctuator::Semicolon)
         }
     }
     impl misc::HasOrphanIf for DebuggerStatement {}
@@ -601,7 +601,7 @@ nodes!{
     pub struct EmptyStatement {}
     impl display::NodeDisplay for EmptyStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Semicolon)
+            f.punctuator(display::Punctuator::Semicolon)
         }
     }
     impl misc::HasOrphanIf for EmptyStatement {}

@@ -32,7 +32,7 @@ nodes!{
                 }
                 ImportSpecifier::NamedAndAliased(ref module, ref id) => {
                     f.node(module)?;
-                    f.token(display::Token::As)?;
+                    f.keyword(display::Keyword::As)?;
                     f.node(id)
                 }
             }
@@ -46,9 +46,9 @@ nodes!{
     }
     impl display::NodeDisplay for ImportNamedDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Import)?;
+            f.keyword(display::Keyword::Import)?;
             f.node(&self.default)?;
-            f.token(display::Token::From)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -62,13 +62,13 @@ nodes!{
     }
     impl display::NodeDisplay for ImportNamedAndNamespaceDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Import)?;
+            f.keyword(display::Keyword::Import)?;
             f.node(&self.default)?;
-            f.token(display::Token::Comma)?;
-            f.token(display::Token::Star)?;
-            f.token(display::Token::As)?;
+            f.punctuator(display::Punctuator::Comma)?;
+            f.punctuator(display::Punctuator::Star)?;
+            f.keyword(display::Keyword::As)?;
             f.node(&self.namespace)?;
-            f.token(display::Token::From)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -81,11 +81,11 @@ nodes!{
     }
     impl display::NodeDisplay for ImportNamespaceDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Import)?;
-            f.token(display::Token::Star)?;
-            f.token(display::Token::As)?;
+            f.keyword(display::Keyword::Import)?;
+            f.punctuator(display::Punctuator::Star)?;
+            f.keyword(display::Keyword::As)?;
             f.node(&self.namespace)?;
-            f.token(display::Token::From)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -100,13 +100,13 @@ nodes!{
     }
     impl display::NodeDisplay for ImportNamedAndSpecifiersDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Import)?;
+            f.keyword(display::Keyword::Import)?;
             f.node(&self.default)?;
-            f.token(display::Token::Comma)?;
-            f.token(display::Token::CurlyL)?;
+            f.punctuator(display::Punctuator::Comma)?;
+            f.punctuator(display::Punctuator::CurlyL)?;
             f.comma_list(&self.specifiers)?;
-            f.token(display::Token::CurlyR)?;
-            f.token(display::Token::From)?;
+            f.punctuator(display::Punctuator::CurlyR)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -120,11 +120,11 @@ nodes!{
     }
     impl display::NodeDisplay for ImportSpecifiersDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Import)?;
-            f.token(display::Token::CurlyL)?;
+            f.keyword(display::Keyword::Import)?;
+            f.punctuator(display::Punctuator::CurlyL)?;
             f.comma_list(&self.specifiers)?;
-            f.token(display::Token::CurlyR)?;
-            f.token(display::Token::From)?;
+            f.punctuator(display::Punctuator::CurlyR)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -139,9 +139,9 @@ nodes!{
     }
     impl display::NodeDisplay for ExportDefaultFunctionDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
-            f.token(display::Token::Default)?;
-            f.token(display::Token::Function)?;
+            f.keyword(display::Keyword::Export)?;
+            f.keyword(display::Keyword::Default)?;
+            f.keyword(display::Keyword::Function)?;
             if let Some(ref id) = self.id {
                 f.node(id)?;
             }
@@ -160,14 +160,14 @@ nodes!{
     }
     impl display::NodeDisplay for ExportDefaultClassDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
-            f.token(display::Token::Default)?;
-            f.token(display::Token::Class)?;
+            f.keyword(display::Keyword::Export)?;
+            f.keyword(display::Keyword::Default)?;
+            f.keyword(display::Keyword::Class)?;
             if let Some(ref id) = self.id {
                 f.node(id)?;
             }
             if let Some(ref extends) = self.extends {
-                f.token(display::Token::Extends)?;
+                f.keyword(display::Keyword::Extends)?;
                 f.require_precedence(display::Precedence::LeftHand).node(extends)?;
             }
             f.node(&self.body)
@@ -182,15 +182,15 @@ nodes!{
     impl display::NodeDisplay for ExportDefaultExpression {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             let mut f = f.allow_in();
-            f.token(display::Token::Export)?;
-            f.token(display::Token::Default)?;
+            f.keyword(display::Keyword::Export)?;
+            f.keyword(display::Keyword::Default)?;
 
             if let misc::SpecialToken::Declaration = self.expression.first_special_token() {
                 f.wrap_parens().node(&self.expression)?;
             } else {
                 f.require_precedence(display::Precedence::Assignment).node(&self.expression)?;
             }
-            f.token(display::Token::Semicolon)
+            f.punctuator(display::Punctuator::Semicolon)
         }
     }
 
@@ -201,7 +201,7 @@ nodes!{
     }
     impl display::NodeDisplay for ExportClassDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
+            f.keyword(display::Keyword::Export)?;
 
             f.node(&self.exported)
         }
@@ -214,7 +214,7 @@ nodes!{
     }
     impl display::NodeDisplay for ExportFunctionDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
+            f.keyword(display::Keyword::Export)?;
 
             f.node(&self.exported)
         }
@@ -227,7 +227,7 @@ nodes!{
     }
     impl display::NodeDisplay for ExportVarStatement {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
+            f.keyword(display::Keyword::Export)?;
 
             f.node(&self.exported)
         }
@@ -240,7 +240,7 @@ nodes!{
     }
     impl display::NodeDisplay for ExportLetDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
+            f.keyword(display::Keyword::Export)?;
 
             f.node(&self.exported)
         }
@@ -253,7 +253,7 @@ nodes!{
     }
     impl display::NodeDisplay for ExportConstDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
+            f.keyword(display::Keyword::Export)?;
 
             f.node(&self.exported)
         }
@@ -267,10 +267,10 @@ nodes!{
     }
     impl display::NodeDisplay for ExportLocalBindings {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
-            f.token(display::Token::CurlyL)?;
+            f.keyword(display::Keyword::Export)?;
+            f.punctuator(display::Punctuator::CurlyL)?;
             f.comma_list(&self.specifiers)?;
-            f.token(display::Token::CurlyR)
+            f.punctuator(display::Punctuator::CurlyR)
         }
     }
 
@@ -285,7 +285,7 @@ nodes!{
                 LocalExportSpecifier::Named(ref id) => f.node(id),
                 LocalExportSpecifier::NamedAndAliased(ref id, ref mod_id) => {
                     f.node(id)?;
-                    f.token(display::Token::As)?;
+                    f.keyword(display::Keyword::As)?;
                     f.node(mod_id)
                 }
             }
@@ -301,13 +301,13 @@ nodes!{
     }
     impl display::NodeDisplay for ExportSourceSpecifiers {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
+            f.keyword(display::Keyword::Export)?;
 
-            f.token(display::Token::CurlyL)?;
+            f.punctuator(display::Punctuator::CurlyL)?;
             f.comma_list(&self.specifiers)?;
-            f.token(display::Token::CurlyR)?;
+            f.punctuator(display::Punctuator::CurlyR)?;
 
-            f.token(display::Token::From)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -323,7 +323,7 @@ nodes!{
                 SourceExportSpecifier::Named(ref id) => f.node(id),
                 SourceExportSpecifier::NamedAndAliased(ref id, ref mod_id) => {
                     f.node(id)?;
-                    f.token(display::Token::As)?;
+                    f.keyword(display::Keyword::As)?;
                     f.node(mod_id)
                 }
             }
@@ -337,9 +337,9 @@ nodes!{
     }
     impl display::NodeDisplay for ExportAllSpecifiers {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
-            f.token(display::Token::Star)?;
-            f.token(display::Token::From)?;
+            f.keyword(display::Keyword::Export)?;
+            f.punctuator(display::Punctuator::Star)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -352,9 +352,9 @@ nodes!{
     }
     impl display::NodeDisplay for ExportNamedSpecifier {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
+            f.keyword(display::Keyword::Export)?;
             f.node(&self.default)?;
-            f.token(display::Token::From)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -368,13 +368,13 @@ nodes!{
     }
     impl display::NodeDisplay for ExportNamedAndNamespace {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
+            f.keyword(display::Keyword::Export)?;
             f.node(&self.default)?;
-            f.token(display::Token::Comma)?;
-            f.token(display::Token::Star)?;
-            f.token(display::Token::As)?;
+            f.punctuator(display::Punctuator::Comma)?;
+            f.punctuator(display::Punctuator::Star)?;
+            f.keyword(display::Keyword::As)?;
             f.node(&self.namespace)?;
-            f.token(display::Token::From)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -387,11 +387,11 @@ nodes!{
     }
     impl display::NodeDisplay for ExportNamespace {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
-            f.token(display::Token::Star)?;
-            f.token(display::Token::As)?;
+            f.keyword(display::Keyword::Export)?;
+            f.punctuator(display::Punctuator::Star)?;
+            f.keyword(display::Keyword::As)?;
             f.node(&self.namespace)?;
-            f.token(display::Token::From)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }
@@ -406,15 +406,15 @@ nodes!{
     }
     impl display::NodeDisplay for ExportNamedAndSpecifiers {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Export)?;
+            f.keyword(display::Keyword::Export)?;
             f.node(&self.default)?;
-            f.token(display::Token::Comma)?;
+            f.punctuator(display::Punctuator::Comma)?;
 
-            f.token(display::Token::CurlyL)?;
+            f.punctuator(display::Punctuator::CurlyL)?;
             f.comma_list(&self.specifiers)?;
-            f.token(display::Token::CurlyR)?;
+            f.punctuator(display::Punctuator::CurlyR)?;
 
-            f.token(display::Token::From)?;
+            f.keyword(display::Keyword::From)?;
             f.node(&self.source)
         }
     }

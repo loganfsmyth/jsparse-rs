@@ -270,21 +270,21 @@ nodes!{
   }
   impl display::NodeDisplay for ObjectPattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::CurlyL)?;
+      f.punctuator(display::Punctuator::CurlyL)?;
 
       f.comma_list(&self.properties)?;
 
       if let Some(ref p) = self.rest {
         if !self.properties.is_empty() {
-          f.token(display::Token::Comma)?;
+          f.punctuator(display::Punctuator::Comma)?;
         }
 
-        f.token(display::Token::Ellipsis)?;
+        f.punctuator(display::Punctuator::Ellipsis)?;
 
         f.node(p)?;
       }
 
-      f.token(display::Token::CurlyR)
+      f.punctuator(display::Punctuator::CurlyR)
     }
   }
   impl FirstSpecialToken for ObjectPattern {
@@ -292,6 +292,8 @@ nodes!{
       SpecialToken::Object
     }
   }
+
+
   pub enum ObjectPatternProperty {
     Identifier(BindingIdentifier, Option<alias::Expression>),
     Pattern(PropertyName, LeftHandComplexAssign, Option<alias::Expression>),
@@ -304,7 +306,7 @@ nodes!{
           if let Some(ref expr) = *expr {
             let mut f = f.allow_in();
 
-            f.token(display::Token::Eq)?;
+            f.punctuator(display::Punctuator::Eq)?;
             f.require_precedence(display::Precedence::Assignment).node(expr)?;
           }
 
@@ -312,12 +314,12 @@ nodes!{
         }
         ObjectPatternProperty::Pattern(ref prop, ref pattern, ref expr) => {
           f.node(prop)?;
-          f.token(display::Token::Colon)?;
+          f.punctuator(display::Punctuator::Colon)?;
           f.node(pattern)?;
           if let Some(ref expr) = *expr {
             let mut f = f.allow_in();
 
-            f.token(display::Token::Eq)?;
+            f.punctuator(display::Punctuator::Eq)?;
             f.require_precedence(display::Precedence::Assignment).node(expr)?;
           }
 
@@ -335,11 +337,11 @@ nodes!{
   }
   impl display::NodeDisplay for ArrayPattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::SquareL)?;
+      f.punctuator(display::Punctuator::SquareL)?;
 
       for (i, prop) in self.items.iter().enumerate() {
         if i != 0 {
-          f.token(display::Token::Comma)?;
+          f.punctuator(display::Punctuator::Comma)?;
         }
 
         if let Some(ref prop) = *prop {
@@ -349,18 +351,19 @@ nodes!{
 
       if let Some(ref p) = self.rest {
         if !self.items.is_empty() {
-          f.token(display::Token::Comma)?;
+          f.punctuator(display::Punctuator::Comma)?;
         }
 
-        f.token(display::Token::Ellipsis)?;
+        f.punctuator(display::Punctuator::Ellipsis)?;
 
         f.node(p)?;
       }
 
-      f.token(display::Token::SquareR)
+      f.punctuator(display::Punctuator::SquareR)
     }
   }
   impl FirstSpecialToken for ArrayPattern {}
+
 
   pub struct ArrayPatternElement {
     id: LeftHandComplexAssign,
@@ -371,16 +374,15 @@ nodes!{
       f.node(&self.id)?;
 
       if let Some(ref init) = self.init {
-        let mut f = f.allow_in();
+        // let mut f = f;
 
-        f.token(display::Token::Eq)?;
-        f.require_precedence(display::Precedence::Assignment).node(init)?;
+        f.punctuator(display::Punctuator::Eq)?;
+        f.allow_in().require_precedence(display::Precedence::Assignment).node(init)?;
       }
 
       Ok(())
     }
   }
-
 
 
   pub struct FunctionBody {
@@ -403,6 +405,7 @@ nodes!{
     }
   }
 
+
   // experimental
   pub enum Decorator {
     Property(DecoratorMemberExpression),
@@ -413,7 +416,7 @@ nodes!{
   }
   impl display::NodeDisplay for Decorator {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::At)?;
+      f.keyword(display::Keyword::At)?;
 
       match *self {
         Decorator::Property(ref expr) => f.node(expr),
@@ -434,7 +437,7 @@ nodes!{
         DecoratorMemberExpression::Identifier(ref id) => f.node(id),
         DecoratorMemberExpression::Member(ref member, ref id) => {
           f.node(member)?;
-          f.token(display::Token::Period)?;
+          f.punctuator(display::Punctuator::Period)?;
           f.node(id)
         },
       }
@@ -458,16 +461,16 @@ nodes!{
   }
   impl display::NodeDisplay for CallArguments {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::ParenL)?;
+      f.punctuator(display::Punctuator::ParenL)?;
 
       f.comma_list(&self.args)?;
 
       if let Some(ref spread) = self.spread {
-        f.token(display::Token::Comma)?;
+        f.punctuator(display::Punctuator::Comma)?;
         f.require_precedence(display::Precedence::Assignment).node(spread)?;
       }
 
-      f.token(display::Token::ParenR)
+      f.punctuator(display::Punctuator::ParenR)
     }
   }
 
@@ -477,19 +480,19 @@ nodes!{
   }
   impl display::NodeDisplay for ClassBody {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::CurlyL)?;
+      f.punctuator(display::Punctuator::CurlyL)?;
 
       for item in self.items.iter() {
         f.node(item)?;
       }
 
-      f.token(display::Token::CurlyR)
+      f.punctuator(display::Punctuator::CurlyR)
     }
   }
   pub struct ClassEmpty {}
   impl display::NodeDisplay for ClassEmpty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-      f.token(display::Token::Semicolon)
+      f.punctuator(display::Punctuator::Semicolon)
     }
   }
   pub enum ClassItem {
@@ -542,9 +545,9 @@ nodes!{
         }
         PropertyName::Computed(ref expr) => {
           let mut f = f.allow_in();
-          f.token(display::Token::SquareL)?;
+          f.punctuator(display::Punctuator::SquareL)?;
           f.require_precedence(display::Precedence::Assignment).node(expr)?;
-          f.token(display::Token::SquareR)
+          f.punctuator(display::Punctuator::SquareR)
         }
       }
     }
@@ -558,14 +561,14 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
       match *self {
         PropertyAccess::Literal(ref id) => {
-          f.token(display::Token::Period)?;
+          f.punctuator(display::Punctuator::Period)?;
           f.node(id)
         }
         PropertyAccess::Computed(ref expr) => {
           let mut f = f.allow_in();
-          f.token(display::Token::SquareL)?;
+          f.punctuator(display::Punctuator::SquareL)?;
           f.require_precedence(display::Precedence::Assignment).node(expr)?;
-          f.token(display::Token::SquareR)
+          f.punctuator(display::Punctuator::SquareR)
         }
       }
     }
@@ -587,7 +590,7 @@ nodes!{
       }
 
       if let FieldPosition::Static = self.pos {
-        f.token(display::Token::Static)?;
+        f.keyword(display::Keyword::Static)?;
       }
 
       f.node(&self.id)?;
@@ -631,13 +634,13 @@ nodes!{
       }
 
       if let FieldPosition::Static = self.pos {
-        f.token(display::Token::Static)?;
+        f.keyword(display::Keyword::Static)?;
       }
 
       f.node(&self.id)?;
 
       if let Some(ref val) = self.value {
-        f.token(display::Token::Eq)?;
+        f.punctuator(display::Punctuator::Eq)?;
         f.require_precedence(display::Precedence::Assignment).node(val)?;
       }
 
@@ -657,10 +660,10 @@ nodes!{
 
       if let Some(ref param) = self.rest {
         if !self.params.is_empty() {
-          f.token(display::Token::Comma)?;
+          f.punctuator(display::Punctuator::Comma)?;
         }
 
-        f.token(display::Token::Ellipsis)?;
+        f.punctuator(display::Punctuator::Ellipsis)?;
         f.node(param)?;
       }
       Ok(())

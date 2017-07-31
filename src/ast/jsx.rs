@@ -13,37 +13,35 @@ nodes!{
     }
     impl display::NodeDisplay for Element {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::AngleL)?;
+            f.punctuator(display::Punctuator::AngleL)?;
             f.node(&self.opening)?;
 
             for attr in self.attributes.iter() {
-                f.space()?;
                 f.node(attr)?;
             }
 
             if self.children.len() > 0 {
-                f.token(display::Token::AngleR)?;
+                f.punctuator(display::Punctuator::AngleR)?;
 
                 for child in self.children.iter() {
                     f.node(child)?;
                 }
 
-                f.token(display::Token::AngleSlash)?;
+                f.punctuator(display::Punctuator::AngleSlash)?;
                 if let Some(ref close) = self.closing {
                     f.node(close)?;
                 } else {
                     f.node(&self.opening)?;
                 }
-                f.token(display::Token::AngleR)?;
+                f.punctuator(display::Punctuator::AngleR)?;
             } else {
                 if let Some(ref close) = self.closing {
-                    f.token(display::Token::AngleR)?;
-                    f.token(display::Token::AngleSlash)?;
+                    f.punctuator(display::Punctuator::AngleR)?;
+                    f.punctuator(display::Punctuator::AngleSlash)?;
                     f.node(close)?;
-                    f.token(display::Token::AngleR)?;
+                    f.punctuator(display::Punctuator::AngleR)?;
                 } else {
-                    f.space();
-                    f.token(display::Token::SlashAngle)?;
+                    f.punctuator(display::Punctuator::SlashAngle)?;
                 }
             }
 
@@ -96,7 +94,7 @@ nodes!{
                 MemberObject::Identifier(ref id) => f.node(id)?,
                 MemberObject::Member(ref id) => f.node(id)?,
             }
-            f.token(display::Token::Period)?;
+            f.punctuator(display::Punctuator::Period)?;
             f.node(&self.property)
         }
     }
@@ -114,7 +112,7 @@ nodes!{
     impl display::NodeDisplay for NamespacedName {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             f.node(&self.namespace)?;
-            f.token(display::Token::Colon)?;
+            f.punctuator(display::Punctuator::Colon)?;
             f.node(&self.name)
         }
     }
@@ -153,10 +151,10 @@ nodes!{
     }
     impl display::NodeDisplay for SpreadAttribute {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::CurlyL)?;
-            f.token(display::Token::Ellipsis)?;
+            f.punctuator(display::Punctuator::CurlyL)?;
+            f.punctuator(display::Punctuator::Ellipsis)?;
             f.require_precedence(display::Precedence::Assignment).node(&self.argument)?;
-            f.token(display::Token::CurlyR)
+            f.punctuator(display::Punctuator::CurlyR)
         }
     }
 
@@ -169,10 +167,10 @@ nodes!{
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             f.node(&self.name)?;
             if let Some(ref value) = self.value {
-                f.token(display::Token::Eq)?;
+                f.punctuator(display::Punctuator::Eq)?;
                 f.node(value)?;
             }
-                Ok(())
+            Ok(())
         }
     }
 
@@ -216,21 +214,21 @@ nodes!{
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             match *self {
                 Child::Empty => {
-                    f.token(display::Token::CurlyL)?;
-                    f.token(display::Token::CurlyR)
+                    f.punctuator(display::Punctuator::CurlyL)?;
+                    f.punctuator(display::Punctuator::CurlyR)
                 }
                 Child::Text(ref t) => f.node(t),
                 Child::Element(ref t) => f.node(t),
                 Child::Expression(ref t) => {
-                    f.token(display::Token::CurlyL)?;
+                    f.punctuator(display::Punctuator::CurlyL)?;
                     f.require_precedence(display::Precedence::Assignment).node(t)?;
-                    f.token(display::Token::CurlyR)
+                    f.punctuator(display::Punctuator::CurlyR)
                 }
                 Child::Spread(ref t) => {
-                    f.token(display::Token::CurlyL)?;
-                    f.token(display::Token::Ellipsis)?;
+                    f.punctuator(display::Punctuator::CurlyL)?;
+                    f.punctuator(display::Punctuator::Ellipsis)?;
                     f.require_precedence(display::Precedence::Assignment).node(t)?;
-                    f.token(display::Token::CurlyR)
+                    f.punctuator(display::Punctuator::CurlyR)
                 }
             }
         }

@@ -8,7 +8,7 @@ nodes!{
     pub struct Null {}
     impl display::NodeDisplay for Null {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Null)
+            f.keyword(display::Keyword::Null)
         }
     }
     impl misc::HasInOperator for Null {
@@ -26,9 +26,9 @@ nodes!{
     impl display::NodeDisplay for Boolean {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             if self.value {
-                f.token(display::Token::True)
+                f.keyword(display::Keyword::True)
             } else {
-                f.token(display::Token::False)
+                f.keyword(display::Keyword::False)
             }
         }
     }

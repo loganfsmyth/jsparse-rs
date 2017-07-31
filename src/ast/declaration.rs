@@ -13,7 +13,7 @@ impl<T: display::NodeDisplay> display::NodeDisplay for DeclaratorList<T> {
                         DeclaratorList::Last(ref decl) => f.node(decl),
                         DeclaratorList::List(ref decl, ref list) => {
                                 f.node(decl)?;
-                                f.token(display::Token::Comma)?;
+                                f.punctuator(display::Punctuator::Comma)?;
                                 f.node(list)
                         }
                 }
@@ -27,7 +27,7 @@ nodes!{
     }
     impl display::NodeDisplay for LetDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Let)?;
+            f.keyword(display::Keyword::Let)?;
             f.node(&self.declarators)
         }
     }
@@ -39,7 +39,7 @@ nodes!{
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             f.node(&self.id)?;
             if let Some(ref init) = self.init {
-                f.token(display::Token::Eq)?;
+                f.punctuator(display::Punctuator::Eq)?;
                 f.require_precedence(display::Precedence::Assignment).node(init)?;
             }
             Ok(())
@@ -53,7 +53,7 @@ nodes!{
     }
     impl display::NodeDisplay for ConstDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Const)?;
+            f.keyword(display::Keyword::Const)?;
             f.node(&self.declarators)
         }
     }
@@ -66,7 +66,7 @@ nodes!{
     impl display::NodeDisplay for ConstDeclarator {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
             f.node(&self.id)?;
-            f.token(display::Token::Eq)?;
+            f.punctuator(display::Punctuator::Eq)?;
             f.require_precedence(display::Precedence::Assignment).node(&self.init)
         }
     }
@@ -80,7 +80,7 @@ nodes!{
     }
     impl display::NodeDisplay for FunctionDeclaration {
         fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-            f.token(display::Token::Function)?;
+            f.keyword(display::Keyword::Function)?;
             f.node(&self.id)?;
             f.node(&self.params)?;
             f.node(&self.body)
@@ -101,13 +101,12 @@ nodes!{
                 f.node(dec)?;
             }
 
-            f.token(display::Token::Class)?;
-            f.space()?;
+            f.keyword(display::Keyword::Class)?;
 
             f.node(&self.id)?;
 
             if let Some(ref expr) = self.extends {
-                f.token(display::Token::Extends)?;
+                f.keyword(display::Keyword::Extends)?;
                 f.require_precedence(display::Precedence::LeftHand).node(expr)?;
             }
 

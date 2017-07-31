@@ -1,28 +1,88 @@
 
-pub enum Token {
-    // Tokens
+pub enum Punctuator {
     Eq,
     EqEq,
     EqEqEq,
+
     Neq,
     NeqEq,
     NeqEqEq,
+
     CurlyR,
     CurlyL,
+
     ParenR,
     ParenL,
+
     SquareR,
     SquareL,
+
+    AngleR,
+    AngleL,
+
     Semicolon,
+
     Ellipsis,
     Period,
+
     At,
     Comma,
+    Question,
+
     Colon,
-    Star,
+    ColonColon,
+
     Slash,
 
-    // Keywords
+    Star,
+    StarStar,
+
+    Add,
+    Plus,
+    PlusPlus,
+
+    Subtract,
+    Minus,
+    MinusMinus,
+
+    Arrow,
+
+    Caret,
+    BitwiseXor,
+
+    LAngle,
+    LAngleEq,
+    LAngleAngle,
+
+    RAngle,
+    RAngleEq,
+    RAngleAngle,
+    RAngleAngleEq,
+    RAngleAngleAngle,
+
+    Mod,
+
+    Amp,
+    AmpAmp,
+
+    Bar,
+    BarBar,
+    Bind,
+
+    Exclam,
+    Tilde,
+
+    Hash,
+
+    TemplateOpen,
+    TemplateClose,
+    TemplateTick,
+
+    SlashAngle,
+    AngleSlash,
+}
+
+pub enum Keyword {
     Export,
     Default,
     Function,
@@ -54,10 +114,8 @@ pub enum Token {
     Catch,
     Any,
     Mixed,
-
     True,
     False,
-
     Return,
     Case,
     Await,
@@ -66,63 +124,23 @@ pub enum Token {
     Try,
     Of,
     If,
-    Arrow,
     Continue,
     Break,
-    Bar,
     Async,
-    Caret,
-    Amp,
-    StarStar,
     Null,
-    Question,
-    LAngle,
-    LAngleAngle,
-    RAngle,
-    RAngleAngle,
-    RAngleAngleAngle,
-
-    Plus,
-    Subtract,
-    ColonColon,
-    AmpAmp,
-    Mod,
-    BarBar,
-    BitwiseXor,
-    LAngleEq,
-    RAngleEq,
-    RAngleAngleEq,
-    Minus,
-    Add,
-    Bind,
     Delete,
     Yield,
-    Exclam,
-    Tilde,
     Instanceof,
-    PlusPlus,
-    MinusMinus,
-    Hash,
-
-    TemplateOpen,
-    TemplateClose,
-    TemplateTick,
     Module,
     Interface,
     Void,
     Get,
     Set,
-
     Number,
     String,
     Boolean,
-    SlashAngle,
-    AngleSlash,
-    AngleR,
     Static,
-    AngleL,
     Exports,
-
     As,
 }
 
@@ -177,6 +195,7 @@ impl NodeFormatter {
         let skip = (p as u32) <= (self.prec as u32);
         WrapParens::new(self, skip)
     }
+
     pub fn require_precedence(&mut self, p: Precedence) -> CachePrecedence {
         let mut lock = CachePrecedence::new(self);
         lock.prec = p;
@@ -209,14 +228,10 @@ impl NodeFormatter {
         WrapSquare::new(self)
     }
 
-    pub fn space(&mut self) -> NodeDisplayResult {
-        Ok(())
-    }
-
     pub fn comma_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
         for (i, item) in list.iter().enumerate() {
             if i != 0 {
-                self.token(Token::Comma)?;
+                self.punctuator(Token::Comma)?;
             }
             self.require_precedence(Precedence::Assignment).node(item)?;
         }
@@ -227,14 +242,13 @@ impl NodeFormatter {
     pub fn node<T: NodeDisplay>(&mut self, s: &T) -> NodeDisplayResult {
         s.fmt(self)
     }
-    pub fn token(&mut self, t: Token) -> NodeDisplayResult {
-        match t {
-            _ => {
-                // TODO: If writing a period or ellipsis, ensure there is a
-                // whitespace if the previous token was an integer
-                Ok(())
-            }
-        }
+
+    pub fn keyword(&mut self, t: Keyword) -> NodeDisplayResult {
+
+    }
+
+    pub fn operator(&mut self, t: Operator) -> NodeDisplayResult {
+
     }
 
     pub fn identifier(&mut self, _name: &str, raw: Option<&str>) -> NodeDisplayResult {
@@ -276,9 +290,9 @@ impl NodeFormatter {
     }
 
     pub fn regexp(&mut self, _value: &str, flags: &[char]) -> NodeDisplayResult {
-        self.token(Token::Slash)?;
+        self.punctuator(Punctuator::Slash)?;
         // self.template_part(value)?;
-        self.token(Token::Slash)?;
+        self.punctuator(Punctuator::Slash)?;
         // self.template_part(flags)
         Ok(())
     }
