@@ -1,4 +1,6 @@
+#[warn(unused_imports)]
 use custom_derive;
+#[warn(unused_imports)]
 use enum_derive;
 
 use super::statement;
@@ -366,7 +368,7 @@ custom_derive!{
         String(literal::String),
         Function(expression::FunctionExpression),
         Class(expression::ClassExpression),
-        Regex(literal::RegularExpressionLiteral),
+        Regex(literal::RegExp),
         Template(expression::TemplateLiteral),
         Member(expression::MemberExpression),
         SuperMember(expression::SuperMemberExpression),

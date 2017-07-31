@@ -1,3 +1,5 @@
+use std::fmt;
+use std::fmt::Write;
 
 pub enum Punctuator {
     Eq,
@@ -6,7 +8,6 @@ pub enum Punctuator {
 
     Neq,
     NeqEq,
-    NeqEqEq,
 
     CurlyR,
     CurlyL,
@@ -21,6 +22,7 @@ pub enum Punctuator {
     AngleL,
 
     Semicolon,
+    SQuote,
 
     Ellipsis,
     Period,
@@ -91,7 +93,6 @@ pub enum Keyword {
     From,
     This,
     Extends,
-    Implements,
     New,
     Target,
     Meta,
@@ -99,8 +100,6 @@ pub enum Keyword {
     Arguments,
     Super,
     Typeof,
-    Type,
-    Declare,
     Var,
     Let,
     Const,
@@ -112,8 +111,6 @@ pub enum Keyword {
     Finally,
     Debugger,
     Catch,
-    Any,
-    Mixed,
     True,
     False,
     Return,
@@ -131,16 +128,10 @@ pub enum Keyword {
     Delete,
     Yield,
     Instanceof,
-    Module,
-    Interface,
     Void,
     Get,
     Set,
-    Number,
-    String,
-    Boolean,
     Static,
-    Exports,
     As,
 }
 
@@ -171,8 +162,6 @@ pub enum Precedence {
 pub type NodeDisplayResult = Result<(), NodeDisplayError>;
 
 pub struct NodeFormatter {
-    current_depth: u32,
-
     prec: Precedence,
     in_operator: bool,
 
@@ -183,7 +172,6 @@ pub struct NodeFormatter {
 impl NodeFormatter {
     pub fn new() -> NodeFormatter {
         NodeFormatter {
-            current_depth: 0,
             prec: Precedence::Normal,
             in_operator: true,
             ends_with_integer: false,
@@ -220,18 +208,18 @@ impl NodeFormatter {
         lock
     }
 
-    pub fn wrap_block(&mut self) -> WrapBlock {
-        WrapBlock::new(self)
-    }
+    // pub fn wrap_block(&mut self) -> WrapBlock {
+    //     WrapBlock::new(self)
+    // }
 
-    pub fn wrap_square(&mut self) -> WrapSquare {
-        WrapSquare::new(self)
-    }
+    // pub fn wrap_square(&mut self) -> WrapSquare {
+    //     WrapSquare::new(self)
+    // }
 
     pub fn comma_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
         for (i, item) in list.iter().enumerate() {
             if i != 0 {
-                self.punctuator(Token::Comma)?;
+                self.punctuator(Punctuator::Comma)?;
             }
             self.require_precedence(Precedence::Assignment).node(item)?;
         }
@@ -244,11 +232,117 @@ impl NodeFormatter {
     }
 
     pub fn keyword(&mut self, t: Keyword) -> NodeDisplayResult {
-
+        Ok(match t {
+            Keyword::Export => write!(self, "export"),
+            Keyword::Default => write!(self, "default"),
+            Keyword::Function => write!(self, "function"),
+            Keyword::Class => write!(self, "class"),
+            Keyword::Import => write!(self, "import"),
+            Keyword::From => write!(self, "from"),
+            Keyword::This => write!(self, "this"),
+            Keyword::Extends => write!(self, "extends"),
+            Keyword::New => write!(self, "new"),
+            Keyword::Target => write!(self, "target"),
+            Keyword::Meta => write!(self, "meta"),
+            Keyword::Sent => write!(self, "sent"),
+            Keyword::Arguments => write!(self, "arguments"),
+            Keyword::Super => write!(self, "super"),
+            Keyword::Typeof => write!(self, "typeof"),
+            Keyword::Var => write!(self, "var"),
+            Keyword::Let => write!(self, "let"),
+            Keyword::Const => write!(self, "const"),
+            Keyword::In => write!(self, "in"),
+            Keyword::While => write!(self, "while"),
+            Keyword::Do => write!(self, "do"),
+            Keyword::Switch => write!(self, "switch"),
+            Keyword::With => write!(self, "with"),
+            Keyword::Finally => write!(self, "finally"),
+            Keyword::Debugger => write!(self, "debugger"),
+            Keyword::Catch => write!(self, "catch"),
+            Keyword::True => write!(self, "true"),
+            Keyword::False => write!(self, "false"),
+            Keyword::Return => write!(self, "return"),
+            Keyword::Case => write!(self, "case"),
+            Keyword::Await => write!(self, "await"),
+            Keyword::For => write!(self, "for"),
+            Keyword::Throw => write!(self, "throw"),
+            Keyword::Try => write!(self, "try"),
+            Keyword::Of => write!(self, "of"),
+            Keyword::If => write!(self, "in"),
+            Keyword::Continue => write!(self, "continue"),
+            Keyword::Break => write!(self, "break"),
+            Keyword::Async => write!(self, "async"),
+            Keyword::Null => write!(self, "null"),
+            Keyword::Delete => write!(self, "delete"),
+            Keyword::Yield => write!(self, "yield"),
+            Keyword::Instanceof => write!(self, "instanceof"),
+            Keyword::Void => write!(self, "void"),
+            Keyword::Get => write!(self, "get"),
+            Keyword::Set => write!(self, "set"),
+            Keyword::Static => write!(self, "static"),
+            Keyword::As => write!(self, "as"),
+        }?)
     }
 
-    pub fn operator(&mut self, t: Operator) -> NodeDisplayResult {
-
+    pub fn punctuator(&mut self, p: Punctuator) -> NodeDisplayResult {
+        Ok(match p {
+            Punctuator::Eq => write!(self, "="),
+            Punctuator::EqEq => write!(self, "=="),
+            Punctuator::EqEqEq => write!(self, "==="),
+            Punctuator::Neq => write!(self, "!="),
+            Punctuator::NeqEq => write!(self, "!=="),
+            Punctuator::CurlyR => write!(self, "}}"),
+            Punctuator::CurlyL => write!(self, "{{"),
+            Punctuator::ParenR => write!(self, ")"),
+            Punctuator::ParenL => write!(self, "("),
+            Punctuator::SquareR => write!(self, "]"),
+            Punctuator::SquareL => write!(self, "["),
+            Punctuator::AngleR => write!(self, ">"),
+            Punctuator::AngleL => write!(self, "<"),
+            Punctuator::Semicolon => write!(self, ";"),
+            Punctuator::SQuote => write!(self, "'"),
+            Punctuator::Ellipsis => write!(self, "..."),
+            Punctuator::Period => write!(self, "."),
+            Punctuator::At => write!(self, "@"),
+            Punctuator::Comma => write!(self, ","),
+            Punctuator::Question => write!(self, "?"),
+            Punctuator::Colon => write!(self, ":"),
+            Punctuator::ColonColon => write!(self, "::"),
+            Punctuator::Slash => write!(self, "/"),
+            Punctuator::Star => write!(self, "*"),
+            Punctuator::StarStar => write!(self, "**"),
+            Punctuator::Add => write!(self, "+"),
+            Punctuator::Plus => write!(self, "+"),
+            Punctuator::PlusPlus => write!(self, "++"),
+            Punctuator::Subtract => write!(self, "-"),
+            Punctuator::Minus => write!(self, "-"),
+            Punctuator::MinusMinus => write!(self, "--"),
+            Punctuator::Arrow => write!(self, "=>"),
+            Punctuator::Caret => write!(self, "^"),
+            Punctuator::BitwiseXor => write!(self, "^"),
+            Punctuator::LAngle => write!(self, "<"),
+            Punctuator::LAngleEq => write!(self, "<="),
+            Punctuator::LAngleAngle => write!(self, "<<"),
+            Punctuator::RAngle => write!(self, ">"),
+            Punctuator::RAngleEq => write!(self, ">="),
+            Punctuator::RAngleAngle => write!(self, ">>"),
+            Punctuator::RAngleAngleEq => write!(self, ">>="),
+            Punctuator::RAngleAngleAngle => write!(self, ">>>"),
+            Punctuator::Mod => write!(self, "%"),
+            Punctuator::Amp => write!(self, "&"),
+            Punctuator::AmpAmp => write!(self, "&&"),
+            Punctuator::Bar => write!(self, "|"),
+            Punctuator::BarBar => write!(self, "||"),
+            Punctuator::Bind => write!(self, "::"),
+            Punctuator::Exclam => write!(self, "!"),
+            Punctuator::Tilde => write!(self, "~"),
+            Punctuator::Hash => write!(self, "#"),
+            Punctuator::TemplateOpen => write!(self, "${{"),
+            Punctuator::TemplateClose => write!(self, "}}"),
+            Punctuator::TemplateTick => write!(self, "`"),
+            Punctuator::SlashAngle => write!(self, "/>"),
+            Punctuator::AngleSlash => write!(self, "</"),
+        }?)
     }
 
     pub fn identifier(&mut self, _name: &str, raw: Option<&str>) -> NodeDisplayResult {
@@ -259,23 +353,30 @@ impl NodeFormatter {
         }
         Ok(())
     }
-    pub fn string(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
-        //write!(self, "\'")?;
+    pub fn string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+        self.punctuator(Punctuator::SQuote)?;
         if let Some(ref _raw) = raw {
             // Ensure that single-quotes are escaped
+            write!(self, "{}", value)?;
         } else {
+            write!(self, "{}", value)?;
             // Serialize "value", escaping anything that _must_ be escaped, like newlines and slashes
         }
-        Ok(()) //write!(self, "\'")?;
+        self.punctuator(Punctuator::SQuote)?;
+
+        Ok(())
     }
-    pub fn number(&mut self, _value: &f64, raw: Option<&str>) -> NodeDisplayResult {
-        if let Some(ref _raw) = raw {
+    pub fn number(&mut self, value: &f64, raw: Option<&str>) -> NodeDisplayResult {
+        // if let Some(ref _raw) = raw {
             // Write raw value as-is, possibly setting flag
-            self.ends_with_integer = true;
-        } else {
+            // self.ends_with_integer = true;
+        // } else {
+            let s = format!("{}", value);
+            write!(self, "{}", s)?;
+
             // Serialize number
-            self.ends_with_integer = true;
-        }
+            self.ends_with_integer = !s.chars().any(|c| c == '.');;
+        // }
 
         Ok(())
     }
@@ -289,11 +390,13 @@ impl NodeFormatter {
         Ok(())
     }
 
-    pub fn regexp(&mut self, _value: &str, flags: &[char]) -> NodeDisplayResult {
+    pub fn regexp(&mut self, value: &str, flags: &[char]) -> NodeDisplayResult {
         self.punctuator(Punctuator::Slash)?;
-        // self.template_part(value)?;
+        write!(self, "{}", value)?;
         self.punctuator(Punctuator::Slash)?;
-        // self.template_part(flags)
+        for f in flags.iter() {
+            write!(self, "{}", f)?;
+        }
         Ok(())
     }
 
@@ -319,6 +422,13 @@ impl NodeFormatter {
         } else {
             // Serialize "value", encoding all entities like {}<>
         }
+        Ok(())
+    }
+}
+impl fmt::Write for NodeFormatter {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.output += s;
+
         Ok(())
     }
 }
@@ -364,7 +474,7 @@ pub struct WrapParens<'a> {
 }
 impl<'a> WrapParens<'a> {
     fn new(fmt: &mut NodeFormatter, skip: bool) -> WrapParens {
-        fmt.token(Token::ParenL);
+        fmt.punctuator(Punctuator::ParenL);
 
         WrapParens {
             skip,
@@ -374,45 +484,45 @@ impl<'a> WrapParens<'a> {
 }
 impl<'a> ::std::ops::Drop for WrapParens<'a> {
   fn drop(&mut self) {
-    if !self.skip { self.fmt.token(Token::ParenR); }
+    if !self.skip { self.fmt.punctuator(Punctuator::ParenR); }
   }
 }
 
-pub struct WrapSquare<'a> {
-  fmt: &'a mut NodeFormatter,
-}
-impl<'a> WrapSquare<'a> {
-    fn new(fmt: &mut NodeFormatter) -> WrapSquare {
-        fmt.token(Token::SquareL);
+// pub struct WrapSquare<'a> {
+//   fmt: &'a mut NodeFormatter,
+// }
+// impl<'a> WrapSquare<'a> {
+//     fn new(fmt: &mut NodeFormatter) -> WrapSquare {
+//         fmt.punctuator(Punctuator::SquareL);
 
-        WrapSquare {
-            fmt,
-        }
-    }
-}
-impl<'a> ::std::ops::Drop for WrapSquare<'a> {
-  fn drop(&mut self) {
-    self.fmt.token(Token::SquareR);
-  }
-}
+//         WrapSquare {
+//             fmt,
+//         }
+//     }
+// }
+// impl<'a> ::std::ops::Drop for WrapSquare<'a> {
+//   fn drop(&mut self) {
+//     self.fmt.punctuator(Punctuator::SquareR);
+//   }
+// }
 
-pub struct WrapBlock<'a> {
-  fmt: &'a mut NodeFormatter,
-}
-impl<'a> WrapBlock<'a> {
-    fn new(fmt: &mut NodeFormatter) -> WrapBlock {
-        fmt.token(Token::CurlyL);
+// pub struct WrapBlock<'a> {
+//   fmt: &'a mut NodeFormatter,
+// }
+// impl<'a> WrapBlock<'a> {
+//     fn new(fmt: &mut NodeFormatter) -> WrapBlock {
+//         fmt.punctuator(Punctuator::CurlyL);
 
-        WrapBlock {
-            fmt,
-        }
-    }
-}
-impl<'a> ::std::ops::Drop for WrapBlock<'a> {
-  fn drop(&mut self) {
-    self.fmt.token(Token::CurlyR);
-  }
-}
+//         WrapBlock {
+//             fmt,
+//         }
+//     }
+// }
+// impl<'a> ::std::ops::Drop for WrapBlock<'a> {
+//   fn drop(&mut self) {
+//     self.fmt.punctuator(Punctuator::CurlyR);
+//   }
+// }
 
 macro_rules! impl_deref {
     ($id:ident) => {
@@ -434,10 +544,17 @@ macro_rules! impl_deref {
         impl_deref!($($ids),+);
     };
 }
-impl_deref!(CachePrecedence, CacheIn, WrapParens, WrapSquare, WrapBlock);
+impl_deref!(CachePrecedence, CacheIn, WrapParens);//, WrapSquare, WrapBlock);
 
 
-pub enum NodeDisplayError {}
+pub enum NodeDisplayError {
+    Fmt(fmt::Error),
+}
+impl From<fmt::Error> for NodeDisplayError {
+    fn from(s: fmt::Error) -> NodeDisplayError {
+        NodeDisplayError::Fmt(s)
+    }
+}
 
 
 pub trait NodeDisplay {
@@ -447,7 +564,7 @@ pub trait NodeDisplay {
 
 impl<T: NodeDisplay> NodeDisplay for Box<T> {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        NodeDisplay::fmt(&*self, f)
+        NodeDisplay::fmt(&**self, f)
     }
 }
 
