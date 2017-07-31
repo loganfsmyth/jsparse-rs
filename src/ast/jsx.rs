@@ -146,7 +146,7 @@ impl misc::HasInOperator for Element {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::CurlyL)?;
     	f.token(display::Token::Ellipsis)?;
-    	f.node(&self.argument)?;
+    	f.require_precedence(display::Precedence::Assignment).node(&self.argument)?;
     	f.token(display::Token::CurlyR)
     }
   }
@@ -175,7 +175,7 @@ impl misc::HasInOperator for Element {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	match *self {
     		AttributeValue::String(ref s) => f.node(s),
-    		AttributeValue::Expression(ref expr) => f.node(expr),
+    		AttributeValue::Expression(ref expr) => f.require_precedence(display::Precedence::Assignment).node(expr),
     		AttributeValue::Element(ref elem) => f.node(elem),
     	}
     }
@@ -210,13 +210,13 @@ impl misc::HasInOperator for Element {
     		Child::Element(ref t) => f.node(t),
     		Child::Expression(ref t) => {
     			f.token(display::Token::CurlyL)?;
-    			f.node(t)?;
+    			f.require_precedence(display::Precedence::Assignment).node(t)?;
     			f.token(display::Token::CurlyR)
     		}
     		Child::Spread(ref t) => {
     			f.token(display::Token::CurlyL)?;
     			f.token(display::Token::Ellipsis)?;
-    			f.node(t)?;
+    			f.require_precedence(display::Precedence::Assignment).node(t)?;
     			f.token(display::Token::CurlyR)
     		}
     	}

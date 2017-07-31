@@ -22,6 +22,8 @@ impl<T: display::NodeDisplay> display::NodeDisplay for DeclaratorList<T> {
     }
 }
 
+// TODO: Let/Const/Var declarations in standard locations always allow "in" operator
+
 nodes!{
 	// let foo, bar;
 	pub struct LetDeclaration {
@@ -42,7 +44,7 @@ nodes!{
 			f.node(&self.id)?;
 			if let Some(ref init) = self.init {
 				f.token(display::Token::Eq)?;
-				f.node(init)?;
+				f.require_precedence(display::Precedence::Assignment).node(init)?;
 			}
 			Ok(())
 		}
@@ -67,7 +69,7 @@ nodes!{
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.node(&self.id)?;
 			f.token(display::Token::Eq)?;
-			f.node(&self.init)
+			f.require_precedence(display::Precedence::Assignment).node(&self.init)
 		}
 	}
 
@@ -96,8 +98,21 @@ nodes!{
 	}
 	impl display::NodeDisplay for ClassDeclaration {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			// TODO
-			Ok(())
+			for dec in self.decorators.iter() {
+				f.node(dec)?;
+			}
+
+			f.token(display::Token::Class)?;
+			f.space()?;
+
+			f.node(&self.id)?;
+
+			if let Some(ref expr) = self.extends {
+				f.token(display::Token::Extends)?;
+				f.require_precedence(display::Precedence::LeftHand).node(expr)?;
+			}
+
+			f.node(&self.body)
 		}
 	}
 }

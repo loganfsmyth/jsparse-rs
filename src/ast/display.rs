@@ -195,7 +195,10 @@ impl NodeFormatter {
     }
 
     pub fn wrap_parens(&mut self) -> WrapParens {
-        WrapParens::new(self, false)
+        let mut lock = WrapParens::new(self, false);
+        lock.prec = Precedence::Normal;
+        lock.in_operator = true;
+        lock
     }
 
     pub fn wrap_block(&mut self) -> WrapBlock {

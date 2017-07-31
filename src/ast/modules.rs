@@ -159,24 +159,28 @@ nodes!{
       if let Some(ref id) = self.id {
         f.node(id)?;
       }
+      if let Some(ref extends) = self.extends {
+        f.token(display::Token::Extends)?;
+        f.require_precedence(display::Precedence::LeftHand).node(extends)?;
+      }
       f.node(&self.body)
     }
   }
 
-  // TODO: Whatever expression here can't start with "function" or "class" or "async"
   // export default 4;
   pub struct ExportDefaultExpression {
     expression: alias::Expression,
   }
   impl display::NodeDisplay for ExportDefaultExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+      let mut f = f.allow_in();
       f.token(display::Token::Export)?;
       f.token(display::Token::Default)?;
 
       if let misc::SpecialToken::Declaration = self.expression.first_special_token() {
         f.wrap_parens().node(&self.expression)?;
       } else {
-        f.node(&self.expression)?;
+        f.require_precedence(display::Precedence::Assignment).node(&self.expression)?;
       }
       f.token(display::Token::Semicolon)
     }

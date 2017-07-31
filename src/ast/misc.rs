@@ -89,6 +89,9 @@ pub enum SpecialToken {
     None,
     Declaration,
     Object,
+
+    // TODO: Lookahead needed for :: operator
+    // New,
 }
 pub trait FirstSpecialToken {
     fn first_special_token(&self) -> SpecialToken {
@@ -209,7 +212,7 @@ nodes!{
 
 
 	pub enum LeftHandSimpleAssign {
-		// TODO: Parenthesized ident and member
+		// TODO: Parenthesized ident and member?
 		Identifier(BindingIdentifier),
 		Member(expression::MemberExpression),
 	}
@@ -230,7 +233,7 @@ nodes!{
 	  }
 	}
 	pub enum LeftHandComplexAssign {
-		// TODO: Parenthesized ident and member
+		// TODO: Parenthesized ident and member?
 		Identifier(BindingIdentifier),
 		Member(expression::MemberExpression),
 		Object(ObjectPattern),
@@ -297,8 +300,10 @@ nodes!{
     		ObjectPatternProperty::Identifier(ref id, ref expr) => {
     			f.node(id)?;
     			if let Some(ref expr) = *expr {
+    				let mut f = f.allow_in();
+
     				f.token(display::Token::Eq)?;
-    				f.node(expr)?;
+    				f.require_precedence(display::Precedence::Assignment).node(expr)?;
     			}
 
     			Ok(())
@@ -308,8 +313,10 @@ nodes!{
     			f.token(display::Token::Colon)?;
     			f.node(pattern)?;
     			if let Some(ref expr) = *expr {
+    				let mut f = f.allow_in();
+
     				f.token(display::Token::Eq)?;
-    				f.node(expr)?;
+    				f.require_precedence(display::Precedence::Assignment).node(expr)?;
     			}
 
     			Ok(())
@@ -362,8 +369,10 @@ nodes!{
     	f.node(&self.id)?;
 
     	if let Some(ref init) = self.init {
+    		let mut f = f.allow_in();
+
     		f.token(display::Token::Eq)?;
-    		f.node(init)?;
+    		f.require_precedence(display::Precedence::Assignment).node(init)?;
     	}
 
     	Ok(())
@@ -405,7 +414,7 @@ nodes!{
     	match *self {
     		Decorator::Property(ref expr) => f.node(expr),
     		Decorator::Call(ref expr) => f.node(expr),
-    		Decorator::Expression(ref expr) => f.node(expr),
+    		Decorator::Expression(ref expr) => f.require_precedence(display::Precedence::Normal).node(expr),
     	}
     }
   }
@@ -448,6 +457,11 @@ nodes!{
     	f.token(display::Token::ParenL)?;
 
     	f.comma_list(&self.args)?;
+
+    	if let Some(ref spread) = self.spread {
+    		f.token(display::Token::Comma)?;
+    		f.require_precedence(display::Precedence::Assignment).node(spread)?;
+    	}
 
     	f.token(display::Token::ParenR)
     }
@@ -523,8 +537,9 @@ nodes!{
     			f.node(id)
     		}
     		PropertyId::Computed(ref expr) => {
+    			let mut f = f.allow_in();
     			f.token(display::Token::SquareL)?;
-    			f.node(expr)?;
+    			f.require_precedence(display::Precedence::Assignment).node(expr)?;
     			f.token(display::Token::SquareR)
     		}
     	}
@@ -598,7 +613,7 @@ nodes!{
 
     	if let Some(ref val) = self.value {
     		f.token(display::Token::Eq)?;
-    		f.node(val)?;
+    		f.require_precedence(display::Precedence::Assignment).node(val)?;
     	}
 
     	Ok(())
@@ -611,6 +626,8 @@ nodes!{
   }
   impl display::NodeDisplay for FunctionParams {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	let mut f = f.allow_in();
+
     	f.comma_list(&self.params)?;
 
     	if let Some(ref param) = self.rest {

@@ -41,18 +41,23 @@ nodes!{
 	impl display::NodeDisplay for ArrayExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			let mut f = f.precedence(display::Precedence::Primary);
+			let mut f = f.allow_in();
 
 			f.token(display::Token::SquareL)?;
 
-			for el in self.elements.iter() {
+			for (i, el) in self.elements.iter().enumerate() {
+				if i != 0 {
+					f.token(display::Token::Comma)?;
+				}
+
 				if let Some(ref expr) = *el {
+					let mut f = f.allow_in();
 					f.require_precedence(display::Precedence::Assignment).node(expr)?;
 				}
-				f.token(display::Token::Comma)?;
 			}
 
 			if let Some(ref expr) = self.spread {
-				f.require_precedence(display::Precedence::Assignment).node(expr)?
+				f.require_precedence(display::Precedence::Assignment).node(expr)?;
 			}
 
 			Ok(())
@@ -101,7 +106,11 @@ nodes!{
 				ObjectProperty::Value(ref id, ref expr) => {
 					f.node(id)?;
 					f.token(display::Token::Colon)?;
-					f.require_precedence(display::Precedence::Assignment).node(expr)
+
+					let mut f = f.allow_in();
+					f.require_precedence(display::Precedence::Assignment).node(expr)?;
+
+					Ok(())
 				}
 			}
 		}
@@ -136,7 +145,6 @@ nodes!{
 
 	// (function(){})
 	pub struct FunctionExpression {
-		decorators: Vec<misc::Decorator>, // experimental
 		id: Option<misc::BindingIdentifier>,
 		params: misc::FunctionParams,
 		body: misc::FunctionBody,
@@ -208,41 +216,42 @@ nodes!{
 	impl misc::HasInOperator for TaggedTemplateLiteral {}
 
 
-// Other syntactic limits
-// ++ / --
-// => Only allowed member expressions and identifiers, all else early errors
-// foo = bar;  or {a} = bar;
-// => Ident, member, or patterns
-// foo += bar;
-// => Ident or member only
-
-
-
 	// `content`
-	pub enum TemplateLiteral {
-		Piece(TemplatePart, Box<alias::Expression>, Box<TemplateLiteral>),
-		End(TemplatePart),
+	pub struct TemplateLiteral {
+		piece: TemplateLiteralPiece,
 	}
 	impl display::NodeDisplay for TemplateLiteral {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			// TODO: Handle initial backtick here
+			f.token(display::Token::TemplateTick)?;
+			f.node(&self.piece)
+		}
+	}
+	impl misc::FirstSpecialToken for TemplateLiteral {}
+	impl misc::HasInOperator for TemplateLiteral {}
+
+	pub enum TemplateLiteralPiece {
+		Piece(TemplatePart, Box<alias::Expression>, Box<TemplateLiteral>),
+		End(TemplatePart),
+	}
+	impl display::NodeDisplay for TemplateLiteralPiece {
+		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+			let mut f = f.allow_in();
+
 			match *self {
-				TemplateLiteral::Piece(ref part, ref expr, ref next_literal) => {
+				TemplateLiteralPiece::Piece(ref part, ref expr, ref next_literal) => {
 					f.node(part)?;
 					f.token(display::Token::TemplateClose)?;
 					f.require_precedence(display::Precedence::Normal).node(expr)?;
 					f.token(display::Token::TemplateOpen)?;
 					f.node(next_literal)
 				}
-				TemplateLiteral::End(ref part) => {
+				TemplateLiteralPiece::End(ref part) => {
 					f.node(part)?;
 					f.token(display::Token::TemplateTick)
 				}
 			}
 		}
 	}
-	impl misc::FirstSpecialToken for TemplateLiteral {}
-	impl misc::HasInOperator for TemplateLiteral {}
 
 
 	pub struct TemplatePart {
@@ -448,9 +457,11 @@ nodes!{
 				UnaryOperator::Await => f.token(display::Token::Await)?,
 				UnaryOperator::Yield => f.token(display::Token::Yield)?,
 				UnaryOperator::YieldDelegate => {
-					f.token(display::Token::Delete)?;
+					f.token(display::Token::Yield)?;
 					f.token(display::Token::Star)?
 				}
+
+				// TODO: Precedence on this is hard
 				UnaryOperator::Bind => f.token(display::Token::Bind)?,
 			}
 
@@ -647,6 +658,7 @@ nodes!{
 					f.require_precedence(display::Precedence::LogicalAnd).node(&self.right)?;
 				}
 				BinaryOperator::Bind => {
+					// TODO: Precedence
 					f.node(&self.left)?;
 					f.token(display::Token::ColonColon)?;
 					f.node(&self.right)?;
@@ -703,7 +715,10 @@ nodes!{
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 			f.require_precedence(display::Precedence::LogicalOr).node(&self.test)?;
 			f.token(display::Token::Question)?;
-			f.require_precedence(display::Precedence::Assignment).node(&self.consequent)?;
+			{
+				let mut f = f.allow_in();
+				f.require_precedence(display::Precedence::Assignment).node(&self.consequent)?;
+			}
 			f.token(display::Token::Colon)?;
 			f.require_precedence(display::Precedence::Assignment).node(&self.alternate)
 		}
@@ -798,10 +813,16 @@ nodes!{
 	}
 	impl display::NodeDisplay for SequenceExpression {
 		fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-			f.require_precedence(display::Precedence::Normal).node(&self.left)?;
+			let mut f = f.precedence(display::Precedence::Normal);
+
+			f.node(&self.left)?;
 			f.token(display::Token::Comma)?;
-			// TODO: This precedence may not be strictly needed?
-			f.require_precedence(display::Precedence::Assignment).node(&self.right)
+
+			// Note: This precedence isn't needed to reproduce functionality, but it is to make the
+			// AST reproduce properly from the serialized code. Parens can be avoided by reordering AST.
+			f.require_precedence(display::Precedence::Assignment).node(&self.right)?;
+
+			Ok(())
 		}
 	}
 	impl misc::FirstSpecialToken for SequenceExpression {
@@ -863,7 +884,7 @@ nodes!{
     			if let misc::SpecialToken::Object = expr.first_special_token() {
 						f.wrap_parens().node(expr)
 					} else {
-						f.node(expr)
+						f.require_precedence(display::Precedence::Assignment).node(expr)
 					}
 				}
 				ArrowFunctionBody::Block(ref body) => f.node(body),

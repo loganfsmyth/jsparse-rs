@@ -58,7 +58,7 @@ nodes!{
     	f.node(&self.id);
     	if let Some(ref init) = self.init {
     		f.token(display::Token::Eq)?;
-    		f.node(init)?;
+    		f.require_precedence(display::Precedence::Assignment).node(init)?;
     	}
     	Ok(())
     }
@@ -70,8 +70,10 @@ nodes!{
 	}
   impl display::NodeDisplay for ExpressionStatement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	let mut f = f.allow_in();
+
     	if let misc::SpecialToken::None = self.expression.first_special_token() {
-    		f.node(&self.expression)?;
+    		f.require_precedence(display::Precedence::Normal).node(&self.expression)?;
     	} else {
     		f.wrap_parens().node(&self.expression)?;
     	}
@@ -90,7 +92,10 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::If)?;
     	f.token(display::Token::ParenL)?;
-    	f.node(&self.test)?;
+    	{
+	    	let mut f = f.allow_in();
+	    	f.require_precedence(display::Precedence::Normal).node(&self.test)?;
+	    }
     	f.token(display::Token::ParenR)?;
 
     	if self.consequent.orphan_if() {
@@ -125,16 +130,17 @@ nodes!{
     	f.token(display::Token::For)?;
     	f.token(display::Token::ParenL)?;
     	if let Some(ref init) = self.init {
-    		// TODO: has_in_operator usage here won't quite work
     		f.node(init)?;
     	}
     	f.token(display::Token::Semicolon)?;
     	if let Some(ref test) = self.test {
-    		f.node(test)?;
+	    	let mut f = f.allow_in();
+    		f.require_precedence(display::Precedence::Normal).node(test)?;
     	}
     	f.token(display::Token::Semicolon)?;
     	if let Some(ref update) = self.update {
-    		f.node(update)?;
+	    	let mut f = f.allow_in();
+    		f.require_precedence(display::Precedence::Normal).node(update)?;
     	}
     	f.token(display::Token::ParenR)?;
     	f.node(&self.body)
@@ -154,11 +160,17 @@ nodes!{
 	}
   impl display::NodeDisplay for ForInit {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	let mut f = f.disallow_in();
+
     	match *self {
     		ForInit::Var(ref item) => f.node(item),
     		ForInit::Let(ref item) => f.node(item),
     		ForInit::Const(ref item) => f.node(item),
-    		ForInit::Expression(ref item) => f.node(item),
+    		ForInit::Expression(ref item) => {
+				  // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
+				  // so we need parens here for that too.
+    			f.require_precedence(display::Precedence::Normal).node(item)
+    		}
     	}
     }
   }
@@ -175,7 +187,10 @@ nodes!{
     	f.token(display::Token::ParenL)?;
     	f.node(&self.left)?;
     	f.token(display::Token::In)?;
-    	f.node(&self.right)?;
+    	{
+	    	let mut f = f.allow_in();
+    		f.require_precedence(display::Precedence::Normal).node(&self.right)?;
+    	}
     	f.token(display::Token::ParenR)?;
 
     	f.node(&self.body)
@@ -198,7 +213,11 @@ nodes!{
     		ForInInit::Var(ref decl) => f.node(decl),
     		ForInInit::Let(ref pat) => f.node(pat),
     		ForInInit::Const(ref pat) => f.node(pat),
-    		ForInInit::Complex(ref pat) => f.node(pat),
+    		ForInInit::Complex(ref pat) => {
+				  // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
+				  // so we need parens here for that too.
+    			f.node(pat)
+    		}
     	}
     }
   }
@@ -216,7 +235,7 @@ nodes!{
     	f.token(display::Token::ParenL)?;
     	f.node(&self.left)?;
     	f.token(display::Token::Of)?;
-    	f.node(&self.right)?;
+    	f.require_precedence(display::Precedence::Normal).node(&self.right)?;
     	f.token(display::Token::ParenR)?;
 
     	f.node(&self.body)
@@ -241,7 +260,10 @@ nodes!{
     	f.token(display::Token::ParenL)?;
     	f.node(&self.left)?;
     	f.token(display::Token::In)?;
-    	f.node(&self.right)?;
+    	{
+	    	let mut f = f.allow_in();
+    		f.require_precedence(display::Precedence::Normal).node(&self.right)?;
+    	}
     	f.token(display::Token::ParenR)?;
 
     	f.node(&self.body)
@@ -264,7 +286,11 @@ nodes!{
     		ForOfInit::Var(ref pat) => f.node(pat),
     		ForOfInit::Let(ref pat) => f.node(pat),
     		ForOfInit::Const(ref pat) => f.node(pat),
-    		ForOfInit::Complex(ref pat) => f.node(pat),
+    		ForOfInit::Complex(ref pat) => {
+				  // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
+				  // so we need parens here for that too.
+    			f.node(pat)
+    		}
     	}
     }
   }
@@ -278,7 +304,10 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::While)?;
     	f.token(display::Token::ParenL)?;
-    	f.node(&self.test)?;
+    	{
+	    	let mut f = f.allow_in();
+    		f.require_precedence(display::Precedence::Normal).node(&self.test)?;
+    	}
     	f.token(display::Token::ParenR)?;
     	f.node(&self.body)
     }
@@ -298,17 +327,17 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::Do)?;
 
-    	// TODO: Does this need special logic to wrap body in curlies?
     	f.node(&self.body)?;
     	f.token(display::Token::While)?;
     	f.token(display::Token::ParenL)?;
-    	f.node(&self.test)?;
+    	{
+	    	let mut f = f.allow_in();
+    		f.require_precedence(display::Precedence::Normal).node(&self.test)?;
+    	}
     	f.token(display::Token::ParenR)?;
     	f.token(display::Token::Semicolon)
     }
   }
-
-  // TODO: Does this need a special implementation?
   impl misc::HasOrphanIf for DoWhileStatement {}
 
 	// switch (...) { ...  }
@@ -320,7 +349,10 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::Switch)?;
     	f.token(display::Token::ParenL)?;
-    	f.node(&self.discriminant)?;
+    	{
+	    	let mut f = f.allow_in();
+    		f.require_precedence(display::Precedence::Normal).node(&self.discriminant)?;
+    	}
     	f.token(display::Token::ParenR)?;
     	f.token(display::Token::CurlyL)?;
     	for c in self.cases.iter() {
@@ -340,8 +372,9 @@ nodes!{
   impl display::NodeDisplay for SwitchCase {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	if let Some(ref expr) = self.test {
+	    	let mut f = f.allow_in();
     		f.token(display::Token::Case)?;
-    		f.node(expr)?;
+    		f.require_precedence(display::Precedence::Normal).node(expr)?;
     	} else {
     		f.token(display::Token::Default)?;
     	}
@@ -390,7 +423,8 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::Return)?;
     	if let Some(ref expr) = self.argument {
-    		f.node(expr)?;
+	    	let mut f = f.allow_in();
+    		f.require_precedence(display::Precedence::Normal).node(expr)?;
     	}
     	Ok(())
     }
@@ -406,7 +440,7 @@ nodes!{
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::With)?;
     	f.token(display::Token::ParenL)?;
-    	f.node(&self.object)?;
+    	f.require_precedence(display::Precedence::Normal).node(&self.object)?;
     	f.token(display::Token::ParenR)?;
     	f.node(&self.body)
     }
@@ -441,38 +475,63 @@ nodes!{
 	}
   impl display::NodeDisplay for ThrowStatement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	let mut f = f.allow_in();
     	f.token(display::Token::Throw)?;
-    	f.node(&self.argument)
+    	f.require_precedence(display::Precedence::Normal).node(&self.argument)?;
+
+    	Ok(())
     }
   }
   impl misc::HasOrphanIf for ThrowStatement {}
 
 	// try {} catch(foo) {}
-	// try {} catch(foo) {} finally {}
-	// try {} finally {}
-	pub struct TryStatement {
+  pub struct TryCatchStatement {
 		block: BlockStatement,
-		handler: Option<CatchClause>,
-		finalizer: Option<BlockStatement>,
+		handler: CatchClause,
+  }
+  impl display::NodeDisplay for TryCatchStatement {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	f.token(display::Token::Try)?;
+    	f.node(&self.block)?;
+    	f.node(&self.handler)
+    }
+  }
+  impl misc::HasOrphanIf for TryCatchStatement {}
 
-		// TODO: Include type-system checks for requiring at least handler or finalizer
-	}
-  impl display::NodeDisplay for TryStatement {
+	// try {} catch(foo) {} finally {}
+  pub struct TryCatchFinallyStatement {
+		block: BlockStatement,
+		handler: CatchClause,
+		finalizer: BlockStatement,
+  }
+  impl display::NodeDisplay for TryCatchFinallyStatement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
     	f.token(display::Token::Try)?;
     	f.node(&self.block)?;
 
-    	if let Some(ref c) = self.handler {
-    		f.node(c)?;
-    	}
-    	if let Some(ref fin) = self.finalizer {
-    		f.token(display::Token::Finally)?;
-    		f.node(fin)?;
-    	}
-    	Ok(())
+    	f.node(&self.handler)?;
+
+  		f.token(display::Token::Finally)?;
+  		f.node(&self.finalizer)
     }
   }
-  impl misc::HasOrphanIf for TryStatement {}
+  impl misc::HasOrphanIf for TryCatchFinallyStatement {}
+
+	// try {} finally {}
+  pub struct TryFinallyStatement {
+		block: BlockStatement,
+		finalizer: BlockStatement,
+  }
+  impl display::NodeDisplay for TryFinallyStatement {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+    	f.token(display::Token::Try)?;
+    	f.node(&self.block)?;
+
+  		f.token(display::Token::Finally)?;
+  		f.node(&self.finalizer)
+    }
+  }
+  impl misc::HasOrphanIf for TryFinallyStatement {}
 
 	pub struct CatchClause {
 		// Missing param is experimental

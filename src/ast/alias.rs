@@ -75,7 +75,9 @@ custom_derive!{
         With(statement::WithStatement),
         Labelled(statement::LabelledStatement),
         Throw(statement::ThrowStatement),
-        Try(statement::TryStatement),
+        TryCatch(statement::TryCatchStatement),
+        TryCatchFinally(statement::TryCatchFinallyStatement),
+        TryFinally(statement::TryFinallyStatement),
         Debugger(statement::DebuggerStatement),
 
         // Declarations
@@ -131,7 +133,9 @@ impl display::NodeDisplay for ModuleStatementItem {
             ModuleStatementItem::With(ref n) => f.node(n),
             ModuleStatementItem::Labelled(ref n) => f.node(n),
             ModuleStatementItem::Throw(ref n) => f.node(n),
-            ModuleStatementItem::Try(ref n) => f.node(n),
+            ModuleStatementItem::TryCatch(ref n) => f.node(n),
+            ModuleStatementItem::TryCatchFinally(ref n) => f.node(n),
+            ModuleStatementItem::TryFinally(ref n) => f.node(n),
             ModuleStatementItem::Debugger(ref n) => f.node(n),
 
             // Declarations
@@ -189,7 +193,9 @@ custom_derive!{
         With(statement::WithStatement),
         Labelled(statement::LabelledStatement),
         Throw(statement::ThrowStatement),
-        Try(statement::TryStatement),
+        TryCatch(statement::TryCatchStatement),
+        TryCatchFinally(statement::TryCatchFinallyStatement),
+        TryFinally(statement::TryFinallyStatement),
         Debugger(statement::DebuggerStatement),
 
         // Declarations
@@ -221,7 +227,9 @@ impl display::NodeDisplay for StatementItem {
             StatementItem::With(ref n) => f.node(n),
             StatementItem::Labelled(ref n) => f.node(n),
             StatementItem::Throw(ref n) => f.node(n),
-            StatementItem::Try(ref n) => f.node(n),
+            StatementItem::TryCatch(ref n) => f.node(n),
+            StatementItem::TryCatchFinally(ref n) => f.node(n),
+            StatementItem::TryFinally(ref n) => f.node(n),
             StatementItem::Debugger(ref n) => f.node(n),
 
             // Declarations
@@ -253,7 +261,9 @@ impl From<Statement> for StatementItem {
             Statement::With(n) => n.into(),
             Statement::Labelled(n) => n.into(),
             Statement::Throw(n) => n.into(),
-            Statement::Try(n) => n.into(),
+            Statement::TryCatch(n) => n.into(),
+            Statement::TryCatchFinally(n) => n.into(),
+            Statement::TryFinally(n) => n.into(),
             Statement::Debugger(n) => n.into(),
         }
     }
@@ -280,7 +290,9 @@ custom_derive!{
         With(statement::WithStatement),
         Labelled(statement::LabelledStatement),
         Throw(statement::ThrowStatement),
-        Try(statement::TryStatement),
+        TryCatch(statement::TryCatchStatement),
+        TryCatchFinally(statement::TryCatchFinallyStatement),
+        TryFinally(statement::TryFinallyStatement),
         Debugger(statement::DebuggerStatement),
     }
 }
@@ -305,7 +317,9 @@ impl display::NodeDisplay for Statement {
             Statement::With(ref n) => f.node(n),
             Statement::Labelled(ref n) => f.node(n),
             Statement::Throw(ref n) => f.node(n),
-            Statement::Try(ref n) => f.node(n),
+            Statement::TryCatch(ref n) => f.node(n),
+            Statement::TryCatchFinally(ref n) => f.node(n),
+            Statement::TryFinally(ref n) => f.node(n),
             Statement::Debugger(ref n) => f.node(n),
         }
     }
@@ -331,7 +345,9 @@ impl misc::HasOrphanIf for Statement {
             Statement::With(ref node) => node.orphan_if(),
             Statement::Labelled(ref node) => node.orphan_if(),
             Statement::Throw(ref node) => node.orphan_if(),
-            Statement::Try(ref node) => node.orphan_if(),
+            Statement::TryCatch(ref node) => node.orphan_if(),
+            Statement::TryCatchFinally(ref node) => node.orphan_if(),
+            Statement::TryFinally(ref node) => node.orphan_if(),
             Statement::Debugger(ref node) => node.orphan_if(),
         }
     }
