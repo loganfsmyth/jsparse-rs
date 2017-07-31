@@ -2,34 +2,34 @@ use std::fmt;
 use std::string;
 
 use super::alias;
-use super::literal;
+use super::literal::{String, Numeric};
 use super::display;
-use super::expression;
+use super::expression::{MemberExpression};
 
 macro_rules! node_position {
-	($id:ident) => {
+  ($id:ident) => {
     impl<T> $crate::ast::WithPosition<T> for $id
     where
-    	T: Into<Option<Box<$crate::ast::NodePosition>>>
+      T: Into<Option<Box<$crate::ast::NodePosition>>>
     {
       fn set_position(&mut self, pos: T) {
         self.position = pos.into();
       }
     }
-	};
+  };
 }
 macro_rules! node_display {
-	($id:ident) => {
-		impl fmt::Display for $id {
-		  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		    let mut node_fmt = display::NodeFormatter::new();
+  ($id:ident) => {
+    impl fmt::Display for $id {
+      fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut node_fmt = display::NodeFormatter::new();
 
-		    display::NodeDisplay::fmt(self, &mut node_fmt);
+        display::NodeDisplay::fmt(self, &mut node_fmt);
 
-		    write!(f, "{}", node_fmt.output)
-		  }
-		}
-	};
+        write!(f, "{}", node_fmt.output)
+      }
+    }
+  };
 }
 
 
@@ -38,7 +38,7 @@ macro_rules! nodes {
   ($item:item $($items:item)+) => {
     nodes!($item);
     $(
-    	nodes!($items);
+      nodes!($items);
     )+
   };
   (pub struct $id:ident { $($field_id:ident : $field_type:ty ,)* }) => {
@@ -74,9 +74,9 @@ pub trait HasOrphanIf {
     }
 }
 // impl<T: HasOrphanIf> HasOrphanIf for Box<T> {
-// 	fn orphan_if(&self) -> bool {
-// 		(*self).orphan_if()
-// 	}
+//   fn orphan_if(&self) -> bool {
+//     (*self).orphan_if()
+//   }
 // }
 
 pub trait HasInOperator {
@@ -106,10 +106,10 @@ nodes!{
   }
   impl display::NodeDisplay for Ast {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		Ast::Script(ref s) => f.node(s),
-    		Ast::Module(ref m) => f.node(m),
-    	}
+      match *self {
+        Ast::Script(ref s) => f.node(s),
+        Ast::Module(ref m) => f.node(m),
+      }
     }
   }
 
@@ -119,15 +119,15 @@ nodes!{
   }
   impl display::NodeDisplay for Script {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	let mut f = f.allow_in();
-    	for d in self.directives.iter() {
-    		f.node(d)?;
-    	}
-    	for item in self.body.iter() {
-    		f.node(item)?;
-    	}
+      let mut f = f.allow_in();
+      for d in self.directives.iter() {
+        f.node(d)?;
+      }
+      for item in self.body.iter() {
+        f.node(item)?;
+      }
 
-    	Ok(())
+      Ok(())
     }
   }
 
@@ -137,15 +137,15 @@ nodes!{
   }
   impl display::NodeDisplay for Module {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	let mut f = f.allow_in();
-    	for d in self.directives.iter() {
-    		f.node(d)?;
-    	}
-    	for item in self.body.iter() {
-    		f.node(item)?;
-    	}
+      let mut f = f.allow_in();
+      for d in self.directives.iter() {
+        f.node(d)?;
+      }
+      for item in self.body.iter() {
+        f.node(item)?;
+      }
 
-    	Ok(())
+      Ok(())
     }
   }
 
@@ -154,7 +154,7 @@ nodes!{
   }
   impl display::NodeDisplay for Directive {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.string(&self.value, Some(&self.value))
+      f.string(&self.value, Some(&self.value))
     }
   }
 
@@ -165,11 +165,11 @@ nodes!{
   }
   impl display::NodeDisplay for Pattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		Pattern::Identifier(ref id) => f.node(id),
-    		Pattern::Object(ref obj) => f.node(obj),
-    		Pattern::Array(ref obj) => f.node(obj),
-    	}
+      match *self {
+        Pattern::Identifier(ref id) => f.node(id),
+        Pattern::Object(ref obj) => f.node(obj),
+        Pattern::Array(ref obj) => f.node(obj),
+      }
     }
   }
 
@@ -180,7 +180,7 @@ nodes!{
   }
   impl display::NodeDisplay for LabelIdentifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.identifier(&self.value, Some(&self.raw))
+      f.identifier(&self.value, Some(&self.raw))
     }
   }
 
@@ -191,12 +191,12 @@ nodes!{
   }
   impl display::NodeDisplay for BindingIdentifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.identifier(&self.value, Some(&self.raw))
+      f.identifier(&self.value, Some(&self.raw))
     }
   }
   impl HasInOperator for BindingIdentifier {
     fn has_in_operator(&self) -> bool {
-    	false
+      false
     }
   }
   impl FirstSpecialToken for BindingIdentifier {}
@@ -208,176 +208,176 @@ nodes!{
   }
   impl display::NodeDisplay for PropertyIdentifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.identifier(&self.value, Some(&self.raw))
+      f.identifier(&self.value, Some(&self.raw))
     }
   }
 
 
-	pub enum LeftHandSimpleAssign {
-		// TODO: Parenthesized ident and member?
-		Identifier(BindingIdentifier),
-		Member(expression::MemberExpression),
-	}
+  pub enum LeftHandSimpleAssign {
+    // TODO: Parenthesized ident and member?
+    Identifier(BindingIdentifier),
+    Member(MemberExpression),
+  }
   impl display::NodeDisplay for LeftHandSimpleAssign {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		LeftHandSimpleAssign::Identifier(ref s) => f.node(s),
-    		LeftHandSimpleAssign::Member(ref m) => f.node(m),
-    	}
+      match *self {
+        LeftHandSimpleAssign::Identifier(ref s) => f.node(s),
+        LeftHandSimpleAssign::Member(ref m) => f.node(m),
+      }
     }
   }
-	impl FirstSpecialToken for LeftHandSimpleAssign {
-	  fn first_special_token(&self) -> SpecialToken {
-    	match *self {
-    		LeftHandSimpleAssign::Identifier(ref s) => s.first_special_token(),
-    		LeftHandSimpleAssign::Member(ref m) => m.first_special_token(),
-    	}
-	  }
-	}
-	pub enum LeftHandComplexAssign {
-		// TODO: Parenthesized ident and member?
-		Identifier(BindingIdentifier),
-		Member(expression::MemberExpression),
-		Object(ObjectPattern),
-		Array(ArrayPattern),
-	}
+  impl FirstSpecialToken for LeftHandSimpleAssign {
+    fn first_special_token(&self) -> SpecialToken {
+      match *self {
+        LeftHandSimpleAssign::Identifier(ref s) => s.first_special_token(),
+        LeftHandSimpleAssign::Member(ref m) => m.first_special_token(),
+      }
+    }
+  }
+  pub enum LeftHandComplexAssign {
+    // TODO: Parenthesized ident and member?
+    Identifier(BindingIdentifier),
+    Member(MemberExpression),
+    Object(ObjectPattern),
+    Array(ArrayPattern),
+  }
   impl display::NodeDisplay for LeftHandComplexAssign {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		LeftHandComplexAssign::Identifier(ref s) => f.node(s),
-    		LeftHandComplexAssign::Member(ref m) => f.node(m),
-    		LeftHandComplexAssign::Object(ref m) => f.node(m),
-    		LeftHandComplexAssign::Array(ref m) => f.node(m),
-    	}
+      match *self {
+        LeftHandComplexAssign::Identifier(ref s) => f.node(s),
+        LeftHandComplexAssign::Member(ref m) => f.node(m),
+        LeftHandComplexAssign::Object(ref m) => f.node(m),
+        LeftHandComplexAssign::Array(ref m) => f.node(m),
+      }
     }
   }
-	impl FirstSpecialToken for LeftHandComplexAssign {
-	  fn first_special_token(&self) -> SpecialToken {
-    	match *self {
-    		LeftHandComplexAssign::Identifier(ref s) => s.first_special_token(),
-    		LeftHandComplexAssign::Member(ref m) => m.first_special_token(),
-    		LeftHandComplexAssign::Object(ref m) => m.first_special_token(),
-    		LeftHandComplexAssign::Array(ref m) => m.first_special_token(),
-    	}
-	  }
-	}
+  impl FirstSpecialToken for LeftHandComplexAssign {
+    fn first_special_token(&self) -> SpecialToken {
+      match *self {
+        LeftHandComplexAssign::Identifier(ref s) => s.first_special_token(),
+        LeftHandComplexAssign::Member(ref m) => m.first_special_token(),
+        LeftHandComplexAssign::Object(ref m) => m.first_special_token(),
+        LeftHandComplexAssign::Array(ref m) => m.first_special_token(),
+      }
+    }
+  }
 
 
   // ({   } =
-	pub struct ObjectPattern {
-		properties: Vec<ObjectPatternProperty>,
+  pub struct ObjectPattern {
+    properties: Vec<ObjectPatternProperty>,
     rest: Option<Box<LeftHandComplexAssign>>,
-	}
+  }
   impl display::NodeDisplay for ObjectPattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.token(display::Token::CurlyL)?;
+      f.token(display::Token::CurlyL)?;
 
-    	f.comma_list(&self.properties)?;
+      f.comma_list(&self.properties)?;
 
-    	if let Some(ref p) = self.rest {
-    		if !self.properties.is_empty() {
-    			f.token(display::Token::Comma)?;
-    		}
+      if let Some(ref p) = self.rest {
+        if !self.properties.is_empty() {
+          f.token(display::Token::Comma)?;
+        }
 
-    		f.token(display::Token::Ellipsis)?;
+        f.token(display::Token::Ellipsis)?;
 
-    		f.node(p)?;
-    	}
+        f.node(p)?;
+      }
 
-    	f.token(display::Token::CurlyR)
+      f.token(display::Token::CurlyR)
     }
   }
   impl FirstSpecialToken for ObjectPattern {
-  	fn first_special_token(&self) -> SpecialToken {
-  		SpecialToken::Object
-  	}
+    fn first_special_token(&self) -> SpecialToken {
+      SpecialToken::Object
+    }
   }
-	pub enum ObjectPatternProperty {
-		Identifier(BindingIdentifier, Option<alias::Expression>),
-		Pattern(PropertyId, LeftHandComplexAssign, Option<alias::Expression>),
-	}
+  pub enum ObjectPatternProperty {
+    Identifier(BindingIdentifier, Option<alias::Expression>),
+    Pattern(PropertyId, LeftHandComplexAssign, Option<alias::Expression>),
+  }
   impl display::NodeDisplay for ObjectPatternProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		ObjectPatternProperty::Identifier(ref id, ref expr) => {
-    			f.node(id)?;
-    			if let Some(ref expr) = *expr {
-    				let mut f = f.allow_in();
+      match *self {
+        ObjectPatternProperty::Identifier(ref id, ref expr) => {
+          f.node(id)?;
+          if let Some(ref expr) = *expr {
+            let mut f = f.allow_in();
 
-    				f.token(display::Token::Eq)?;
-    				f.require_precedence(display::Precedence::Assignment).node(expr)?;
-    			}
+            f.token(display::Token::Eq)?;
+            f.require_precedence(display::Precedence::Assignment).node(expr)?;
+          }
 
-    			Ok(())
-    		}
-    		ObjectPatternProperty::Pattern(ref prop, ref pattern, ref expr) => {
-    			f.node(prop)?;
-    			f.token(display::Token::Colon)?;
-    			f.node(pattern)?;
-    			if let Some(ref expr) = *expr {
-    				let mut f = f.allow_in();
+          Ok(())
+        }
+        ObjectPatternProperty::Pattern(ref prop, ref pattern, ref expr) => {
+          f.node(prop)?;
+          f.token(display::Token::Colon)?;
+          f.node(pattern)?;
+          if let Some(ref expr) = *expr {
+            let mut f = f.allow_in();
 
-    				f.token(display::Token::Eq)?;
-    				f.require_precedence(display::Precedence::Assignment).node(expr)?;
-    			}
+            f.token(display::Token::Eq)?;
+            f.require_precedence(display::Precedence::Assignment).node(expr)?;
+          }
 
-    			Ok(())
-    		}
-    	}
+          Ok(())
+        }
+      }
     }
   }
 
 
   // ([   ] =
-	pub struct ArrayPattern {
-		items: Vec<Option<ArrayPatternElement>>,
+  pub struct ArrayPattern {
+    items: Vec<Option<ArrayPatternElement>>,
     rest: Option<Box<Pattern>>,
-	}
+  }
   impl display::NodeDisplay for ArrayPattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.token(display::Token::SquareL)?;
+      f.token(display::Token::SquareL)?;
 
-    	for (i, prop) in self.items.iter().enumerate() {
-    		if i != 0 {
-	    		f.token(display::Token::Comma)?;
-    		}
+      for (i, prop) in self.items.iter().enumerate() {
+        if i != 0 {
+          f.token(display::Token::Comma)?;
+        }
 
-    		if let Some(ref prop) = *prop {
-	    		f.node(prop)?;
-	    	}
-    	}
+        if let Some(ref prop) = *prop {
+          f.node(prop)?;
+        }
+      }
 
-    	if let Some(ref p) = self.rest {
-    		if !self.items.is_empty() {
-    			f.token(display::Token::Comma)?;
-    		}
+      if let Some(ref p) = self.rest {
+        if !self.items.is_empty() {
+          f.token(display::Token::Comma)?;
+        }
 
-    		f.token(display::Token::Ellipsis)?;
+        f.token(display::Token::Ellipsis)?;
 
-    		f.node(p)?;
-    	}
+        f.node(p)?;
+      }
 
-    	f.token(display::Token::SquareR)
+      f.token(display::Token::SquareR)
     }
   }
   impl FirstSpecialToken for ArrayPattern {}
 
-	pub struct ArrayPatternElement {
-		id: LeftHandComplexAssign,
-		init: Option<alias::Expression>,
-	}
+  pub struct ArrayPatternElement {
+    id: LeftHandComplexAssign,
+    init: Option<alias::Expression>,
+  }
   impl display::NodeDisplay for ArrayPatternElement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.node(&self.id)?;
+      f.node(&self.id)?;
 
-    	if let Some(ref init) = self.init {
-    		let mut f = f.allow_in();
+      if let Some(ref init) = self.init {
+        let mut f = f.allow_in();
 
-    		f.token(display::Token::Eq)?;
-    		f.require_precedence(display::Precedence::Assignment).node(init)?;
-    	}
+        f.token(display::Token::Eq)?;
+        f.require_precedence(display::Precedence::Assignment).node(init)?;
+      }
 
-    	Ok(())
+      Ok(())
     }
   }
 
@@ -389,17 +389,17 @@ nodes!{
   }
   impl display::NodeDisplay for FunctionBody {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	let mut f = f.allow_in();
+      let mut f = f.allow_in();
 
-    	for d in self.directives.iter() {
-    		f.node(d)?;
-    	}
+      for d in self.directives.iter() {
+        f.node(d)?;
+      }
 
-    	for item in self.body.iter() {
-    		f.node(item)?;
-    	}
+      for item in self.body.iter() {
+        f.node(item)?;
+      }
 
-    	Ok(())
+      Ok(())
     }
   }
 
@@ -413,13 +413,13 @@ nodes!{
   }
   impl display::NodeDisplay for Decorator {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.token(display::Token::At)?;
+      f.token(display::Token::At)?;
 
-    	match *self {
-    		Decorator::Property(ref expr) => f.node(expr),
-    		Decorator::Call(ref expr) => f.node(expr),
-    		Decorator::Expression(ref expr) => f.require_precedence(display::Precedence::Normal).node(expr),
-    	}
+      match *self {
+        Decorator::Property(ref expr) => f.node(expr),
+        Decorator::Call(ref expr) => f.node(expr),
+        Decorator::Expression(ref expr) => f.require_precedence(display::Precedence::Normal).node(expr),
+      }
     }
   }
 
@@ -430,14 +430,14 @@ nodes!{
   }
   impl display::NodeDisplay for DecoratorMemberExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		DecoratorMemberExpression::Identifier(ref id) => f.node(id),
-    		DecoratorMemberExpression::Member(ref member, ref id) => {
-    			f.node(member)?;
-    			f.token(display::Token::Period)?;
-    			f.node(id)
-    		},
-    	}
+      match *self {
+        DecoratorMemberExpression::Identifier(ref id) => f.node(id),
+        DecoratorMemberExpression::Member(ref member, ref id) => {
+          f.node(member)?;
+          f.token(display::Token::Period)?;
+          f.node(id)
+        },
+      }
     }
   }
   // experimental
@@ -447,8 +447,8 @@ nodes!{
   }
   impl display::NodeDisplay for DecoratorCallExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.node(&self.callee)?;
-    	f.node(&self.arguments)
+      f.node(&self.callee)?;
+      f.node(&self.arguments)
     }
   }
 
@@ -458,16 +458,16 @@ nodes!{
   }
   impl display::NodeDisplay for CallArguments {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.token(display::Token::ParenL)?;
+      f.token(display::Token::ParenL)?;
 
-    	f.comma_list(&self.args)?;
+      f.comma_list(&self.args)?;
 
-    	if let Some(ref spread) = self.spread {
-    		f.token(display::Token::Comma)?;
-    		f.require_precedence(display::Precedence::Assignment).node(spread)?;
-    	}
+      if let Some(ref spread) = self.spread {
+        f.token(display::Token::Comma)?;
+        f.require_precedence(display::Precedence::Assignment).node(spread)?;
+      }
 
-    	f.token(display::Token::ParenR)
+      f.token(display::Token::ParenR)
     }
   }
 
@@ -477,19 +477,19 @@ nodes!{
   }
   impl display::NodeDisplay for ClassBody {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.token(display::Token::CurlyL)?;
+      f.token(display::Token::CurlyL)?;
 
-    	for item in self.items.iter() {
-    		f.node(item)?;
-    	}
+      for item in self.items.iter() {
+        f.node(item)?;
+      }
 
-    	f.token(display::Token::CurlyR)
+      f.token(display::Token::CurlyR)
     }
   }
   pub struct ClassEmpty {}
   impl display::NodeDisplay for ClassEmpty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.token(display::Token::Semicolon)
+      f.token(display::Token::Semicolon)
     }
   }
   pub enum ClassItem {
@@ -499,11 +499,11 @@ nodes!{
   }
   impl display::NodeDisplay for ClassItem {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		ClassItem::Method(ref item) => f.node(item),
-    		ClassItem::Field(ref item) => f.node(item),
-    		ClassItem::Empty(ref item) => f.node(item),
-    	}
+      match *self {
+        ClassItem::Method(ref item) => f.node(item),
+        ClassItem::Field(ref item) => f.node(item),
+        ClassItem::Empty(ref item) => f.node(item),
+      }
     }
   }
 
@@ -521,32 +521,32 @@ nodes!{
   }
   pub enum PropertyId {
     Literal(PropertyIdentifier),
-    String(literal::String),
-    Number(literal::Numeric),
+    String(String),
+    Number(Numeric),
     Computed(Box<alias::Expression>),
   }
   impl display::NodeDisplay for PropertyId {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		PropertyId::Literal(ref id) => {
-    			f.token(display::Token::Period)?;
-    			f.node(id)
-    		}
-    		PropertyId::String(ref id) => {
-    			f.token(display::Token::Period)?;
-    			f.node(id)
-    		}
-    		PropertyId::Number(ref id) => {
-    			f.token(display::Token::Period)?;
-    			f.node(id)
-    		}
-    		PropertyId::Computed(ref expr) => {
-    			let mut f = f.allow_in();
-    			f.token(display::Token::SquareL)?;
-    			f.require_precedence(display::Precedence::Assignment).node(expr)?;
-    			f.token(display::Token::SquareR)
-    		}
-    	}
+      match *self {
+        PropertyId::Literal(ref id) => {
+          f.token(display::Token::Period)?;
+          f.node(id)
+        }
+        PropertyId::String(ref id) => {
+          f.token(display::Token::Period)?;
+          f.node(id)
+        }
+        PropertyId::Number(ref id) => {
+          f.token(display::Token::Period)?;
+          f.node(id)
+        }
+        PropertyId::Computed(ref expr) => {
+          let mut f = f.allow_in();
+          f.token(display::Token::SquareL)?;
+          f.require_precedence(display::Precedence::Assignment).node(expr)?;
+          f.token(display::Token::SquareR)
+        }
+      }
     }
   }
 
@@ -561,19 +561,19 @@ nodes!{
   }
   impl display::NodeDisplay for ClassMethod {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	for dec in self.decorators.iter() {
-    		f.node(dec)?;
-    	}
+      for dec in self.decorators.iter() {
+        f.node(dec)?;
+      }
 
-    	if let FieldPosition::Static = self.pos {
-    		f.token(display::Token::Static)?;
-    	}
+      if let FieldPosition::Static = self.pos {
+        f.token(display::Token::Static)?;
+      }
 
-    	f.node(&self.id)?;
-    	f.node(&self.params)?;
-    	f.node(&self.body)?;
+      f.node(&self.id)?;
+      f.node(&self.params)?;
+      f.node(&self.body)?;
 
-    	Ok(())
+      Ok(())
     }
   }
   pub enum FieldPosition {
@@ -588,10 +588,10 @@ nodes!{
   }
   impl display::NodeDisplay for ClassFieldId {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		ClassFieldId::Public(ref id) => f.node(id),
-    		ClassFieldId::Private(ref id) => f.node(id),
-    	}
+      match *self {
+        ClassFieldId::Public(ref id) => f.node(id),
+        ClassFieldId::Private(ref id) => f.node(id),
+      }
     }
   }
 
@@ -605,22 +605,22 @@ nodes!{
   }
   impl display::NodeDisplay for ClassField {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	for dec in self.decorators.iter() {
-    		f.node(dec)?;
-    	}
+      for dec in self.decorators.iter() {
+        f.node(dec)?;
+      }
 
-    	if let FieldPosition::Static = self.pos {
-    		f.token(display::Token::Static)?;
-    	}
+      if let FieldPosition::Static = self.pos {
+        f.token(display::Token::Static)?;
+      }
 
-    	f.node(&self.id)?;
+      f.node(&self.id)?;
 
-    	if let Some(ref val) = self.value {
-    		f.token(display::Token::Eq)?;
-    		f.require_precedence(display::Precedence::Assignment).node(val)?;
-    	}
+      if let Some(ref val) = self.value {
+        f.token(display::Token::Eq)?;
+        f.require_precedence(display::Precedence::Assignment).node(val)?;
+      }
 
-    	Ok(())
+      Ok(())
     }
   }
 
@@ -630,19 +630,19 @@ nodes!{
   }
   impl display::NodeDisplay for FunctionParams {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	let mut f = f.allow_in();
+      let mut f = f.allow_in();
 
-    	f.comma_list(&self.params)?;
+      f.comma_list(&self.params)?;
 
-    	if let Some(ref param) = self.rest {
-    		if !self.params.is_empty() {
-    			f.token(display::Token::Comma)?;
-    		}
+      if let Some(ref param) = self.rest {
+        if !self.params.is_empty() {
+          f.token(display::Token::Comma)?;
+        }
 
-    		f.token(display::Token::Ellipsis)?;
-    		f.node(param)?;
-    	}
-    	Ok(())
+        f.token(display::Token::Ellipsis)?;
+        f.node(param)?;
+      }
+      Ok(())
     }
   }
   pub struct FunctionParam {
@@ -652,16 +652,16 @@ nodes!{
   }
   impl display::NodeDisplay for FunctionParam {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	for dec in self.decorators.iter() {
-    		f.node(dec)?;
-    	}
+      for dec in self.decorators.iter() {
+        f.node(dec)?;
+      }
 
-    	f.node(&self.id)?;
+      f.node(&self.id)?;
 
-    	if let Some(ref init) = self.init {
-    		f.node(init)?;
-    	}
-    	Ok(())
+      if let Some(ref init) = self.init {
+        f.node(init)?;
+      }
+      Ok(())
     }
   }
   pub struct FunctionRestParam {
@@ -669,9 +669,9 @@ nodes!{
   }
   impl display::NodeDisplay for FunctionRestParam {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	f.node(&self.id)?;
+      f.node(&self.id)?;
 
-    	Ok(())
+      Ok(())
     }
   }
 }
