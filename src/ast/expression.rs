@@ -8,8 +8,6 @@ use super::display;
 use super::statement::{BlockStatement};
 use super::misc::FirstSpecialToken;
 
-// TODO: None of these do "super()" do they?
-
 // this
 node!(pub struct ThisExpression {});
 impl display::NodeDisplay for ThisExpression {
@@ -102,14 +100,6 @@ node_enum!(pub enum ObjectItem {
     Method(ObjectMethod),
     Property(ObjectProperty),
 });
-impl display::NodeDisplay for ObjectItem {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            ObjectItem::Method(ref n) => f.node(n),
-            ObjectItem::Property(ref n) => f.node(n),
-        }
-    }
-}
 
 
 node!(pub struct ObjectProperty {
@@ -367,14 +357,6 @@ node_enum!(pub enum MemberProperty {
     Normal(misc::PropertyAccess),
     Private(PrivateProperty),
 });
-impl display::NodeDisplay for MemberProperty {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            MemberProperty::Normal(ref n) => f.node(n),
-            MemberProperty::Private(ref n) => f.node(n),
-        }
-    }
-}
 
 
 node!(pub struct PrivateProperty {
@@ -895,34 +877,44 @@ impl display::NodeDisplay for ArrowFunctionExpression {
 impl misc::FirstSpecialToken for ArrowFunctionExpression {}
 impl misc::HasInOperator for ArrowFunctionExpression {
     fn has_in_operator(&self) -> bool {
-        match self.body {
-            ArrowFunctionBody::Block(_) => false,
-            ArrowFunctionBody::Expression(ref expr) => expr.has_in_operator(),
+        self.body.has_in_operator()
+    }
+}
+
+
+node!(pub struct ArrowFunctionExpressionBody {
+    expression: Box<alias::Expression>,
+});
+impl display::NodeDisplay for ArrowFunctionExpressionBody {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        if let misc::SpecialToken::Object = self.expression.first_special_token() {
+            f.wrap_parens().node(&self.expression)
+        } else {
+            f.require_precedence(display::Precedence::Assignment).node(&self.expression)
         }
+    }
+}
+impl misc::HasInOperator for ArrowFunctionExpressionBody {
+    fn has_in_operator(&self) -> bool {
+        self.expression.has_in_operator()
     }
 }
 
 
 node_enum!(pub enum ArrowFunctionBody {
-    Expression(Box<alias::Expression>),
-
+    Expression(ArrowFunctionExpressionBody),
     // TODO: Do we need an async arrow body for fn return val
     Block(misc::FunctionBody),
 });
-impl display::NodeDisplay for ArrowFunctionBody {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl misc::HasInOperator for ArrowFunctionBody {
+    fn has_in_operator(&self) -> bool {
         match *self {
-            ArrowFunctionBody::Expression(ref n) => {
-                if let misc::SpecialToken::Object = n.first_special_token() {
-                    f.wrap_parens().node(n)
-                } else {
-                    f.require_precedence(display::Precedence::Assignment).node(n)
-                }
-            }
-            ArrowFunctionBody::Block(ref n) => f.node(n),
+            ArrowFunctionBody::Expression(ref n) => n.has_in_operator(),
+            ArrowFunctionBody::Block(ref n) => n.has_in_operator(),
         }
     }
 }
+
 
 
 // do { foo; }

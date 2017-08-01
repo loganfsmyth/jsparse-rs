@@ -18,6 +18,16 @@ macro_rules! node_enum {
                 }
             }
         )*
+
+        impl $crate::ast::display::NodeDisplay for $id {
+            fn fmt(&self, f: &mut $crate::ast::display::NodeFormatter) -> $crate::ast::display::NodeDisplayResult {
+                match *self {
+                    $(
+                        $id::$key(ref n) => f.node(n),
+                    )*
+                }
+            }
+        }
     }
 }
 
@@ -116,14 +126,6 @@ node_enum!(pub enum Ast {
     Script(Script),
     Module(Module),
 });
-impl display::NodeDisplay for Ast {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            Ast::Script(ref n) => f.node(n),
-            Ast::Module(ref n) => f.node(n),
-        }
-    }
-}
 
 
 node!(pub struct Script {
@@ -179,15 +181,6 @@ node_enum!(pub enum Pattern {
     Object(ObjectPattern),
     Array(ArrayPattern),
 });
-impl display::NodeDisplay for Pattern {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            Pattern::Identifier(ref n) => f.node(n),
-            Pattern::Object(ref n) => f.node(n),
-            Pattern::Array(ref n) => f.node(n),
-        }
-    }
-}
 
 
 // identifiers used as labels
@@ -237,14 +230,6 @@ node_enum!(pub enum LeftHandSimpleAssign {
     Identifier(BindingIdentifier),
     Member(MemberExpression),
 });
-impl display::NodeDisplay for LeftHandSimpleAssign {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            LeftHandSimpleAssign::Identifier(ref n) => f.node(n),
-            LeftHandSimpleAssign::Member(ref n) => f.node(n),
-        }
-    }
-}
 impl FirstSpecialToken for LeftHandSimpleAssign {
     fn first_special_token(&self) -> SpecialToken {
         match *self {
@@ -260,16 +245,6 @@ node_enum!(pub enum LeftHandComplexAssign {
     Object(ObjectPattern),
     Array(ArrayPattern),
 });
-impl display::NodeDisplay for LeftHandComplexAssign {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            LeftHandComplexAssign::Identifier(ref n) => f.node(n),
-            LeftHandComplexAssign::Member(ref n) => f.node(n),
-            LeftHandComplexAssign::Object(ref n) => f.node(n),
-            LeftHandComplexAssign::Array(ref n) => f.node(n),
-        }
-    }
-}
 impl FirstSpecialToken for LeftHandComplexAssign {
     fn first_special_token(&self) -> SpecialToken {
         match *self {
@@ -355,14 +330,6 @@ node_enum!(pub enum ObjectPatternProperty {
     Identifier(ObjectPatternIdentifierProperty),
     Pattern(ObjectPatternPatternProperty),
 });
-impl display::NodeDisplay for ObjectPatternProperty {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            ObjectPatternProperty::Identifier(ref n) => f.node(n),
-            ObjectPatternProperty::Pattern(ref n) => f.node(n),
-        }
-    }
-}
 
 
 // ([     ] =
@@ -439,6 +406,11 @@ impl display::NodeDisplay for FunctionBody {
         Ok(())
     }
 }
+impl HasInOperator for FunctionBody {
+    fn has_in_operator(&self) -> bool {
+        false
+    }
+}
 
 
 // experimental
@@ -450,17 +422,18 @@ node_enum!(pub enum Decorator {
     // Backward-compat for older decorator spec
     Expression(alias::Expression),
 });
-impl display::NodeDisplay for Decorator {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::At)?;
+// TODO
+// impl display::NodeDisplay for Decorator {
+//     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+//         f.punctuator(display::Punctuator::At)?;
 
-        match *self {
-            Decorator::Property(ref n) => f.node(n),
-            Decorator::Call(ref n) => f.node(n),
-            Decorator::Expression(ref expr) => f.require_precedence(display::Precedence::Normal).node(expr),
-        }
-    }
-}
+//         match *self {
+//             Decorator::Property(ref n) => f.node(n),
+//             Decorator::Call(ref n) => f.node(n),
+//             Decorator::Expression(ref expr) => f.require_precedence(display::Precedence::Normal).node(expr),
+//         }
+//     }
+// }
 
 node!(pub struct DecoratorMemberAccess {
     object: Box<DecoratorValueExpression>,
@@ -479,14 +452,7 @@ node_enum!(pub enum DecoratorValueExpression {
     Identifier(BindingIdentifier),
     Member(DecoratorMemberAccess),
 });
-impl display::NodeDisplay for DecoratorValueExpression {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            DecoratorValueExpression::Identifier(ref n) => f.node(n),
-            DecoratorValueExpression::Member(ref n) => f.node(n),
-        }
-    }
-}
+
 // experimental
 node!(pub struct DecoratorCallExpression {
     callee: DecoratorValueExpression,
@@ -548,15 +514,6 @@ node_enum!(pub enum ClassItem {
     Field(ClassField),
     Empty(ClassEmpty),
 });
-impl display::NodeDisplay for ClassItem {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            ClassItem::Method(ref n) => f.node(n),
-            ClassItem::Field(ref n) => f.node(n),
-            ClassItem::Empty(ref n) => f.node(n),
-        }
-    }
-}
 
 pub enum FunctionKind {
     Normal,
@@ -595,16 +552,8 @@ node_enum!(pub enum PropertyName {
     Number(Numeric),
     Computed(ComputedPropertyName),
 });
-impl display::NodeDisplay for PropertyName {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            PropertyName::Literal(ref n) => f.node(n),
-            PropertyName::String(ref n) => f.node(n),
-            PropertyName::Number(ref n) => f.node(n),
-            PropertyName::Computed(ref n) => f.node(n),
-        }
-    }
-}
+
+
 node!(pub struct ComputedPropertyName {
     expression: Box<alias::Expression>,
 });
@@ -623,14 +572,6 @@ node_enum!(pub enum PropertyAccess {
     Identifier(IdentifierPropertyAccess),
     Computed(ComputedPropertyAccess),
 });
-impl display::NodeDisplay for PropertyAccess {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            PropertyAccess::Identifier(ref n) => f.node(n),
-            PropertyAccess::Computed(ref n) => f.node(n),
-        }
-    }
-}
 
 node!(pub struct ComputedPropertyAccess {
     expression: Box<alias::Expression>,
@@ -690,14 +631,6 @@ node_enum!(pub enum ClassFieldId {
     Public(PropertyName),
     Private(PropertyIdentifier),
 });
-impl display::NodeDisplay for ClassFieldId {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            ClassFieldId::Public(ref n) => f.node(n),
-            ClassFieldId::Private(ref n) => f.node(n),
-        }
-    }
-}
 
 // experimental
 node!(pub struct ClassField {

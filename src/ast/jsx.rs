@@ -72,15 +72,6 @@ node_enum!(pub enum ElementName {
     Member(MemberExpression),
     Namespaced(NamespacedName),
 });
-impl display::NodeDisplay for ElementName {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            ElementName::Identifier(ref n) => f.node(n),
-            ElementName::Member(ref n) => f.node(n),
-            ElementName::Namespaced(ref n) => f.node(n),
-        }
-    }
-}
 
 
 node!(pub struct MemberExpression {
@@ -99,14 +90,6 @@ node_enum!(pub enum MemberObject {
     Identifier(Identifier),
     Member(MemberExpression),
 });
-impl display::NodeDisplay for MemberObject {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            MemberObject::Identifier(ref n) => f.node(n),
-            MemberObject::Member(ref n) => f.node(n),
-        }
-    }
-}
 
 
 node!(pub struct NamespacedName {
@@ -126,28 +109,12 @@ node_enum!(pub enum Attribute {
     Spread(SpreadAttribute),
     Pair(PairAttribute),
 });
-impl display::NodeDisplay for Attribute {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            Attribute::Spread(ref n) => f.node(n),
-            Attribute::Pair(ref n) => f.node(n),
-        }
-    }
-}
 
 
 node_enum!(pub enum AttributeName {
     Identifier(Identifier),
     Namespaced(NamespacedName),
 });
-impl display::NodeDisplay for AttributeName {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            AttributeName::Identifier(ref n) => f.node(n),
-            AttributeName::Namespaced(ref n) => f.node(n),
-        }
-    }
-}
 
 
 node!(pub struct SpreadAttribute {
@@ -184,15 +151,6 @@ node_enum!(pub enum AttributeValue {
     Expression(Box<alias::Expression>),
     Element(Element),
 });
-impl display::NodeDisplay for AttributeValue {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            AttributeValue::String(ref n) => f.node(n),
-            AttributeValue::Expression(ref n) => f.require_precedence(display::Precedence::Assignment).node(n),
-            AttributeValue::Element(ref n) => f.node(n),
-        }
-    }
-}
 
 
 node!(pub struct StringLiteral {
@@ -214,17 +172,6 @@ node_enum!(pub enum Child {
     Expression(Expression),
     Spread(ExpressionSpread),
 });
-impl display::NodeDisplay for Child {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            Child::Empty(ref n) => f.node(n),
-            Child::Text(ref n) => f.node(n),
-            Child::Element(ref n) => f.node(n),
-            Child::Expression(ref n) => f.node(n),
-            Child::Spread(ref n) => f.node(n),
-        }
-    }
-}
 
 node!(pub struct Expression {
     expression: Box<alias::Expression>,

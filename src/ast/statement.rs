@@ -193,24 +193,11 @@ node_enum!(pub enum ForInit {
     Var(VariableStatement),
     Let(LetDeclaration),
     Const(ConstDeclaration),
+
+    // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
+    // so we need parens here for that too.
     Expression(alias::Expression),
 });
-impl display::NodeDisplay for ForInit {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        let mut f = f.disallow_in();
-
-        match *self {
-            ForInit::Var(ref n) => f.node(n),
-            ForInit::Let(ref n) => f.node(n),
-            ForInit::Const(ref n) => f.node(n),
-            ForInit::Expression(ref n) => {
-                // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
-                // so we need parens here for that too.
-                f.require_precedence(display::Precedence::Normal).node(n)
-            }
-        }
-    }
-}
 
 
 // for ... in
@@ -294,22 +281,11 @@ node_enum!(pub enum ForInInit {
     Var(ForInVarPattern),
     Let(ForLetPattern),
     Const(ForConstPattern),
+
+    // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
+    // so we need parens here for that too.
     Complex(misc::LeftHandComplexAssign),
 });
-impl display::NodeDisplay for ForInInit {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            ForInInit::Var(ref n) => f.node(n),
-            ForInInit::Let(ref n) => f.node(n),
-            ForInInit::Const(ref n) => f.node(n),
-            ForInInit::Complex(ref n) => {
-                // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
-                // so we need parens here for that too.
-                f.node(n)
-            }
-        }
-    }
-}
 
 
 // for ... of
@@ -369,22 +345,11 @@ node_enum!(pub enum ForOfInit {
     Var(ForVarPattern),
     Let(ForLetPattern),
     Const(ForConstPattern),
+
+    // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
+    // so we need parens here for that too.
     Complex(misc::LeftHandComplexAssign),
 });
-impl display::NodeDisplay for ForOfInit {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            ForOfInit::Var(ref n) => f.node(n),
-            ForOfInit::Let(ref n) => f.node(n),
-            ForOfInit::Const(ref n) => f.node(n),
-            ForOfInit::Complex(ref n) => {
-                // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
-                // so we need parens here for that too.
-                f.node(n)
-            }
-        }
-    }
-}
 
 
 // while(...) ;
