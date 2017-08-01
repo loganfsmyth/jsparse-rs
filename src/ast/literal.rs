@@ -38,7 +38,7 @@ mod tests {
 }
 
 // null
-nodes!(pub struct Null {});
+node!(pub struct Null {});
 impl display::NodeDisplay for Null {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.keyword(display::Keyword::Null)
@@ -53,7 +53,7 @@ impl misc::FirstSpecialToken for Null {}
 
 
 // true/false
-nodes!(pub struct Boolean {
+node!(pub struct Boolean {
     value: bool,
 });
 impl display::NodeDisplay for Boolean {
@@ -74,7 +74,7 @@ impl misc::FirstSpecialToken for Boolean {}
 
 
 // 12
-nodes!(pub struct Numeric {
+node!(pub struct Numeric {
     raw: Option<string::String>,
     value: f64,
 });
@@ -92,7 +92,7 @@ impl misc::FirstSpecialToken for Numeric {}
 
 
 // "foo"
-nodes!(pub struct String {
+node!(pub struct String {
     raw: Option<string::String>,
     value: string::String,
 });
@@ -110,7 +110,7 @@ impl misc::FirstSpecialToken for String {}
 
 
 // /foo/g
-nodes!(pub struct RegExp {
+node!(pub struct RegExp {
     value: string::String,
     flags: Vec<char>,
 });

@@ -4,7 +4,7 @@ use super::misc;
 use super::alias;
 use super::display;
 
-nodes!(pub struct Element {
+node!(pub struct Element {
     opening: ElementName,
     attributes: Vec<Attribute>,
     children: Vec<Child>,
@@ -55,7 +55,7 @@ impl misc::HasInOperator for Element {
 impl misc::FirstSpecialToken for Element {}
 
 
-nodes!(pub struct Identifier {
+node!(pub struct Identifier {
     // Same as a JS identifier, but allows "-"
     raw: string::String,
     value: string::String,
@@ -83,7 +83,7 @@ impl display::NodeDisplay for ElementName {
 }
 
 
-nodes!(pub struct MemberExpression {
+node!(pub struct MemberExpression {
     object: Box<MemberObject>,
     property: Identifier,
 });
@@ -109,7 +109,7 @@ impl display::NodeDisplay for MemberObject {
 }
 
 
-nodes!(pub struct NamespacedName {
+node!(pub struct NamespacedName {
     namespace: Identifier,
     name: Identifier,
 });
@@ -150,7 +150,7 @@ impl display::NodeDisplay for AttributeName {
 }
 
 
-nodes!(pub struct SpreadAttribute {
+node!(pub struct SpreadAttribute {
     argument: alias::Expression,
 });
 impl display::NodeDisplay for SpreadAttribute {
@@ -163,7 +163,7 @@ impl display::NodeDisplay for SpreadAttribute {
 }
 
 
-nodes!(pub struct PairAttribute {
+node!(pub struct PairAttribute {
     name: AttributeName,
     value: Option<AttributeValue>,
 });
@@ -195,7 +195,7 @@ impl display::NodeDisplay for AttributeValue {
 }
 
 
-nodes!(pub struct StringLiteral {
+node!(pub struct StringLiteral {
     // String literal that allows _all_ chars, except closing quote
     raw: string::String,
     value: string::String,
@@ -226,7 +226,7 @@ impl display::NodeDisplay for Child {
     }
 }
 
-nodes!(pub struct Expression {
+node!(pub struct Expression {
     expression: Box<alias::Expression>,
 });
 impl display::NodeDisplay for Expression {
@@ -238,7 +238,7 @@ impl display::NodeDisplay for Expression {
 }
 
 // experimental?
-nodes!(pub struct ExpressionSpread {
+node!(pub struct ExpressionSpread {
     expression: Box<alias::Expression>,
 });
 impl display::NodeDisplay for ExpressionSpread {
@@ -250,7 +250,7 @@ impl display::NodeDisplay for ExpressionSpread {
     }
 }
 
-nodes!(pub struct Empty {});
+node!(pub struct Empty {});
 impl display::NodeDisplay for Empty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.punctuator(display::Punctuator::CurlyL)?;
@@ -258,7 +258,7 @@ impl display::NodeDisplay for Empty {
     }
 }
 
-nodes!(pub struct Text {
+node!(pub struct Text {
     // Serialized string should contain HTML entities since it, allows all chars except {, }, <, and >
     value: string::String,
 });

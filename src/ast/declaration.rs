@@ -22,7 +22,7 @@ impl<T: display::NodeDisplay> display::NodeDisplay for DeclaratorList<T> {
 }
 
 // let foo, bar;
-nodes!(pub struct LetDeclaration {
+node!(pub struct LetDeclaration {
     declarators: DeclaratorList<LetDeclarator>,
 });
 impl display::NodeDisplay for LetDeclaration {
@@ -31,7 +31,7 @@ impl display::NodeDisplay for LetDeclaration {
         f.node(&self.declarators)
     }
 }
-nodes!(pub struct LetDeclarator {
+node!(pub struct LetDeclarator {
     id: misc::Pattern,
     init: Option<alias::Expression>,
 });
@@ -48,7 +48,7 @@ impl display::NodeDisplay for LetDeclarator {
 
 
 // const foo = 4, bar = 5;
-nodes!(pub struct ConstDeclaration {
+node!(pub struct ConstDeclaration {
     declarators: DeclaratorList<ConstDeclarator>,
 });
 impl display::NodeDisplay for ConstDeclaration {
@@ -59,7 +59,7 @@ impl display::NodeDisplay for ConstDeclaration {
 }
 
 
-nodes!(pub struct ConstDeclarator {
+node!(pub struct ConstDeclarator {
     id: misc::Pattern,
     init: alias::Expression,
 });
@@ -72,7 +72,7 @@ impl display::NodeDisplay for ConstDeclarator {
 }
 
 // function name() {}
-nodes!(pub struct FunctionDeclaration {
+node!(pub struct FunctionDeclaration {
     id: misc::BindingIdentifier,
     params: misc::FunctionParams,
     body: misc::FunctionBody,
@@ -89,7 +89,7 @@ impl display::NodeDisplay for FunctionDeclaration {
 
 
 // class name {}
-nodes!(pub struct ClassDeclaration {
+node!(pub struct ClassDeclaration {
     decorators: Vec<misc::Decorator>, // experimental
     id: misc::BindingIdentifier,
     extends: Option<Box<alias::Expression>>,

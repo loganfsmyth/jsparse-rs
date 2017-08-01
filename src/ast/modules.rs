@@ -8,7 +8,7 @@ use super::declaration::{ClassDeclaration, FunctionDeclaration, LetDeclaration, 
 use super::literal::{String};
 use super::misc::FirstSpecialToken;
 
-nodes!(pub struct ModuleIdentifier {
+node!(pub struct ModuleIdentifier {
     // Identifier with "default"
     id: string::String,
 });
@@ -19,7 +19,7 @@ impl display::NodeDisplay for ModuleIdentifier {
 }
 
 
-nodes!(pub struct ImportSpecifier {
+node!(pub struct ImportSpecifier {
     local: misc::BindingIdentifier,
     imported: Option<ModuleIdentifier>,
 });
@@ -36,7 +36,7 @@ impl display::NodeDisplay for ImportSpecifier {
 }
 
 // import foo from "";
-nodes!(pub struct ImportNamedDeclaration {
+node!(pub struct ImportNamedDeclaration {
     default: misc::BindingIdentifier,
     source: String,
 });
@@ -51,7 +51,7 @@ impl display::NodeDisplay for ImportNamedDeclaration {
 
 
 // import foo, * as bar from "";
-nodes!(pub struct ImportNamedAndNamespaceDeclaration {
+node!(pub struct ImportNamedAndNamespaceDeclaration {
     default: misc::BindingIdentifier,
     namespace: misc::BindingIdentifier,
     source: String,
@@ -71,7 +71,7 @@ impl display::NodeDisplay for ImportNamedAndNamespaceDeclaration {
 
 
 // import * as bar from "";
-nodes!(pub struct ImportNamespaceDeclaration {
+node!(pub struct ImportNamespaceDeclaration {
     namespace: misc::BindingIdentifier,
     source: String,
 });
@@ -89,7 +89,7 @@ impl display::NodeDisplay for ImportNamespaceDeclaration {
 
 // import foo, {bar} from "";
 // import foo, {bar as bar} from "";
-nodes!(pub struct ImportNamedAndSpecifiersDeclaration {
+node!(pub struct ImportNamedAndSpecifiersDeclaration {
     default: misc::BindingIdentifier,
     specifiers: Vec<ImportSpecifier>,
     source: String,
@@ -110,7 +110,7 @@ impl display::NodeDisplay for ImportNamedAndSpecifiersDeclaration {
 
 // import {bar} from "";
 // import {bar as bar} from "";
-nodes!(pub struct ImportSpecifiersDeclaration {
+node!(pub struct ImportSpecifiersDeclaration {
     specifiers: Vec<ImportSpecifier>,
     source: String,
 });
@@ -127,7 +127,7 @@ impl display::NodeDisplay for ImportSpecifiersDeclaration {
 
 
 // export default function name() {}
-nodes!(pub struct ExportDefaultFunctionDeclaration {
+node!(pub struct ExportDefaultFunctionDeclaration {
     id: Option<misc::BindingIdentifier>,
     params: misc::FunctionParams,
     body: misc::FunctionBody,
@@ -148,7 +148,7 @@ impl display::NodeDisplay for ExportDefaultFunctionDeclaration {
 
 
 // export default class name {}
-nodes!(pub struct ExportDefaultClassDeclaration {
+node!(pub struct ExportDefaultClassDeclaration {
     decorators: Vec<misc::Decorator>, // experimental
     id: Option<misc::BindingIdentifier>,
     extends: Option<Box<alias::Expression>>,
@@ -172,7 +172,7 @@ impl display::NodeDisplay for ExportDefaultClassDeclaration {
 
 
 // export default 4;
-nodes!(pub struct ExportDefaultExpression {
+node!(pub struct ExportDefaultExpression {
     expression: alias::Expression,
 });
 impl display::NodeDisplay for ExportDefaultExpression {
@@ -192,7 +192,7 @@ impl display::NodeDisplay for ExportDefaultExpression {
 
 
 // export class foo {}
-nodes!(pub struct ExportClassDeclaration {
+node!(pub struct ExportClassDeclaration {
     exported: ClassDeclaration,
 });
 impl display::NodeDisplay for ExportClassDeclaration {
@@ -205,7 +205,7 @@ impl display::NodeDisplay for ExportClassDeclaration {
 
 
 // export function foo() {}
-nodes!(pub struct ExportFunctionDeclaration {
+node!(pub struct ExportFunctionDeclaration {
     exported: FunctionDeclaration,
 });
 impl display::NodeDisplay for ExportFunctionDeclaration {
@@ -218,7 +218,7 @@ impl display::NodeDisplay for ExportFunctionDeclaration {
 
 
 // export var foo;
-nodes!(pub struct ExportVarStatement {
+node!(pub struct ExportVarStatement {
     exported: VariableStatement,
 });
 impl display::NodeDisplay for ExportVarStatement {
@@ -231,7 +231,7 @@ impl display::NodeDisplay for ExportVarStatement {
 
 
 // export let foo;
-nodes!(pub struct ExportLetDeclaration {
+node!(pub struct ExportLetDeclaration {
     exported: LetDeclaration,
 });
 impl display::NodeDisplay for ExportLetDeclaration {
@@ -244,7 +244,7 @@ impl display::NodeDisplay for ExportLetDeclaration {
 
 
 // export const foo;
-nodes!(pub struct ExportConstDeclaration {
+node!(pub struct ExportConstDeclaration {
     exported: ConstDeclaration,
 });
 impl display::NodeDisplay for ExportConstDeclaration {
@@ -258,7 +258,7 @@ impl display::NodeDisplay for ExportConstDeclaration {
 
 // export {foo};
 // export {foo as bar};
-nodes!(pub struct ExportLocalBindings {
+node!(pub struct ExportLocalBindings {
     specifiers: Vec<LocalExportSpecifier>,
 });
 impl display::NodeDisplay for ExportLocalBindings {
@@ -271,7 +271,7 @@ impl display::NodeDisplay for ExportLocalBindings {
 }
 
 
-nodes!(pub struct LocalExportSpecifier {
+node!(pub struct LocalExportSpecifier {
     local: misc::BindingIdentifier,
     exported: Option<ModuleIdentifier>,
 });
@@ -290,7 +290,7 @@ impl display::NodeDisplay for LocalExportSpecifier {
 
 // export {foo} from "";
 // export {foo as bar} from "";
-nodes!(pub struct ExportSourceSpecifiers {
+node!(pub struct ExportSourceSpecifiers {
         specifiers: Vec<SourceExportSpecifier>,
         source: String,
 });
@@ -308,7 +308,7 @@ impl display::NodeDisplay for ExportSourceSpecifiers {
 }
 
 
-nodes!(pub struct SourceExportSpecifier {
+node!(pub struct SourceExportSpecifier {
     imported: ModuleIdentifier,
     exported: Option<ModuleIdentifier>,
 });
@@ -326,7 +326,7 @@ impl display::NodeDisplay for SourceExportSpecifier {
 
 
 // export * from "";
-nodes!(pub struct ExportAllSpecifiers {
+node!(pub struct ExportAllSpecifiers {
     source: String,
 });
 impl display::NodeDisplay for ExportAllSpecifiers {
@@ -340,7 +340,7 @@ impl display::NodeDisplay for ExportAllSpecifiers {
 
 
 // export foo from "";
-nodes!(pub struct ExportNamedSpecifier {
+node!(pub struct ExportNamedSpecifier {
     default: ModuleIdentifier,
     source: String,
 });
@@ -355,7 +355,7 @@ impl display::NodeDisplay for ExportNamedSpecifier {
 
 
 // export foo, * as foo from "";
-nodes!(pub struct ExportNamedAndNamespace {
+node!(pub struct ExportNamedAndNamespace {
     default: ModuleIdentifier,
     namespace: ModuleIdentifier,
     source: String,
@@ -375,7 +375,7 @@ impl display::NodeDisplay for ExportNamedAndNamespace {
 
 
 // export * as foo from "";
-nodes!(pub struct ExportNamespace {
+node!(pub struct ExportNamespace {
     namespace: ModuleIdentifier,
     source: String,
 });
@@ -393,7 +393,7 @@ impl display::NodeDisplay for ExportNamespace {
 
 // export foo, {foo} from "";
 // export foo, {foo as bar} from "";
-nodes!(pub struct ExportNamedAndSpecifiers {
+node!(pub struct ExportNamedAndSpecifiers {
     default: ModuleIdentifier,
     specifiers: Vec<SourceExportSpecifier>,
     source: String,

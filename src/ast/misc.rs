@@ -47,7 +47,7 @@ macro_rules! node_display {
 }
 
 
-macro_rules! nodes {
+macro_rules! node {
     (pub struct $id:ident { $($field_id:ident: $field_type:ty ,)* }) => {
         pub struct $id {
             $($field_id: $field_type,)*
@@ -117,7 +117,7 @@ impl display::NodeDisplay for Ast {
     }
 }
 
-nodes!(pub struct Script {
+node!(pub struct Script {
     directives: Vec<Directive>,
     body: Vec<alias::StatementItem>,
 });
@@ -135,7 +135,7 @@ impl display::NodeDisplay for Script {
     }
 }
 
-nodes!(pub struct Module {
+node!(pub struct Module {
     directives: Vec<Directive>,
     body: Vec<alias::ModuleStatementItem>,
 });
@@ -153,7 +153,7 @@ impl display::NodeDisplay for Module {
     }
 }
 
-nodes!(pub struct Directive {
+node!(pub struct Directive {
     value: string::String,
 });
 impl display::NodeDisplay for Directive {
@@ -181,7 +181,7 @@ impl display::NodeDisplay for Pattern {
 }
 
 // identifiers used as labels
-nodes!(pub struct LabelIdentifier {
+node!(pub struct LabelIdentifier {
     value: string::String,
     raw: string::String,
 });
@@ -192,7 +192,7 @@ impl display::NodeDisplay for LabelIdentifier {
 }
 
 // identifiers used as variables
-nodes!(pub struct BindingIdentifier {
+node!(pub struct BindingIdentifier {
     value: string::String,
     raw: Option<string::String>,
 });
@@ -209,7 +209,7 @@ impl HasInOperator for BindingIdentifier {
 impl FirstSpecialToken for BindingIdentifier {}
 
 // identifiers used as properties
-nodes!(pub struct PropertyIdentifier {
+node!(pub struct PropertyIdentifier {
     value: string::String,
     raw: string::String,
 });
@@ -271,7 +271,7 @@ impl FirstSpecialToken for LeftHandComplexAssign {
 
 
 // ({     } =
-nodes!(pub struct ObjectPattern {
+node!(pub struct ObjectPattern {
     properties: Vec<ObjectPatternProperty>,
     rest: Option<Box<LeftHandComplexAssign>>,
 });
@@ -301,7 +301,7 @@ impl FirstSpecialToken for ObjectPattern {
 }
 
 
-nodes!(pub struct ObjectPatternIdentifierProperty {
+node!(pub struct ObjectPatternIdentifierProperty {
     id: BindingIdentifier,
     init: Option<alias::Expression>,
 });
@@ -318,7 +318,7 @@ impl display::NodeDisplay for ObjectPatternIdentifierProperty {
         Ok(())
     }
 }
-nodes!(pub struct ObjectPatternPatternProperty {
+node!(pub struct ObjectPatternPatternProperty {
     name: PropertyName,
     pattern: LeftHandComplexAssign,
     init: Option<alias::Expression>,
@@ -354,7 +354,7 @@ impl display::NodeDisplay for ObjectPatternProperty {
 
 
 // ([     ] =
-nodes!(pub struct ArrayPattern {
+node!(pub struct ArrayPattern {
     items: Vec<Option<ArrayPatternElement>>,
     rest: Option<Box<Pattern>>,
 });
@@ -388,7 +388,7 @@ impl display::NodeDisplay for ArrayPattern {
 impl FirstSpecialToken for ArrayPattern {}
 
 
-nodes!(pub struct ArrayPatternElement {
+node!(pub struct ArrayPatternElement {
     id: LeftHandComplexAssign,
     init: Option<alias::Expression>,
 });
@@ -408,7 +408,7 @@ impl display::NodeDisplay for ArrayPatternElement {
 }
 
 
-nodes!(pub struct FunctionBody {
+node!(pub struct FunctionBody {
     directives: Vec<Directive>,
     body: Vec<alias::StatementItem>,
 });
@@ -450,7 +450,7 @@ impl display::NodeDisplay for Decorator {
     }
 }
 
-nodes!(pub struct DecoratorMemberAccess {
+node!(pub struct DecoratorMemberAccess {
     object: Box<DecoratorValueExpression>,
     property: PropertyIdentifier,
 });
@@ -476,7 +476,7 @@ impl display::NodeDisplay for DecoratorValueExpression {
     }
 }
 // experimental
-nodes!(pub struct DecoratorCallExpression {
+node!(pub struct DecoratorCallExpression {
     callee: DecoratorValueExpression,
     arguments: CallArguments,
 });
@@ -487,7 +487,7 @@ impl display::NodeDisplay for DecoratorCallExpression {
     }
 }
 
-nodes!(pub struct CallArguments {
+node!(pub struct CallArguments {
     args: Vec<Box<alias::Expression>>,
     spread: Option<Box<alias::Expression>>,
 });
@@ -507,7 +507,7 @@ impl display::NodeDisplay for CallArguments {
 }
 
 
-nodes!(pub struct ClassBody {
+node!(pub struct ClassBody {
     items: Vec<ClassItem>,
 });
 impl display::NodeDisplay for ClassBody {
@@ -523,7 +523,7 @@ impl display::NodeDisplay for ClassBody {
 }
 
 
-nodes!(pub struct ClassEmpty {});
+node!(pub struct ClassEmpty {});
 impl display::NodeDisplay for ClassEmpty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.punctuator(display::Punctuator::Semicolon)
@@ -593,7 +593,7 @@ impl display::NodeDisplay for PropertyName {
         }
     }
 }
-nodes!(pub struct ComputedPropertyName {
+node!(pub struct ComputedPropertyName {
     expression: Box<alias::Expression>,
 });
 impl display::NodeDisplay for ComputedPropertyName {
@@ -620,7 +620,7 @@ impl display::NodeDisplay for PropertyAccess {
     }
 }
 
-nodes!(pub struct ComputedPropertyAccess {
+node!(pub struct ComputedPropertyAccess {
     expression: Box<alias::Expression>,
 });
 impl display::NodeDisplay for ComputedPropertyAccess {
@@ -630,7 +630,7 @@ impl display::NodeDisplay for ComputedPropertyAccess {
         f.punctuator(display::Punctuator::SquareR)
     }
 }
-nodes!(pub struct IdentifierPropertyAccess {
+node!(pub struct IdentifierPropertyAccess {
     id: PropertyIdentifier,
 });
 impl display::NodeDisplay for IdentifierPropertyAccess {
@@ -641,7 +641,7 @@ impl display::NodeDisplay for IdentifierPropertyAccess {
 }
 
 
-nodes!(pub struct ClassMethod {
+node!(pub struct ClassMethod {
     pos: FieldPosition,
     kind: MethodKind,
     id: ClassFieldId,
@@ -688,7 +688,7 @@ impl display::NodeDisplay for ClassFieldId {
 }
 
 // experimental
-nodes!(pub struct ClassField {
+node!(pub struct ClassField {
     pos: FieldPosition,
     decorators: Vec<Decorator>,
 
@@ -716,7 +716,7 @@ impl display::NodeDisplay for ClassField {
     }
 }
 
-nodes!(pub struct FunctionParams {
+node!(pub struct FunctionParams {
     params: Vec<FunctionParam>,
     rest: Option<FunctionRestParam>,
 });
@@ -737,7 +737,7 @@ impl display::NodeDisplay for FunctionParams {
         Ok(())
     }
 }
-nodes!(pub struct FunctionParam {
+node!(pub struct FunctionParam {
     decorators: Vec<Decorator>, // experimental
     id: Pattern,
     init: Option<Box<alias::Expression>>,
@@ -758,7 +758,7 @@ impl display::NodeDisplay for FunctionParam {
 }
 
 
-nodes!(pub struct FunctionRestParam {
+node!(pub struct FunctionRestParam {
     id: Pattern,
 });
 impl display::NodeDisplay for FunctionRestParam {

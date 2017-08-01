@@ -35,7 +35,7 @@ mod tests {
 
 
 // { ... }
-nodes!(pub struct BlockStatement {
+node!(pub struct BlockStatement {
     body: Vec<alias::StatementItem>,
 });
 impl display::NodeDisplay for BlockStatement {
@@ -53,7 +53,7 @@ impl misc::HasOrphanIf for BlockStatement {}
 
 
 // var foo, bar;
-nodes!(pub struct VariableStatement {
+node!(pub struct VariableStatement {
     declarations: VariableDeclaratorList,
 });
 impl display::NodeDisplay for VariableStatement {
@@ -82,7 +82,7 @@ impl display::NodeDisplay for VariableDeclaratorList {
 }
 
 
-nodes!(pub struct VariableDeclarator {
+node!(pub struct VariableDeclarator {
     id: misc::Pattern,
     init: Option<alias::Expression>,
 });
@@ -99,7 +99,7 @@ impl display::NodeDisplay for VariableDeclarator {
 
 
 // foo;
-nodes!(pub struct ExpressionStatement {
+node!(pub struct ExpressionStatement {
     expression: alias::Expression,
 });
 impl display::NodeDisplay for ExpressionStatement {
@@ -118,7 +118,7 @@ impl misc::HasOrphanIf for ExpressionStatement {}
 
 
 // if () {}
-nodes!(pub struct IfStatement {
+node!(pub struct IfStatement {
     test: alias::Expression,
     consequent: Box<alias::Statement>,
     alternate: Option<Box<alias::Statement>>,
@@ -155,7 +155,7 @@ impl misc::HasOrphanIf for IfStatement {
 
 
 // for( ; ; ) {}
-nodes!(pub struct ForStatement {
+node!(pub struct ForStatement {
     init: Option<ForInit>,
     test: Option<Box<alias::Expression>>,
     update: Option<Box<alias::Expression>>,
@@ -214,7 +214,7 @@ impl display::NodeDisplay for ForInit {
 
 
 // for ... in
-nodes!(pub struct ForInStatement {
+node!(pub struct ForInStatement {
     left: ForInInit,
     right: Box<alias::Expression>,
     body: Box<alias::Statement>,
@@ -240,7 +240,7 @@ impl misc::HasOrphanIf for ForInStatement {
     }
 }
 
-nodes!(pub struct ForInVarPattern {
+node!(pub struct ForInVarPattern {
     pattern: misc::Pattern,
     init: Option<alias::Expression>,
 });
@@ -257,7 +257,7 @@ impl display::NodeDisplay for ForInVarPattern {
 }
 
 
-nodes!(pub struct ForVarPattern {
+node!(pub struct ForVarPattern {
     pattern: misc::Pattern,
 });
 impl display::NodeDisplay for ForVarPattern {
@@ -268,7 +268,7 @@ impl display::NodeDisplay for ForVarPattern {
 }
 
 
-nodes!(pub struct ForLetPattern {
+node!(pub struct ForLetPattern {
     pattern: misc::Pattern,
 });
 impl display::NodeDisplay for ForLetPattern {
@@ -279,7 +279,7 @@ impl display::NodeDisplay for ForLetPattern {
 }
 
 
-nodes!(pub struct ForConstPattern {
+node!(pub struct ForConstPattern {
     pattern: misc::Pattern,
 });
 impl display::NodeDisplay for ForConstPattern {
@@ -313,7 +313,7 @@ impl display::NodeDisplay for ForInInit {
 
 
 // for ... of
-nodes!(pub struct ForOfStatement {
+node!(pub struct ForOfStatement {
     left: ForOfInit,
     right: Box<alias::Expression>,
     body: Box<alias::Statement>,
@@ -338,7 +338,7 @@ impl misc::HasOrphanIf for ForOfStatement {
 
 
 // for await .. of
-nodes!(pub struct ForAwaitStatement {
+node!(pub struct ForAwaitStatement {
     left: ForOfInit,
     right: Box<alias::Expression>,
     body: Box<alias::Statement>,
@@ -388,7 +388,7 @@ impl display::NodeDisplay for ForOfInit {
 
 
 // while(...) ;
-nodes!(pub struct WhileStatement {
+node!(pub struct WhileStatement {
     test: Box<alias::Expression>,
     body: Box<alias::Statement>,
 });
@@ -412,7 +412,7 @@ impl misc::HasOrphanIf for WhileStatement {
 
 
 // do ; while(...) ;
-nodes!(pub struct DoWhileStatement {
+node!(pub struct DoWhileStatement {
     test: Box<alias::Expression>,
     body: Box<alias::Statement>,
 });
@@ -435,7 +435,7 @@ impl misc::HasOrphanIf for DoWhileStatement {}
 
 
 // switch (...) { ...    }
-nodes!(pub struct SwitchStatement {
+node!(pub struct SwitchStatement {
     discriminant: Box<alias::Expression>,
     cases: Vec<SwitchCase>,
 });
@@ -460,7 +460,7 @@ impl misc::HasOrphanIf for SwitchStatement {}
 
 // case foo:
 // default:
-nodes!(pub struct SwitchCase {
+node!(pub struct SwitchCase {
     test: Option<Box<alias::Expression>>,
     consequent: Vec<alias::StatementItem>,
 });
@@ -486,7 +486,7 @@ impl display::NodeDisplay for SwitchCase {
 
 
 // with(...) ;
-nodes!(pub struct WithStatement {
+node!(pub struct WithStatement {
     object: Box<alias::Expression>,
     body: Box<alias::Statement>,
 });
@@ -507,7 +507,7 @@ impl misc::HasOrphanIf for WithStatement {
 
 
 // foo: while(false) ;
-nodes!(pub struct LabelledStatement {
+node!(pub struct LabelledStatement {
     label: misc::LabelIdentifier,
     body: Box<alias::Statement>,
 });
@@ -526,7 +526,7 @@ impl misc::HasOrphanIf for LabelledStatement {
 
 
 // throw foo;
-nodes!(pub struct ThrowStatement {
+node!(pub struct ThrowStatement {
     argument: Box<alias::Expression>,
 });
 impl display::NodeDisplay for ThrowStatement {
@@ -542,7 +542,7 @@ impl misc::HasOrphanIf for ThrowStatement {}
 
 
 // try {} catch(foo) {}
-nodes!(pub struct TryCatchStatement {
+node!(pub struct TryCatchStatement {
     block: BlockStatement,
     handler: CatchClause,
 });
@@ -557,7 +557,7 @@ impl misc::HasOrphanIf for TryCatchStatement {}
 
 
 // try {} catch(foo) {} finally {}
-nodes!(pub struct TryCatchFinallyStatement {
+node!(pub struct TryCatchFinallyStatement {
     block: BlockStatement,
     handler: CatchClause,
     finalizer: BlockStatement,
@@ -577,7 +577,7 @@ impl misc::HasOrphanIf for TryCatchFinallyStatement {}
 
 
 // try {} finally {}
-nodes!(pub struct TryFinallyStatement {
+node!(pub struct TryFinallyStatement {
     block: BlockStatement,
     finalizer: BlockStatement,
 });
@@ -593,7 +593,7 @@ impl display::NodeDisplay for TryFinallyStatement {
 impl misc::HasOrphanIf for TryFinallyStatement {}
 
 
-nodes!(pub struct CatchClause {
+node!(pub struct CatchClause {
     // Missing param is experimental
     param: Option<misc::Pattern>,
     body: BlockStatement,
@@ -613,7 +613,7 @@ impl display::NodeDisplay for CatchClause {
 
 // continue;
 // continue foo;
-nodes!(pub struct ContinueStatement {
+node!(pub struct ContinueStatement {
     label: Option<misc::LabelIdentifier>,
 });
 impl display::NodeDisplay for ContinueStatement {
@@ -630,7 +630,7 @@ impl misc::HasOrphanIf for ContinueStatement {}
 
 // break;
 // break foo;
-nodes!(pub struct BreakStatement {
+node!(pub struct BreakStatement {
     label: Option<misc::LabelIdentifier>,
 });
 impl display::NodeDisplay for BreakStatement {
@@ -647,7 +647,7 @@ impl misc::HasOrphanIf for BreakStatement {}
 
 // return;
 // return foo;
-nodes!(pub struct ReturnStatement {
+node!(pub struct ReturnStatement {
     argument: Option<Box<alias::Expression>>,
 });
 impl display::NodeDisplay for ReturnStatement {
@@ -664,7 +664,7 @@ impl misc::HasOrphanIf for ReturnStatement {}
 
 
 // debugger;
-nodes!(pub struct DebuggerStatement {});
+node!(pub struct DebuggerStatement {});
 impl display::NodeDisplay for DebuggerStatement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.keyword(display::Keyword::Debugger)?;
@@ -674,7 +674,7 @@ impl display::NodeDisplay for DebuggerStatement {
 impl misc::HasOrphanIf for DebuggerStatement {}
 
 // ;
-nodes!(pub struct EmptyStatement {});
+node!(pub struct EmptyStatement {});
 impl display::NodeDisplay for EmptyStatement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.punctuator(display::Punctuator::Semicolon)

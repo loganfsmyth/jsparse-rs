@@ -11,7 +11,7 @@ use super::misc::FirstSpecialToken;
 // TODO: None of these do "super()" do they?
 
 // this
-nodes!(pub struct ThisExpression {});
+node!(pub struct ThisExpression {});
 impl display::NodeDisplay for ThisExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.keyword(display::Keyword::This)
@@ -23,7 +23,7 @@ impl misc::FirstSpecialToken for ThisExpression {
 impl misc::HasInOperator for ThisExpression {}
 
 
-nodes!(pub struct ParenthesizedExpression {
+node!(pub struct ParenthesizedExpression {
     expr: Box<alias::Expression>,
 });
 impl display::NodeDisplay for ParenthesizedExpression {
@@ -36,7 +36,7 @@ impl misc::HasInOperator for ParenthesizedExpression {}
 
 
 // [1, 2, 3, ...4]
-nodes!(pub struct ArrayExpression {
+node!(pub struct ArrayExpression {
     elements: Vec<Option<Box<alias::Expression>>>,
     spread: Option<Box<alias::Expression>>,
 });
@@ -70,7 +70,7 @@ impl misc::HasInOperator for ArrayExpression {}
 
 
 // {a: 1, ...b}
-nodes!(pub struct ObjectExpression {
+node!(pub struct ObjectExpression {
     properties: Vec<ObjectProperty>,
     spread: Option<Box<alias::Expression>>, // experimental
 });
@@ -112,7 +112,7 @@ impl display::NodeDisplay for ObjectItem {
 }
 
 
-nodes!(pub struct ObjectProperty {
+node!(pub struct ObjectProperty {
     name: misc::PropertyName,
     value: Box<alias::Expression>,
 });
@@ -129,7 +129,7 @@ impl display::NodeDisplay for ObjectProperty {
     }
 }
 
-nodes!(pub struct ObjectMethod {
+node!(pub struct ObjectMethod {
     kind: misc::MethodKind,
     id: misc::PropertyName,
     params: misc::FunctionParams,
@@ -147,7 +147,7 @@ impl display::NodeDisplay for ObjectMethod {
 
 
 // (function(){})
-nodes!(pub struct FunctionExpression {
+node!(pub struct FunctionExpression {
     id: Option<misc::BindingIdentifier>,
     params: misc::FunctionParams,
     body: misc::FunctionBody,
@@ -171,7 +171,7 @@ impl misc::HasInOperator for FunctionExpression {}
 
 
 // (class {})
-nodes!(pub struct ClassExpression {
+node!(pub struct ClassExpression {
     decorators: Vec<misc::Decorator>, // experimental
     id: Option<misc::BindingIdentifier>,
     extends: Option<Box<alias::Expression>>,
@@ -203,7 +203,7 @@ impl misc::HasInOperator for ClassExpression {}
 
 
 // fn`content`
-nodes!(pub struct TaggedTemplateLiteral {
+node!(pub struct TaggedTemplateLiteral {
     tag: Box<alias::Expression>,
     template: TemplateLiteral,
 });
@@ -220,7 +220,7 @@ impl misc::HasInOperator for TaggedTemplateLiteral {}
 
 
 // `content`
-nodes!(pub struct TemplateLiteral {
+node!(pub struct TemplateLiteral {
     piece: TemplateLiteralPiece,
 });
 impl display::NodeDisplay for TemplateLiteral {
@@ -231,6 +231,7 @@ impl display::NodeDisplay for TemplateLiteral {
 }
 impl misc::FirstSpecialToken for TemplateLiteral {}
 impl misc::HasInOperator for TemplateLiteral {}
+
 
 // TODO: Enum fix?
 pub enum TemplateLiteralPiece {
@@ -258,7 +259,7 @@ impl display::NodeDisplay for TemplateLiteralPiece {
 }
 
 
-nodes!(pub struct TemplatePart {
+node!(pub struct TemplatePart {
     value: string::String,
     rawValue: Option<string::String>,
 });
@@ -270,7 +271,7 @@ impl display::NodeDisplay for TemplatePart {
 
 
 // foo()
-nodes!(pub struct CallExpression {
+node!(pub struct CallExpression {
     callee: Box<alias::Expression>,
     arguments: misc::CallArguments,
     optional: bool,
@@ -291,7 +292,7 @@ impl misc::HasInOperator for CallExpression {}
 
 
 // new foo()
-nodes!(pub struct NewExpression {
+node!(pub struct NewExpression {
     callee: Box<alias::Expression>,
     arguments: misc::CallArguments,
 });
@@ -308,7 +309,7 @@ impl misc::HasInOperator for NewExpression {}
 
 // experimental
 // import(foo)
-nodes!(pub struct ImportCallExpression {
+node!(pub struct ImportCallExpression {
     argument: Box<alias::Expression>,
 });
 impl display::NodeDisplay for ImportCallExpression {
@@ -324,7 +325,7 @@ impl misc::FirstSpecialToken for ImportCallExpression {}
 impl misc::HasInOperator for ImportCallExpression {}
 
 
-nodes!(pub struct SuperCallExpression {
+node!(pub struct SuperCallExpression {
     arguments: misc::CallArguments,
 });
 impl display::NodeDisplay for SuperCallExpression {
@@ -340,7 +341,7 @@ impl misc::HasInOperator for SuperCallExpression {}
 // foo?.bar
 // foo.#bar
 // foo?.#bar
-nodes!(pub struct MemberExpression {
+node!(pub struct MemberExpression {
     object: Box<alias::Expression>,
     property: MemberProperty,
     optional: bool,
@@ -376,7 +377,7 @@ impl display::NodeDisplay for MemberProperty {
 }
 
 
-nodes!(pub struct PrivateProperty {
+node!(pub struct PrivateProperty {
     property: misc::PropertyIdentifier,
 });
 impl display::NodeDisplay for PrivateProperty {
@@ -388,7 +389,7 @@ impl display::NodeDisplay for PrivateProperty {
 
 
 // #bar
-nodes!(pub struct PrivateExpression {
+node!(pub struct PrivateExpression {
     property: misc::PropertyIdentifier,
 });
 impl display::NodeDisplay for PrivateExpression {
@@ -405,7 +406,7 @@ impl misc::HasInOperator for PrivateExpression {}
 // i--
 // ++i
 // --i
-nodes!(pub struct UpdateExpression {
+node!(pub struct UpdateExpression {
     value: misc::LeftHandSimpleAssign,
     operator: UpdateOperator,
 });
@@ -452,7 +453,7 @@ impl misc::HasInOperator for UpdateExpression {}
 
 
 // void foo
-nodes!(pub struct UnaryExpression {
+node!(pub struct UnaryExpression {
     value: Box<alias::Expression>,
     operator: UnaryOperator,
 });
@@ -498,7 +499,7 @@ impl misc::HasInOperator for UnaryExpression {}
 
 
 // foo OP bar
-nodes!(pub struct BinaryExpression {
+node!(pub struct BinaryExpression {
     left: Box<alias::Expression>,
     operator: BinaryOperator,
     right: Box<alias::Expression>,
@@ -731,7 +732,7 @@ impl misc::HasInOperator for BinaryExpression {
 
 
 // foo ? bar : baz
-nodes!(pub struct ConditionalExpression {
+node!(pub struct ConditionalExpression {
     test: Box<alias::Expression>,
     consequent: Box<alias::Expression>,
     alternate: Box<alias::Expression>,
@@ -759,7 +760,7 @@ impl misc::HasInOperator for ConditionalExpression {
 
 
 // foo = bar
-nodes!(pub struct AssignmentExpression {
+node!(pub struct AssignmentExpression {
     left: Box<misc::LeftHandComplexAssign>,
     right: Box<alias::Expression>,
 });
@@ -781,7 +782,7 @@ impl misc::HasInOperator for AssignmentExpression {
 
 
 // foo OP= bar
-nodes!(pub struct AssignmentUpdateExpression {
+node!(pub struct AssignmentUpdateExpression {
     left: Box<misc::LeftHandSimpleAssign>,
     operator: AssignmentUpdateOperator,
     right: Box<alias::Expression>,
@@ -834,7 +835,7 @@ impl misc::HasInOperator for AssignmentUpdateExpression {
 
 
 // foo, bar
-nodes!(pub struct SequenceExpression {
+node!(pub struct SequenceExpression {
     left: Box<alias::Expression>,
     right: Box<alias::Expression>,
 });
@@ -863,7 +864,7 @@ impl misc::HasInOperator for SequenceExpression {
 
 
 // (foo) => bar
-nodes!(pub struct ArrowFunctionExpression {
+node!(pub struct ArrowFunctionExpression {
     // TODO: Needs to handle single-param Ident output as type of params
     params: misc::FunctionParams,
     body: ArrowFunctionBody,
@@ -925,7 +926,7 @@ impl display::NodeDisplay for ArrowFunctionBody {
 
 
 // do { foo; }
-nodes!(pub struct DoExpression {
+node!(pub struct DoExpression {
     body: BlockStatement,
 });
 impl display::NodeDisplay for DoExpression {
@@ -943,7 +944,7 @@ impl misc::HasInOperator for DoExpression {}
 
 
 // new.target
-nodes!(pub struct MetaProperty {
+node!(pub struct MetaProperty {
     kind: MetaPropertyKind,
 });
 pub enum MetaPropertyKind {
@@ -984,7 +985,7 @@ impl misc::HasInOperator for MetaProperty {}
 
 // super.foo
 // super[foo]
-nodes!(pub struct SuperMemberExpression {
+node!(pub struct SuperMemberExpression {
     property: misc::PropertyAccess,
 });
 impl display::NodeDisplay for SuperMemberExpression {
