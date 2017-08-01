@@ -64,6 +64,7 @@ impl display::NodeDisplay for VariableStatement {
 impl misc::HasOrphanIf for VariableStatement {}
 
 
+// TODO: Enum fix?
 pub enum VariableDeclaratorList {
     Declarator(VariableDeclarator),
     List(VariableDeclarator, Box<VariableDeclaratorList>),
@@ -71,9 +72,9 @@ pub enum VariableDeclaratorList {
 impl display::NodeDisplay for VariableDeclaratorList {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            VariableDeclaratorList::Declarator(ref item) => f.node(item),
-            VariableDeclaratorList::List(ref item, ref list) => {
-                f.node(item)?;
+            VariableDeclaratorList::Declarator(ref n) => f.node(n),
+            VariableDeclaratorList::List(ref n, ref list) => {
+                f.node(n)?;
                 f.node(list)
             }
         }
@@ -199,13 +200,13 @@ impl display::NodeDisplay for ForInit {
         let mut f = f.disallow_in();
 
         match *self {
-            ForInit::Var(ref item) => f.node(item),
-            ForInit::Let(ref item) => f.node(item),
-            ForInit::Const(ref item) => f.node(item),
-            ForInit::Expression(ref item) => {
+            ForInit::Var(ref n) => f.node(n),
+            ForInit::Let(ref n) => f.node(n),
+            ForInit::Const(ref n) => f.node(n),
+            ForInit::Expression(ref n) => {
                 // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
                 // so we need parens here for that too.
-                f.require_precedence(display::Precedence::Normal).node(item)
+                f.require_precedence(display::Precedence::Normal).node(n)
             }
         }
     }
@@ -239,23 +240,72 @@ impl misc::HasOrphanIf for ForInStatement {
     }
 }
 
+nodes!(pub struct ForInVarPattern {
+    pattern: misc::Pattern,
+    init: Option<alias::Expression>,
+});
+impl display::NodeDisplay for ForInVarPattern {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.keyword(display::Keyword::Var)?;
+        f.node(&self.pattern)?;
+        if let Some(ref init) = self.init {
+            f.punctuator(display::Punctuator::Eq)?;
+            f.node(init)?;
+        }
+        Ok(())
+    }
+}
+
+
+nodes!(pub struct ForVarPattern {
+    pattern: misc::Pattern,
+});
+impl display::NodeDisplay for ForVarPattern {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.keyword(display::Keyword::Var)?;
+        f.node(&self.pattern)
+    }
+}
+
+
+nodes!(pub struct ForLetPattern {
+    pattern: misc::Pattern,
+});
+impl display::NodeDisplay for ForLetPattern {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.keyword(display::Keyword::Let)?;
+        f.node(&self.pattern)
+    }
+}
+
+
+nodes!(pub struct ForConstPattern {
+    pattern: misc::Pattern,
+});
+impl display::NodeDisplay for ForConstPattern {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.keyword(display::Keyword::Const)?;
+        f.node(&self.pattern)
+    }
+}
+
 
 pub enum ForInInit {
-    Var(VariableDeclarator),
-    Let(misc::Pattern),
-    Const(misc::Pattern),
+    Var(ForInVarPattern),
+    Let(ForLetPattern),
+    Const(ForLetPattern),
     Complex(misc::LeftHandComplexAssign),
 }
 impl display::NodeDisplay for ForInInit {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            ForInInit::Var(ref decl) => f.node(decl),
-            ForInInit::Let(ref pat) => f.node(pat),
-            ForInInit::Const(ref pat) => f.node(pat),
-            ForInInit::Complex(ref pat) => {
+            ForInInit::Var(ref n) => f.node(n),
+            ForInInit::Let(ref n) => f.node(n),
+            ForInInit::Const(ref n) => f.node(n),
+            ForInInit::Complex(ref n) => {
                 // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
                 // so we need parens here for that too.
-                f.node(pat)
+                f.node(n)
             }
         }
     }
@@ -315,23 +365,22 @@ impl misc::HasOrphanIf for ForAwaitStatement {
     }
 }
 
-
 pub enum ForOfInit {
-    Var(misc::Pattern),
-    Let(misc::Pattern),
-    Const(misc::Pattern),
+    Var(ForVarPattern),
+    Let(ForLetPattern),
+    Const(ForConstPattern),
     Complex(misc::LeftHandComplexAssign),
 }
 impl display::NodeDisplay for ForOfInit {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            ForOfInit::Var(ref pat) => f.node(pat),
-            ForOfInit::Let(ref pat) => f.node(pat),
-            ForOfInit::Const(ref pat) => f.node(pat),
-            ForOfInit::Complex(ref pat) => {
+            ForOfInit::Var(ref n) => f.node(n),
+            ForOfInit::Let(ref n) => f.node(n),
+            ForOfInit::Const(ref n) => f.node(n),
+            ForOfInit::Complex(ref n) => {
                 // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
                 // so we need parens here for that too.
-                f.node(pat)
+                f.node(n)
             }
         }
     }

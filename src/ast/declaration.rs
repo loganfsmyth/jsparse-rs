@@ -3,6 +3,7 @@ use super::misc;
 use super::alias;
 use super::display;
 
+// TODO: Enum fix?
 enum DeclaratorList<T: display::NodeDisplay> {
     Last(T),
     List(T, Box<DeclaratorList<T>>),
@@ -10,9 +11,9 @@ enum DeclaratorList<T: display::NodeDisplay> {
 impl<T: display::NodeDisplay> display::NodeDisplay for DeclaratorList<T> {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            DeclaratorList::Last(ref decl) => f.node(decl),
-            DeclaratorList::List(ref decl, ref list) => {
-                f.node(decl)?;
+            DeclaratorList::Last(ref n) => f.node(n),
+            DeclaratorList::List(ref n, ref list) => {
+                f.node(n)?;
                 f.punctuator(display::Punctuator::Comma)?;
                 f.node(list)
             }

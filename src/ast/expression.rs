@@ -98,25 +98,34 @@ impl misc::FirstSpecialToken for ObjectExpression {
 }
 impl misc::HasInOperator for ObjectExpression {}
 
-
-pub enum ObjectProperty {
+pub enum ObjectItem {
     Method(ObjectMethod),
-    Value(misc::PropertyName, Box<alias::Expression>),
+    Property(ObjectProperty),
 }
-impl display::NodeDisplay for ObjectProperty {
+impl display::NodeDisplay for ObjectItem {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            ObjectProperty::Method(ref method) => f.node(method),
-            ObjectProperty::Value(ref id, ref expr) => {
-                f.node(id)?;
-                f.punctuator(display::Punctuator::Colon)?;
-
-                let mut f = f.allow_in();
-                f.require_precedence(display::Precedence::Assignment).node(expr)?;
-
-                Ok(())
-            }
+            ObjectItem::Method(ref n) => f.node(n),
+            ObjectItem::Property(ref n) => f.node(n),
         }
+    }
+}
+
+
+nodes!(pub struct ObjectProperty {
+    name: misc::PropertyName,
+    value: Box<alias::Expression>,
+});
+impl display::NodeDisplay for ObjectProperty {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+
+        f.node(&self.name)?;
+        f.punctuator(display::Punctuator::Colon)?;
+
+        let mut f = f.allow_in();
+        f.require_precedence(display::Precedence::Assignment).node(&self.value)?;
+
+        Ok(())
     }
 }
 
@@ -223,9 +232,9 @@ impl display::NodeDisplay for TemplateLiteral {
 impl misc::FirstSpecialToken for TemplateLiteral {}
 impl misc::HasInOperator for TemplateLiteral {}
 
-
+// TODO: Enum fix?
 pub enum TemplateLiteralPiece {
-    Piece(TemplatePart, Box<alias::Expression>, Box<TemplateLiteral>),
+    Piece(TemplatePart, Box<alias::Expression>, Box<TemplateLiteralPiece>),
     End(TemplatePart),
 }
 impl display::NodeDisplay for TemplateLiteralPiece {
@@ -299,10 +308,10 @@ impl misc::HasInOperator for NewExpression {}
 
 // experimental
 // import(foo)
-nodes!(pub struct ImportExpression {
+nodes!(pub struct ImportCallExpression {
     argument: Box<alias::Expression>,
 });
-impl display::NodeDisplay for ImportExpression {
+impl display::NodeDisplay for ImportCallExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.keyword(display::Keyword::Import)?;
         f.punctuator(display::Punctuator::ParenL)?;
@@ -311,9 +320,21 @@ impl display::NodeDisplay for ImportExpression {
         Ok(())
     }
 }
-impl misc::FirstSpecialToken for ImportExpression {}
-impl misc::HasInOperator for ImportExpression {}
+impl misc::FirstSpecialToken for ImportCallExpression {}
+impl misc::HasInOperator for ImportCallExpression {}
 
+
+nodes!(pub struct SuperCallExpression {
+    arguments: misc::CallArguments,
+});
+impl display::NodeDisplay for SuperCallExpression {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.keyword(display::Keyword::Super)?;
+        f.node(&self.arguments)
+    }
+}
+impl misc::FirstSpecialToken for SuperCallExpression {}
+impl misc::HasInOperator for SuperCallExpression {}
 
 // foo.bar
 // foo?.bar
@@ -340,7 +361,7 @@ impl misc::FirstSpecialToken for MemberExpression {
 }
 impl misc::HasInOperator for MemberExpression {}
 
-
+// TODO: It is kind of a pain to have this as nested enums, since PropertyAccess is also an enum
 pub enum MemberProperty {
     Normal(misc::PropertyAccess),
     Private(PrivateProperty),
@@ -348,8 +369,8 @@ pub enum MemberProperty {
 impl display::NodeDisplay for MemberProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            MemberProperty::Normal(ref id) => f.node(id),
-            MemberProperty::Private(ref prop) => f.node(prop),
+            MemberProperty::Normal(ref n) => f.node(n),
+            MemberProperty::Private(ref n) => f.node(n),
         }
     }
 }
@@ -890,14 +911,14 @@ pub enum ArrowFunctionBody {
 impl display::NodeDisplay for ArrowFunctionBody {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            ArrowFunctionBody::Expression(ref expr) => {
-                if let misc::SpecialToken::Object = expr.first_special_token() {
-                    f.wrap_parens().node(expr)
+            ArrowFunctionBody::Expression(ref n) => {
+                if let misc::SpecialToken::Object = n.first_special_token() {
+                    f.wrap_parens().node(n)
                 } else {
-                    f.require_precedence(display::Precedence::Assignment).node(expr)
+                    f.require_precedence(display::Precedence::Assignment).node(n)
                 }
             }
-            ArrowFunctionBody::Block(ref body) => f.node(body),
+            ArrowFunctionBody::Block(ref n) => f.node(n),
         }
     }
 }
@@ -913,7 +934,11 @@ impl display::NodeDisplay for DoExpression {
         f.node(&self.body)
     }
 }
-impl misc::FirstSpecialToken for DoExpression {}
+impl misc::FirstSpecialToken for DoExpression {
+    fn first_special_token(&self) -> misc::SpecialToken {
+        misc::SpecialToken::Declaration
+    }
+}
 impl misc::HasInOperator for DoExpression {}
 
 

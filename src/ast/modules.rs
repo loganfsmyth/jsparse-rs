@@ -19,22 +19,19 @@ impl display::NodeDisplay for ModuleIdentifier {
 }
 
 
-pub enum ImportSpecifier {
-    Named(misc::BindingIdentifier),
-    NamedAndAliased(ModuleIdentifier, misc::BindingIdentifier),
-}
+nodes!(pub struct ImportSpecifier {
+    local: misc::BindingIdentifier,
+    imported: Option<ModuleIdentifier>,
+});
 impl display::NodeDisplay for ImportSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            ImportSpecifier::Named(ref id) => {
-                f.node(id)
-            }
-            ImportSpecifier::NamedAndAliased(ref module, ref id) => {
-                f.node(module)?;
-                f.keyword(display::Keyword::As)?;
-                f.node(id)
-            }
+        f.node(&self.local);
+
+        if let Some(ref imported) = self.imported {
+            f.keyword(display::Keyword::As)?;
+            f.node(imported)?;
         }
+        Ok(())
     }
 }
 
@@ -274,20 +271,19 @@ impl display::NodeDisplay for ExportLocalBindings {
 }
 
 
-pub enum LocalExportSpecifier {
-    Named(misc::BindingIdentifier),
-    NamedAndAliased(misc::BindingIdentifier, ModuleIdentifier),
-}
+nodes!(pub struct LocalExportSpecifier {
+    local: misc::BindingIdentifier,
+    exported: Option<ModuleIdentifier>,
+});
 impl display::NodeDisplay for LocalExportSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            LocalExportSpecifier::Named(ref id) => f.node(id),
-            LocalExportSpecifier::NamedAndAliased(ref id, ref mod_id) => {
-                f.node(id)?;
-                f.keyword(display::Keyword::As)?;
-                f.node(mod_id)
-            }
+        f.node(&self.local)?;
+
+        if let Some(ref exported) = self.exported {
+            f.keyword(display::Keyword::As)?;
+            f.node(exported)?;
         }
+        Ok(())
     }
 }
 
@@ -312,20 +308,19 @@ impl display::NodeDisplay for ExportSourceSpecifiers {
 }
 
 
-pub enum SourceExportSpecifier {
-    Named(ModuleIdentifier),
-    NamedAndAliased(ModuleIdentifier, ModuleIdentifier),
-}
+nodes!(pub struct SourceExportSpecifier {
+    imported: ModuleIdentifier,
+    exported: Option<ModuleIdentifier>,
+});
 impl display::NodeDisplay for SourceExportSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self {
-            SourceExportSpecifier::Named(ref id) => f.node(id),
-            SourceExportSpecifier::NamedAndAliased(ref id, ref mod_id) => {
-                f.node(id)?;
-                f.keyword(display::Keyword::As)?;
-                f.node(mod_id)
-            }
+        f.node(&self.imported)?;
+
+        if let Some(ref exported) = self.exported {
+            f.keyword(display::Keyword::As)?;
+            f.node(exported)?;
         }
+        Ok(())
     }
 }
 

@@ -75,9 +75,9 @@ pub enum ElementName {
 impl display::NodeDisplay for ElementName {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            ElementName::Identifier(ref id) => f.node(id),
-            ElementName::Member(ref id) => f.node(id),
-            ElementName::Namespaced(ref id) => f.node(id),
+            ElementName::Identifier(ref n) => f.node(n),
+            ElementName::Member(ref n) => f.node(n),
+            ElementName::Namespaced(ref n) => f.node(n),
         }
     }
 }
@@ -89,10 +89,7 @@ nodes!(pub struct MemberExpression {
 });
 impl display::NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match *self.object {
-            MemberObject::Identifier(ref id) => f.node(id)?,
-            MemberObject::Member(ref id) => f.node(id)?,
-        }
+        f.node(&self.object)?;
         f.punctuator(display::Punctuator::Period)?;
         f.node(&self.property)
     }
@@ -101,6 +98,14 @@ impl display::NodeDisplay for MemberExpression {
 pub enum MemberObject {
     Identifier(Identifier),
     Member(MemberExpression),
+}
+impl display::NodeDisplay for MemberObject {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        match *self {
+            MemberObject::Identifier(ref n) => f.node(n),
+            MemberObject::Member(ref n) => f.node(n),
+        }
+    }
 }
 
 
@@ -124,8 +129,8 @@ pub enum Attribute {
 impl display::NodeDisplay for Attribute {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            Attribute::Spread(ref attr) => f.node(attr),
-            Attribute::Pair(ref attr) => f.node(attr),
+            Attribute::Spread(ref n) => f.node(n),
+            Attribute::Pair(ref n) => f.node(n),
         }
     }
 }
@@ -138,8 +143,8 @@ pub enum AttributeName {
 impl display::NodeDisplay for AttributeName {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            AttributeName::Identifier(ref id) => f.node(id),
-            AttributeName::Namespaced(ref name) => f.node(name),
+            AttributeName::Identifier(ref n) => f.node(n),
+            AttributeName::Namespaced(ref n) => f.node(n),
         }
     }
 }
@@ -182,9 +187,9 @@ pub enum AttributeValue {
 impl display::NodeDisplay for AttributeValue {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            AttributeValue::String(ref s) => f.node(s),
-            AttributeValue::Expression(ref expr) => f.require_precedence(display::Precedence::Assignment).node(expr),
-            AttributeValue::Element(ref elem) => f.node(elem),
+            AttributeValue::String(ref n) => f.node(n),
+            AttributeValue::Expression(ref n) => f.require_precedence(display::Precedence::Assignment).node(n),
+            AttributeValue::Element(ref n) => f.node(n),
         }
     }
 }
@@ -203,36 +208,55 @@ impl display::NodeDisplay for StringLiteral {
 
 
 pub enum Child {
-    Empty,
+    Empty(Empty),
     Text(Text),
     Element(Element),
-    Expression(Box<alias::Expression>),
-    Spread(Box<alias::Expression>), // experimental?
+    Expression(Expression),
+    Spread(ExpressionSpread),
 }
 impl display::NodeDisplay for Child {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            Child::Empty => {
-                f.punctuator(display::Punctuator::CurlyL)?;
-                f.punctuator(display::Punctuator::CurlyR)
-            }
-            Child::Text(ref t) => f.node(t),
-            Child::Element(ref t) => f.node(t),
-            Child::Expression(ref t) => {
-                f.punctuator(display::Punctuator::CurlyL)?;
-                f.require_precedence(display::Precedence::Assignment).node(t)?;
-                f.punctuator(display::Punctuator::CurlyR)
-            }
-            Child::Spread(ref t) => {
-                f.punctuator(display::Punctuator::CurlyL)?;
-                f.punctuator(display::Punctuator::Ellipsis)?;
-                f.require_precedence(display::Precedence::Assignment).node(t)?;
-                f.punctuator(display::Punctuator::CurlyR)
-            }
+            Child::Empty(ref n) => f.node(n),
+            Child::Text(ref n) => f.node(n),
+            Child::Element(ref n) => f.node(n),
+            Child::Expression(ref n) => f.node(n),
+            Child::Spread(ref n) => f.node(n),
         }
     }
 }
 
+nodes!(pub struct Expression {
+    expression: Box<alias::Expression>,
+});
+impl display::NodeDisplay for Expression {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.punctuator(display::Punctuator::CurlyL)?;
+        f.require_precedence(display::Precedence::Assignment).node(&self.expression)?;
+        f.punctuator(display::Punctuator::CurlyR)
+    }
+}
+
+// experimental?
+nodes!(pub struct ExpressionSpread {
+    expression: Box<alias::Expression>,
+});
+impl display::NodeDisplay for ExpressionSpread {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.punctuator(display::Punctuator::CurlyL)?;
+        f.punctuator(display::Punctuator::Ellipsis)?;
+        f.require_precedence(display::Precedence::Assignment).node(&self.expression)?;
+        f.punctuator(display::Punctuator::CurlyR)
+    }
+}
+
+nodes!(pub struct Empty {});
+impl display::NodeDisplay for Empty {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.punctuator(display::Punctuator::CurlyL)?;
+        f.punctuator(display::Punctuator::CurlyR)
+    }
+}
 
 nodes!(pub struct Text {
     // Serialized string should contain HTML entities since it, allows all chars except {, }, <, and >
