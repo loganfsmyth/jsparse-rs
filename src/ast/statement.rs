@@ -293,7 +293,7 @@ impl display::NodeDisplay for ForConstPattern {
 node_enum!(pub enum ForInInit {
     Var(ForInVarPattern),
     Let(ForLetPattern),
-    Const(ForLetPattern),
+    Const(ForConstPattern),
     Complex(misc::LeftHandComplexAssign),
 });
 impl display::NodeDisplay for ForInInit {

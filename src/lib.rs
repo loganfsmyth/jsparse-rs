@@ -1,13 +1,13 @@
 // Alias enums are too many items for the macro
-#![recursion_limit="128"]
+// #![recursion_limit="128"]
 
 
 extern crate ucd;
 
-#[macro_use]
-extern crate custom_derive;
-#[macro_use]
-extern crate enum_derive;
+// #[macro_use]
+// extern crate custom_derive;
+// #[macro_use]
+// extern crate enum_derive;
 
 mod ast;
 

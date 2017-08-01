@@ -10,6 +10,14 @@ macro_rules! node_enum {
         pub enum $id {
             $($key($type),)*
         }
+
+        $(
+            impl From<$type> for $id {
+                fn from(val: $type) -> $id {
+                    $id::$key(val)
+                }
+            }
+        )*
     }
 }
 
@@ -82,11 +90,6 @@ pub trait HasOrphanIf {
         false
     }
 }
-// impl<T: HasOrphanIf> HasOrphanIf for Box<T> {
-//     fn orphan_if(&self) -> bool {
-//         (*self).orphan_if()
-//     }
-// }
 
 pub trait HasInOperator {
     fn has_in_operator(&self) -> bool {
@@ -122,6 +125,7 @@ impl display::NodeDisplay for Ast {
     }
 }
 
+
 node!(pub struct Script {
     directives: Vec<Directive>,
     body: Vec<alias::StatementItem>,
@@ -139,6 +143,7 @@ impl display::NodeDisplay for Script {
         Ok(())
     }
 }
+
 
 node!(pub struct Module {
     directives: Vec<Directive>,
@@ -158,6 +163,7 @@ impl display::NodeDisplay for Module {
     }
 }
 
+
 node!(pub struct Directive {
     value: string::String,
 });
@@ -167,14 +173,12 @@ impl display::NodeDisplay for Directive {
     }
 }
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum Pattern {
-        Identifier(BindingIdentifier),
-        Object(ObjectPattern),
-        Array(ArrayPattern),
-    }
-}
+
+node_enum!(pub enum Pattern {
+    Identifier(BindingIdentifier),
+    Object(ObjectPattern),
+    Array(ArrayPattern),
+});
 impl display::NodeDisplay for Pattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -184,6 +188,7 @@ impl display::NodeDisplay for Pattern {
         }
     }
 }
+
 
 // identifiers used as labels
 node!(pub struct LabelIdentifier {
@@ -195,6 +200,7 @@ impl display::NodeDisplay for LabelIdentifier {
         f.identifier(&self.value, Some(&self.raw))
     }
 }
+
 
 // identifiers used as variables
 node!(pub struct BindingIdentifier {
@@ -212,6 +218,7 @@ impl HasInOperator for BindingIdentifier {
     }
 }
 impl FirstSpecialToken for BindingIdentifier {}
+
 
 // identifiers used as properties
 node!(pub struct PropertyIdentifier {

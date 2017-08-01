@@ -1,8 +1,3 @@
-#[warn(unused_imports)]
-use custom_derive;
-#[warn(unused_imports)]
-use enum_derive;
-
 use super::statement;
 use super::declaration;
 use super::expression;
@@ -15,17 +10,15 @@ use super::modules;
 use super::misc::HasInOperator;
 use super::misc::FirstSpecialToken;
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum Function {
-        DefaultDeclaration(modules::ExportDefaultFunctionDeclaration),
-        Declaration(declaration::FunctionDeclaration),
-        Expression(expression::FunctionExpression),
-        ClassMethod(misc::ClassMethod),
-        ObjectMethod(expression::ObjectMethod),
-        Arrow(expression::ArrowFunctionExpression),
-    }
-}
+
+node_enum!(pub enum Function {
+    DefaultDeclaration(modules::ExportDefaultFunctionDeclaration),
+    Declaration(declaration::FunctionDeclaration),
+    Expression(expression::FunctionExpression),
+    ClassMethod(misc::ClassMethod),
+    ObjectMethod(expression::ObjectMethod),
+    Arrow(expression::ArrowFunctionExpression),
+});
 impl display::NodeDisplay for Function {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -39,13 +32,11 @@ impl display::NodeDisplay for Function {
     }
 }
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum Method {
-        ClassMethod(misc::ClassMethod),
-        ObjectMethod(expression::ObjectMethod),
-    }
-}
+
+node_enum!(pub enum Method {
+    ClassMethod(misc::ClassMethod),
+    ObjectMethod(expression::ObjectMethod),
+});
 impl display::NodeDisplay for Method {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -55,64 +46,62 @@ impl display::NodeDisplay for Method {
     }
 }
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum ModuleStatementItem {
-        // Statements
-        Block(statement::BlockStatement),
-        Variable(statement::VariableStatement),
-        Empty(statement::EmptyStatement),
-        Expression(statement::ExpressionStatement),
-        If(statement::IfStatement),
-        For(statement::ForStatement),
-        ForIn(statement::ForInStatement),
-        ForOf(statement::ForOfStatement),
-        ForAwait(statement::ForAwaitStatement),
-        While(statement::WhileStatement),
-        DoWhile(statement::DoWhileStatement),
-        Switch(statement::SwitchStatement),
-        Continue(statement::ContinueStatement),
-        Break(statement::BreakStatement),
-        Return(statement::ReturnStatement),
-        With(statement::WithStatement),
-        Labelled(statement::LabelledStatement),
-        Throw(statement::ThrowStatement),
-        TryCatch(statement::TryCatchStatement),
-        TryCatchFinally(statement::TryCatchFinallyStatement),
-        TryFinally(statement::TryFinallyStatement),
-        Debugger(statement::DebuggerStatement),
 
-        // Declarations
-        Function(declaration::FunctionDeclaration),
-        Class(declaration::ClassDeclaration),
-        Let(declaration::LetDeclaration),
-        Const(declaration::ConstDeclaration),
+node_enum!(pub enum ModuleStatementItem {
+    // Statements
+    Block(statement::BlockStatement),
+    Variable(statement::VariableStatement),
+    Empty(statement::EmptyStatement),
+    Expression(statement::ExpressionStatement),
+    If(statement::IfStatement),
+    For(statement::ForStatement),
+    ForIn(statement::ForInStatement),
+    ForOf(statement::ForOfStatement),
+    ForAwait(statement::ForAwaitStatement),
+    While(statement::WhileStatement),
+    DoWhile(statement::DoWhileStatement),
+    Switch(statement::SwitchStatement),
+    Continue(statement::ContinueStatement),
+    Break(statement::BreakStatement),
+    Return(statement::ReturnStatement),
+    With(statement::WithStatement),
+    Labelled(statement::LabelledStatement),
+    Throw(statement::ThrowStatement),
+    TryCatch(statement::TryCatchStatement),
+    TryCatchFinally(statement::TryCatchFinallyStatement),
+    TryFinally(statement::TryFinallyStatement),
+    Debugger(statement::DebuggerStatement),
 
-        // ExportDeclaration
-        ExportDefaultClass(modules::ExportDefaultClassDeclaration),
-        ExportDefaultFunction(modules::ExportDefaultFunctionDeclaration),
-        ExportDefaultExpression(modules::ExportDefaultExpression),
-        ExportClass(modules::ExportClassDeclaration),
-        ExportFunction(modules::ExportFunctionDeclaration),
-        ExportVariable(modules::ExportVarStatement),
-        ExportLet(modules::ExportLetDeclaration),
-        ExportConst(modules::ExportConstDeclaration),
-        ExportLocalBindings(modules::ExportLocalBindings),
-        ExportSourceSpecifiers(modules::ExportSourceSpecifiers),
-        ExportAll(modules::ExportAllSpecifiers),
-        ExportNamed(modules::ExportNamedSpecifier),
-        ExportNamedAndNamespace(modules::ExportNamedAndNamespace),
-        ExportNamespace(modules::ExportNamespace),
-        ExportNamedAndSpecifiers(modules::ExportNamedAndSpecifiers),
+    // Declarations
+    Function(declaration::FunctionDeclaration),
+    Class(declaration::ClassDeclaration),
+    Let(declaration::LetDeclaration),
+    Const(declaration::ConstDeclaration),
 
-        // ImportDeclaration
-        ImportNamed(modules::ImportNamedDeclaration),
-        ImportNamedAndNamespace(modules::ImportNamedAndNamespaceDeclaration),
-        ImportNamespace(modules::ImportNamespaceDeclaration),
-        ImportNamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
-        ImportSpecifiers(modules::ImportSpecifiersDeclaration),
-    }
-}
+    // ExportDeclaration
+    ExportDefaultClass(modules::ExportDefaultClassDeclaration),
+    ExportDefaultFunction(modules::ExportDefaultFunctionDeclaration),
+    ExportDefaultExpression(modules::ExportDefaultExpression),
+    ExportClass(modules::ExportClassDeclaration),
+    ExportFunction(modules::ExportFunctionDeclaration),
+    ExportVariable(modules::ExportVarStatement),
+    ExportLet(modules::ExportLetDeclaration),
+    ExportConst(modules::ExportConstDeclaration),
+    ExportLocalBindings(modules::ExportLocalBindings),
+    ExportSourceSpecifiers(modules::ExportSourceSpecifiers),
+    ExportAll(modules::ExportAllSpecifiers),
+    ExportNamed(modules::ExportNamedSpecifier),
+    ExportNamedAndNamespace(modules::ExportNamedAndNamespace),
+    ExportNamespace(modules::ExportNamespace),
+    ExportNamedAndSpecifiers(modules::ExportNamedAndSpecifiers),
+
+    // ImportDeclaration
+    ImportNamed(modules::ImportNamedDeclaration),
+    ImportNamedAndNamespace(modules::ImportNamedAndNamespaceDeclaration),
+    ImportNamespace(modules::ImportNamespaceDeclaration),
+    ImportNamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
+    ImportSpecifiers(modules::ImportSpecifiersDeclaration),
+});
 impl display::NodeDisplay for ModuleStatementItem {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -173,40 +162,38 @@ impl display::NodeDisplay for ModuleStatementItem {
     }
 }
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum StatementItem {
-        // Statements
-        Block(statement::BlockStatement),
-        Variable(statement::VariableStatement),
-        Empty(statement::EmptyStatement),
-        Expression(statement::ExpressionStatement),
-        If(statement::IfStatement),
-        For(statement::ForStatement),
-        ForIn(statement::ForInStatement),
-        ForOf(statement::ForOfStatement),
-        ForAwait(statement::ForAwaitStatement),
-        While(statement::WhileStatement),
-        DoWhile(statement::DoWhileStatement),
-        Switch(statement::SwitchStatement),
-        Continue(statement::ContinueStatement),
-        Break(statement::BreakStatement),
-        Return(statement::ReturnStatement),
-        With(statement::WithStatement),
-        Labelled(statement::LabelledStatement),
-        Throw(statement::ThrowStatement),
-        TryCatch(statement::TryCatchStatement),
-        TryCatchFinally(statement::TryCatchFinallyStatement),
-        TryFinally(statement::TryFinallyStatement),
-        Debugger(statement::DebuggerStatement),
 
-        // Declarations
-        Function(declaration::FunctionDeclaration),
-        Class(declaration::ClassDeclaration),
-        Let(declaration::LetDeclaration),
-        Const(declaration::ConstDeclaration),
-    }
-}
+node_enum!(pub enum StatementItem {
+    // Statements
+    Block(statement::BlockStatement),
+    Variable(statement::VariableStatement),
+    Empty(statement::EmptyStatement),
+    Expression(statement::ExpressionStatement),
+    If(statement::IfStatement),
+    For(statement::ForStatement),
+    ForIn(statement::ForInStatement),
+    ForOf(statement::ForOfStatement),
+    ForAwait(statement::ForAwaitStatement),
+    While(statement::WhileStatement),
+    DoWhile(statement::DoWhileStatement),
+    Switch(statement::SwitchStatement),
+    Continue(statement::ContinueStatement),
+    Break(statement::BreakStatement),
+    Return(statement::ReturnStatement),
+    With(statement::WithStatement),
+    Labelled(statement::LabelledStatement),
+    Throw(statement::ThrowStatement),
+    TryCatch(statement::TryCatchStatement),
+    TryCatchFinally(statement::TryCatchFinallyStatement),
+    TryFinally(statement::TryFinallyStatement),
+    Debugger(statement::DebuggerStatement),
+
+    // Declarations
+    Function(declaration::FunctionDeclaration),
+    Class(declaration::ClassDeclaration),
+    Let(declaration::LetDeclaration),
+    Const(declaration::ConstDeclaration),
+});
 impl display::NodeDisplay for StatementItem {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -271,33 +258,31 @@ impl From<Statement> for StatementItem {
     }
 }
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum Statement {
-        Block(statement::BlockStatement),
-        Variable(statement::VariableStatement),
-        Empty(statement::EmptyStatement),
-        Expression(statement::ExpressionStatement),
-        If(statement::IfStatement),
-        For(statement::ForStatement),
-        ForIn(statement::ForInStatement),
-        ForOf(statement::ForOfStatement),
-        ForAwait(statement::ForAwaitStatement),
-        While(statement::WhileStatement),
-        DoWhile(statement::DoWhileStatement),
-        Switch(statement::SwitchStatement),
-        Continue(statement::ContinueStatement),
-        Break(statement::BreakStatement),
-        Return(statement::ReturnStatement),
-        With(statement::WithStatement),
-        Labelled(statement::LabelledStatement),
-        Throw(statement::ThrowStatement),
-        TryCatch(statement::TryCatchStatement),
-        TryCatchFinally(statement::TryCatchFinallyStatement),
-        TryFinally(statement::TryFinallyStatement),
-        Debugger(statement::DebuggerStatement),
-    }
-}
+
+node_enum!(pub enum Statement {
+    Block(statement::BlockStatement),
+    Variable(statement::VariableStatement),
+    Empty(statement::EmptyStatement),
+    Expression(statement::ExpressionStatement),
+    If(statement::IfStatement),
+    For(statement::ForStatement),
+    ForIn(statement::ForInStatement),
+    ForOf(statement::ForOfStatement),
+    ForAwait(statement::ForAwaitStatement),
+    While(statement::WhileStatement),
+    DoWhile(statement::DoWhileStatement),
+    Switch(statement::SwitchStatement),
+    Continue(statement::ContinueStatement),
+    Break(statement::BreakStatement),
+    Return(statement::ReturnStatement),
+    With(statement::WithStatement),
+    Labelled(statement::LabelledStatement),
+    Throw(statement::ThrowStatement),
+    TryCatch(statement::TryCatchStatement),
+    TryCatchFinally(statement::TryCatchFinallyStatement),
+    TryFinally(statement::TryFinallyStatement),
+    Debugger(statement::DebuggerStatement),
+});
 impl display::NodeDisplay for Statement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -355,39 +340,37 @@ impl misc::HasOrphanIf for Statement {
     }
 }
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum Expression {
-        Binding(misc::BindingIdentifier),
-        This(expression::ThisExpression),
-        Array(expression::ArrayExpression),
-        Object(expression::ObjectExpression),
-        Null(literal::Null),
-        Boolean(literal::Boolean),
-        Numeric(literal::Numeric),
-        String(literal::String),
-        Function(expression::FunctionExpression),
-        Class(expression::ClassExpression),
-        Regex(literal::RegExp),
-        Template(expression::TemplateLiteral),
-        Member(expression::MemberExpression),
-        SuperMember(expression::SuperMemberExpression),
-        Binary(expression::BinaryExpression),
-        Unary(expression::UnaryExpression),
-        Update(expression::UpdateExpression),
-        Call(expression::CallExpression),
-        New(expression::NewExpression),
-        ImportCall(expression::ImportCallExpression),
-        SuperCall(expression::SuperCallExpression),
-        Conditional(expression::ConditionalExpression),
-        Assign(expression::AssignmentExpression),
-        AssignUpdate(expression::AssignmentUpdateExpression),
-        Sequence(expression::SequenceExpression),
-        Arrow(expression::ArrowFunctionExpression),
-        Do(expression::DoExpression),
-        JSX(jsx::Element),
-    }
-}
+
+node_enum!(pub enum Expression {
+    Binding(misc::BindingIdentifier),
+    This(expression::ThisExpression),
+    Array(expression::ArrayExpression),
+    Object(expression::ObjectExpression),
+    Null(literal::Null),
+    Boolean(literal::Boolean),
+    Numeric(literal::Numeric),
+    String(literal::String),
+    Function(expression::FunctionExpression),
+    Class(expression::ClassExpression),
+    Regex(literal::RegExp),
+    Template(expression::TemplateLiteral),
+    Member(expression::MemberExpression),
+    SuperMember(expression::SuperMemberExpression),
+    Binary(expression::BinaryExpression),
+    Unary(expression::UnaryExpression),
+    Update(expression::UpdateExpression),
+    Call(expression::CallExpression),
+    New(expression::NewExpression),
+    ImportCall(expression::ImportCallExpression),
+    SuperCall(expression::SuperCallExpression),
+    Conditional(expression::ConditionalExpression),
+    Assign(expression::AssignmentExpression),
+    AssignUpdate(expression::AssignmentUpdateExpression),
+    Sequence(expression::SequenceExpression),
+    Arrow(expression::ArrowFunctionExpression),
+    Do(expression::DoExpression),
+    JSX(jsx::Element),
+});
 impl display::NodeDisplay for Expression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -491,28 +474,26 @@ impl misc::HasInOperator for Expression {
     }
 }
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum ExportDeclaration {
-        DefaultClass(modules::ExportDefaultClassDeclaration),
-        DefaultFunction(modules::ExportDefaultFunctionDeclaration),
-        DefaultExpression(modules::ExportDefaultExpression),
-        Class(modules::ExportClassDeclaration),
-        Function(modules::ExportFunctionDeclaration),
-        Variable(modules::ExportVarStatement),
-        Let(modules::ExportLetDeclaration),
-        Const(modules::ExportConstDeclaration),
-        LocalBindings(modules::ExportLocalBindings),
-        SourceSpecifiers(modules::ExportSourceSpecifiers),
-        All(modules::ExportAllSpecifiers),
 
-        // experimental
-        Named(modules::ExportNamedSpecifier),
-        NamedAndNamespace(modules::ExportNamedAndNamespace),
-        Namespace(modules::ExportNamespace),
-        NamedAndSpecifiers(modules::ExportNamedAndSpecifiers),
-    }
-}
+node_enum!(pub enum ExportDeclaration {
+    DefaultClass(modules::ExportDefaultClassDeclaration),
+    DefaultFunction(modules::ExportDefaultFunctionDeclaration),
+    DefaultExpression(modules::ExportDefaultExpression),
+    Class(modules::ExportClassDeclaration),
+    Function(modules::ExportFunctionDeclaration),
+    Variable(modules::ExportVarStatement),
+    Let(modules::ExportLetDeclaration),
+    Const(modules::ExportConstDeclaration),
+    LocalBindings(modules::ExportLocalBindings),
+    SourceSpecifiers(modules::ExportSourceSpecifiers),
+    All(modules::ExportAllSpecifiers),
+
+    // experimental
+    Named(modules::ExportNamedSpecifier),
+    NamedAndNamespace(modules::ExportNamedAndNamespace),
+    Namespace(modules::ExportNamespace),
+    NamedAndSpecifiers(modules::ExportNamedAndSpecifiers),
+});
 impl display::NodeDisplay for ExportDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -536,16 +517,13 @@ impl display::NodeDisplay for ExportDeclaration {
 }
 
 
-custom_derive!{
-    #[derive(EnumFromInner)]
-    pub enum ImportDeclaration {
-        Named(modules::ImportNamedDeclaration),
-        NamedAndNamespace(modules::ImportNamedAndNamespaceDeclaration),
-        Namespace(modules::ImportNamespaceDeclaration),
-        NamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
-        Specifiers(modules::ImportSpecifiersDeclaration),
-    }
-}
+node_enum!(pub enum ImportDeclaration {
+    Named(modules::ImportNamedDeclaration),
+    NamedAndNamespace(modules::ImportNamedAndNamespaceDeclaration),
+    Namespace(modules::ImportNamespaceDeclaration),
+    NamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
+    Specifiers(modules::ImportSpecifiersDeclaration),
+});
 impl display::NodeDisplay for ImportDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
