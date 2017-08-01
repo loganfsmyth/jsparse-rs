@@ -5,6 +5,14 @@ use super::literal::{String, Numeric};
 use super::display;
 use super::expression::{MemberExpression};
 
+macro_rules! node_enum {
+    (pub enum $id:ident { $($key:ident($type:ty),)* }) => {
+        pub enum $id {
+            $($key($type),)*
+        }
+    }
+}
+
 macro_rules! assert_serialize {
     ($id:ident, { $($key:ident: $val:expr),* $(,)* }, $s:expr) => {
         {
@@ -15,8 +23,6 @@ macro_rules! assert_serialize {
 
             assert_eq!(format!("{}", o), $crate::std::string::String::from($s));
         }
-
-
     };
 }
 
@@ -45,7 +51,6 @@ macro_rules! node_display {
         }
     };
 }
-
 
 macro_rules! node {
     (pub struct $id:ident { $($field_id:ident: $field_type:ty ,)* }) => {
@@ -104,10 +109,10 @@ pub trait FirstSpecialToken {
 }
 
 
-pub enum Ast {
-    Script(Box<Script>),
-    Module(Box<Module>),
-}
+node_enum!(pub enum Ast {
+    Script(Script),
+    Module(Module),
+});
 impl display::NodeDisplay for Ast {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -220,11 +225,11 @@ impl display::NodeDisplay for PropertyIdentifier {
 }
 
 
-pub enum LeftHandSimpleAssign {
+node_enum!(pub enum LeftHandSimpleAssign {
     // TODO: Parenthesized ident and member?
     Identifier(BindingIdentifier),
     Member(MemberExpression),
-}
+});
 impl display::NodeDisplay for LeftHandSimpleAssign {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -241,13 +246,13 @@ impl FirstSpecialToken for LeftHandSimpleAssign {
         }
     }
 }
-pub enum LeftHandComplexAssign {
+node_enum!(pub enum LeftHandComplexAssign {
     // TODO: Parenthesized ident and member?
     Identifier(BindingIdentifier),
     Member(MemberExpression),
     Object(ObjectPattern),
     Array(ArrayPattern),
-}
+});
 impl display::NodeDisplay for LeftHandComplexAssign {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -339,10 +344,10 @@ impl display::NodeDisplay for ObjectPatternPatternProperty {
     }
 }
 
-pub enum ObjectPatternProperty {
+node_enum!(pub enum ObjectPatternProperty {
     Identifier(ObjectPatternIdentifierProperty),
     Pattern(ObjectPatternPatternProperty),
-}
+});
 impl display::NodeDisplay for ObjectPatternProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -431,13 +436,13 @@ impl display::NodeDisplay for FunctionBody {
 
 // experimental
 // TODO: Enum fix
-pub enum Decorator {
+node_enum!(pub enum Decorator {
     Property(DecoratorValueExpression),
     Call(DecoratorCallExpression),
 
     // Backward-compat for older decorator spec
     Expression(alias::Expression),
-}
+});
 impl display::NodeDisplay for Decorator {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.punctuator(display::Punctuator::At)?;
@@ -463,10 +468,10 @@ impl display::NodeDisplay for DecoratorMemberAccess {
 }
 
 // experimental
-pub enum DecoratorValueExpression {
+node_enum!(pub enum DecoratorValueExpression {
     Identifier(BindingIdentifier),
     Member(DecoratorMemberAccess),
-}
+});
 impl display::NodeDisplay for DecoratorValueExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -531,11 +536,11 @@ impl display::NodeDisplay for ClassEmpty {
 }
 
 
-pub enum ClassItem {
+node_enum!(pub enum ClassItem {
     Method(ClassMethod),
     Field(ClassField),
     Empty(ClassEmpty),
-}
+});
 impl display::NodeDisplay for ClassItem {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -577,12 +582,12 @@ impl display::NodeDisplay for MethodKind {
 }
 
 
-pub enum PropertyName {
+node_enum!(pub enum PropertyName {
     Literal(PropertyIdentifier),
     String(String),
     Number(Numeric),
     Computed(ComputedPropertyName),
-}
+});
 impl display::NodeDisplay for PropertyName {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -607,10 +612,10 @@ impl display::NodeDisplay for ComputedPropertyName {
 }
 
 
-pub enum PropertyAccess {
+node_enum!(pub enum PropertyAccess {
     Identifier(IdentifierPropertyAccess),
     Computed(ComputedPropertyAccess),
-}
+});
 impl display::NodeDisplay for PropertyAccess {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -674,10 +679,10 @@ pub enum FieldPosition {
 }
 
 // experimental
-pub enum ClassFieldId {
+node_enum!(pub enum ClassFieldId {
     Public(PropertyName),
     Private(PropertyIdentifier),
-}
+});
 impl display::NodeDisplay for ClassFieldId {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {

@@ -67,11 +67,11 @@ impl display::NodeDisplay for Identifier {
 }
 
 
-pub enum ElementName {
+node_enum!(pub enum ElementName {
     Identifier(Identifier),
     Member(MemberExpression),
     Namespaced(NamespacedName),
-}
+});
 impl display::NodeDisplay for ElementName {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -95,10 +95,10 @@ impl display::NodeDisplay for MemberExpression {
     }
 }
 
-pub enum MemberObject {
+node_enum!(pub enum MemberObject {
     Identifier(Identifier),
     Member(MemberExpression),
-}
+});
 impl display::NodeDisplay for MemberObject {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -122,10 +122,10 @@ impl display::NodeDisplay for NamespacedName {
 }
 
 
-pub enum Attribute {
+node_enum!(pub enum Attribute {
     Spread(SpreadAttribute),
     Pair(PairAttribute),
-}
+});
 impl display::NodeDisplay for Attribute {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -136,10 +136,10 @@ impl display::NodeDisplay for Attribute {
 }
 
 
-pub enum AttributeName {
+node_enum!(pub enum AttributeName {
     Identifier(Identifier),
     Namespaced(NamespacedName),
-}
+});
 impl display::NodeDisplay for AttributeName {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -179,11 +179,11 @@ impl display::NodeDisplay for PairAttribute {
 }
 
 
-pub enum AttributeValue {
+node_enum!(pub enum AttributeValue {
     String(StringLiteral),
     Expression(Box<alias::Expression>),
     Element(Element),
-}
+});
 impl display::NodeDisplay for AttributeValue {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -207,13 +207,13 @@ impl display::NodeDisplay for StringLiteral {
 }
 
 
-pub enum Child {
+node_enum!(pub enum Child {
     Empty(Empty),
     Text(Text),
     Element(Element),
     Expression(Expression),
     Spread(ExpressionSpread),
-}
+});
 impl display::NodeDisplay for Child {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {

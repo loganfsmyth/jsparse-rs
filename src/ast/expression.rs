@@ -98,10 +98,10 @@ impl misc::FirstSpecialToken for ObjectExpression {
 }
 impl misc::HasInOperator for ObjectExpression {}
 
-pub enum ObjectItem {
+node_enum!(pub enum ObjectItem {
     Method(ObjectMethod),
     Property(ObjectProperty),
-}
+});
 impl display::NodeDisplay for ObjectItem {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -363,10 +363,10 @@ impl misc::FirstSpecialToken for MemberExpression {
 impl misc::HasInOperator for MemberExpression {}
 
 // TODO: It is kind of a pain to have this as nested enums, since PropertyAccess is also an enum
-pub enum MemberProperty {
+node_enum!(pub enum MemberProperty {
     Normal(misc::PropertyAccess),
     Private(PrivateProperty),
-}
+});
 impl display::NodeDisplay for MemberProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -903,12 +903,12 @@ impl misc::HasInOperator for ArrowFunctionExpression {
 }
 
 
-pub enum ArrowFunctionBody {
+node_enum!(pub enum ArrowFunctionBody {
     Expression(Box<alias::Expression>),
 
     // TODO: Do we need an async arrow body for fn return val
     Block(misc::FunctionBody),
-}
+});
 impl display::NodeDisplay for ArrowFunctionBody {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {

@@ -189,12 +189,12 @@ impl misc::HasOrphanIf for ForStatement {
 }
 
 
-pub enum ForInit {
+node_enum!(pub enum ForInit {
     Var(VariableStatement),
     Let(LetDeclaration),
     Const(ConstDeclaration),
     Expression(alias::Expression),
-}
+});
 impl display::NodeDisplay for ForInit {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         let mut f = f.disallow_in();
@@ -290,12 +290,12 @@ impl display::NodeDisplay for ForConstPattern {
 }
 
 
-pub enum ForInInit {
+node_enum!(pub enum ForInInit {
     Var(ForInVarPattern),
     Let(ForLetPattern),
     Const(ForLetPattern),
     Complex(misc::LeftHandComplexAssign),
-}
+});
 impl display::NodeDisplay for ForInInit {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
@@ -365,12 +365,12 @@ impl misc::HasOrphanIf for ForAwaitStatement {
     }
 }
 
-pub enum ForOfInit {
+node_enum!(pub enum ForOfInit {
     Var(ForVarPattern),
     Let(ForLetPattern),
     Const(ForConstPattern),
     Complex(misc::LeftHandComplexAssign),
-}
+});
 impl display::NodeDisplay for ForOfInit {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
