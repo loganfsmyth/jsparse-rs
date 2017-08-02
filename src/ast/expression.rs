@@ -96,7 +96,7 @@ impl misc::FirstSpecialToken for ObjectExpression {
 }
 impl misc::HasInOperator for ObjectExpression {}
 
-node_enum!(pub enum ObjectItem {
+node_enum!(@node_display pub enum ObjectItem {
     Method(ObjectMethod),
     Property(ObjectProperty),
 });
@@ -353,7 +353,7 @@ impl misc::FirstSpecialToken for MemberExpression {
 impl misc::HasInOperator for MemberExpression {}
 
 // TODO: It is kind of a pain to have this as nested enums, since PropertyAccess is also an enum
-node_enum!(pub enum MemberProperty {
+node_enum!(@node_display pub enum MemberProperty {
     Normal(misc::PropertyAccess),
     Private(PrivateProperty),
 });
@@ -901,19 +901,11 @@ impl misc::HasInOperator for ArrowFunctionExpressionBody {
 }
 
 
-node_enum!(pub enum ArrowFunctionBody {
+node_enum!(@node_display @has_in_operator pub enum ArrowFunctionBody {
     Expression(ArrowFunctionExpressionBody),
     // TODO: Do we need an async arrow body for fn return val
     Block(misc::FunctionBody),
 });
-impl misc::HasInOperator for ArrowFunctionBody {
-    fn has_in_operator(&self) -> bool {
-        match *self {
-            ArrowFunctionBody::Expression(ref n) => n.has_in_operator(),
-            ArrowFunctionBody::Block(ref n) => n.has_in_operator(),
-        }
-    }
-}
 
 
 

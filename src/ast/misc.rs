@@ -5,30 +5,86 @@ use super::literal::{String, Numeric};
 use super::display;
 use super::expression::{MemberExpression};
 
-macro_rules! node_enum {
-    (pub enum $id:ident { $($key:ident($type:ty),)* }) => {
-        pub enum $id {
-            $($key($type),)*
-        }
+macro_rules! node_enum_impl {
+    ( ( $(@$label:tt)* ) pub enum $id:ident $body:tt ) => {
+        pub enum $id $body
 
+        node_enum_impl!(@from $id $body);
         $(
-            impl From<$type> for $id {
-                fn from(val: $type) -> $id {
-                    $id::$key(val)
+            node_enum_impl!(@$label $id $body);
+        )*
+    };
+    (@from $name:ident { $( $key:ident($type:ty) ,)* }) => {
+        $(
+            impl From<$type> for $name {
+                fn from(val: $type) -> $name {
+                    $name::$key(val)
                 }
             }
         )*
-
-        impl $crate::ast::display::NodeDisplay for $id {
-            fn fmt(&self, f: &mut $crate::ast::display::NodeFormatter) -> $crate::ast::display::NodeDisplayResult {
+    };
+    (@has_in_operator $name:ident { $( $key:ident($type:ty) ,)* }) => {
+        impl $crate::ast::misc::HasInOperator for $name {
+            fn has_in_operator(&self) -> bool {
                 match *self {
                     $(
-                        $id::$key(ref n) => f.node(n),
+                        $name::$key(ref n) => n.has_in_operator(),
                     )*
                 }
             }
         }
-    }
+    };
+    (@node_display $name:ident { $( $key:ident($type:ty) ,)* }) => {
+        impl $crate::ast::display::NodeDisplay for $name {
+            fn fmt(&self, f: &mut $crate::ast::display::NodeFormatter) -> $crate::ast::display::NodeDisplayResult {
+                match *self {
+                    $(
+                        $name::$key(ref n) => f.node(n),
+                    )*
+                }
+            }
+        }
+    };
+    (@first_special_token $name:ident { $( $key:ident($type:ty) ,)* }) => {
+        impl $crate::ast::misc::FirstSpecialToken for $name {
+            fn first_special_token(&self) -> $crate::ast::misc::SpecialToken {
+                match *self {
+                    $(
+                        $name::$key(ref n) => n.first_special_token(),
+                    )*
+                }
+            }
+        }
+    };
+    (@orphan_if $name:ident { $( $key:ident($type:ty) ,)* }) => {
+        impl $crate::ast::misc::HasOrphanIf for $name {
+            fn orphan_if(&self) -> bool {
+                match *self {
+                    $(
+                        $name::$key(ref n) => n.orphan_if(),
+                    )*
+                }
+            }
+        }
+    };
+}
+
+macro_rules! node_enum {
+    (@$label1:ident @$label2:ident @$label3:ident @$label4:ident $($it:tt)*) => {
+        node_enum_impl!((@$label1 @$label2 @$label3 @$label4) $($it)*);
+    };
+    (@$label1:ident @$label2:ident @$label3:ident $($it:tt)*) => {
+        node_enum_impl!((@$label1 @$label2 @$label3) $($it)*);
+    };
+    (@$label1:ident @$label2:ident $($it:tt)*) => {
+        node_enum_impl!((@$label1 @$label2) $($it)*);
+    };
+    (@$label1:ident $($it:tt)*) => {
+        node_enum_impl!((@$label1) $($it)*);
+    };
+    ($($it:tt)*) => {
+        node_enum_impl!(() $($it)*);
+    };
 }
 
 macro_rules! assert_serialize {
@@ -122,7 +178,7 @@ pub trait FirstSpecialToken {
 }
 
 
-node_enum!(pub enum Ast {
+node_enum!(@node_display pub enum Ast {
     Script(Script),
     Module(Module),
 });
@@ -176,7 +232,7 @@ impl display::NodeDisplay for Directive {
 }
 
 
-node_enum!(pub enum Pattern {
+node_enum!(@node_display pub enum Pattern {
     Identifier(BindingIdentifier),
     Object(ObjectPattern),
     Array(ArrayPattern),
@@ -225,36 +281,19 @@ impl display::NodeDisplay for PropertyIdentifier {
 }
 
 
-node_enum!(pub enum LeftHandSimpleAssign {
+node_enum!(@node_display @first_special_token pub enum LeftHandSimpleAssign {
     // TODO: Parenthesized ident and member?
     Identifier(BindingIdentifier),
     Member(MemberExpression),
 });
-impl FirstSpecialToken for LeftHandSimpleAssign {
-    fn first_special_token(&self) -> SpecialToken {
-        match *self {
-            LeftHandSimpleAssign::Identifier(ref s) => s.first_special_token(),
-            LeftHandSimpleAssign::Member(ref m) => m.first_special_token(),
-        }
-    }
-}
-node_enum!(pub enum LeftHandComplexAssign {
+
+node_enum!(@node_display @first_special_token pub enum LeftHandComplexAssign {
     // TODO: Parenthesized ident and member?
     Identifier(BindingIdentifier),
     Member(MemberExpression),
     Object(ObjectPattern),
     Array(ArrayPattern),
 });
-impl FirstSpecialToken for LeftHandComplexAssign {
-    fn first_special_token(&self) -> SpecialToken {
-        match *self {
-            LeftHandComplexAssign::Identifier(ref s) => s.first_special_token(),
-            LeftHandComplexAssign::Member(ref m) => m.first_special_token(),
-            LeftHandComplexAssign::Object(ref m) => m.first_special_token(),
-            LeftHandComplexAssign::Array(ref m) => m.first_special_token(),
-        }
-    }
-}
 
 
 // ({     } =
@@ -326,7 +365,7 @@ impl display::NodeDisplay for ObjectPatternPatternProperty {
     }
 }
 
-node_enum!(pub enum ObjectPatternProperty {
+node_enum!(@node_display pub enum ObjectPatternProperty {
     Identifier(ObjectPatternIdentifierProperty),
     Pattern(ObjectPatternPatternProperty),
 });
@@ -422,18 +461,17 @@ node_enum!(pub enum Decorator {
     // Backward-compat for older decorator spec
     Expression(alias::Expression),
 });
-// TODO
-// impl display::NodeDisplay for Decorator {
-//     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-//         f.punctuator(display::Punctuator::At)?;
+impl display::NodeDisplay for Decorator {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.punctuator(display::Punctuator::At)?;
 
-//         match *self {
-//             Decorator::Property(ref n) => f.node(n),
-//             Decorator::Call(ref n) => f.node(n),
-//             Decorator::Expression(ref expr) => f.require_precedence(display::Precedence::Normal).node(expr),
-//         }
-//     }
-// }
+        match *self {
+            Decorator::Property(ref n) => f.node(n),
+            Decorator::Call(ref n) => f.node(n),
+            Decorator::Expression(ref expr) => f.require_precedence(display::Precedence::Normal).node(expr),
+        }
+    }
+}
 
 node!(pub struct DecoratorMemberAccess {
     object: Box<DecoratorValueExpression>,
@@ -448,7 +486,7 @@ impl display::NodeDisplay for DecoratorMemberAccess {
 }
 
 // experimental
-node_enum!(pub enum DecoratorValueExpression {
+node_enum!(@node_display pub enum DecoratorValueExpression {
     Identifier(BindingIdentifier),
     Member(DecoratorMemberAccess),
 });
@@ -509,7 +547,7 @@ impl display::NodeDisplay for ClassEmpty {
 }
 
 
-node_enum!(pub enum ClassItem {
+node_enum!(@node_display pub enum ClassItem {
     Method(ClassMethod),
     Field(ClassField),
     Empty(ClassEmpty),
@@ -546,7 +584,7 @@ impl display::NodeDisplay for MethodKind {
 }
 
 
-node_enum!(pub enum PropertyName {
+node_enum!(@node_display pub enum PropertyName {
     Literal(PropertyIdentifier),
     String(String),
     Number(Numeric),
@@ -568,7 +606,7 @@ impl display::NodeDisplay for ComputedPropertyName {
 }
 
 
-node_enum!(pub enum PropertyAccess {
+node_enum!(@node_display pub enum PropertyAccess {
     Identifier(IdentifierPropertyAccess),
     Computed(ComputedPropertyAccess),
 });
@@ -627,7 +665,7 @@ pub enum FieldPosition {
 }
 
 // experimental
-node_enum!(pub enum ClassFieldId {
+node_enum!(@node_display pub enum ClassFieldId {
     Public(PropertyName),
     Private(PropertyIdentifier),
 });

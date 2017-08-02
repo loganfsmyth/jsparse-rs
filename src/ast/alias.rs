@@ -7,11 +7,10 @@ use super::literal;
 use super::display;
 use super::modules;
 
-use super::misc::HasInOperator;
 use super::misc::FirstSpecialToken;
 
 
-node_enum!(pub enum Function {
+node_enum!(@node_display pub enum Function {
     DefaultDeclaration(modules::ExportDefaultFunctionDeclaration),
     Declaration(declaration::FunctionDeclaration),
     Expression(expression::FunctionExpression),
@@ -21,13 +20,13 @@ node_enum!(pub enum Function {
 });
 
 
-node_enum!(pub enum Method {
+node_enum!(@node_display pub enum Method {
     ClassMethod(misc::ClassMethod),
     ObjectMethod(expression::ObjectMethod),
 });
 
 
-node_enum!(pub enum ModuleStatementItem {
+node_enum!(@node_display pub enum ModuleStatementItem {
     // Statements
     Block(statement::BlockStatement),
     Variable(statement::VariableStatement),
@@ -84,7 +83,7 @@ node_enum!(pub enum ModuleStatementItem {
 });
 
 
-node_enum!(pub enum StatementItem {
+node_enum!(@node_display pub enum StatementItem {
     // Statements
     Block(statement::BlockStatement),
     Variable(statement::VariableStatement),
@@ -145,7 +144,7 @@ impl From<Statement> for StatementItem {
 }
 
 
-node_enum!(pub enum Statement {
+node_enum!(@node_display @orphan_if pub enum Statement {
     Block(statement::BlockStatement),
     Variable(statement::VariableStatement),
     Empty(statement::EmptyStatement),
@@ -169,37 +168,9 @@ node_enum!(pub enum Statement {
     TryFinally(statement::TryFinallyStatement),
     Debugger(statement::DebuggerStatement),
 });
-impl misc::HasOrphanIf for Statement {
-    fn orphan_if(&self) -> bool {
-        match *self {
-            Statement::Block(ref node) => node.orphan_if(),
-            Statement::Variable(ref node) => node.orphan_if(),
-            Statement::Empty(ref node) => node.orphan_if(),
-            Statement::Expression(ref node) => node.orphan_if(),
-            Statement::If(ref node) => node.orphan_if(),
-            Statement::For(ref node) => node.orphan_if(),
-            Statement::ForIn(ref node) => node.orphan_if(),
-            Statement::ForOf(ref node) => node.orphan_if(),
-            Statement::ForAwait(ref node) => node.orphan_if(),
-            Statement::While(ref node) => node.orphan_if(),
-            Statement::DoWhile(ref node) => node.orphan_if(),
-            Statement::Switch(ref node) => node.orphan_if(),
-            Statement::Continue(ref node) => node.orphan_if(),
-            Statement::Break(ref node) => node.orphan_if(),
-            Statement::Return(ref node) => node.orphan_if(),
-            Statement::With(ref node) => node.orphan_if(),
-            Statement::Labelled(ref node) => node.orphan_if(),
-            Statement::Throw(ref node) => node.orphan_if(),
-            Statement::TryCatch(ref node) => node.orphan_if(),
-            Statement::TryCatchFinally(ref node) => node.orphan_if(),
-            Statement::TryFinally(ref node) => node.orphan_if(),
-            Statement::Debugger(ref node) => node.orphan_if(),
-        }
-    }
-}
 
 
-node_enum!(pub enum Expression {
+node_enum!(@node_display @has_in_operator @first_special_token pub enum Expression {
     Binding(misc::BindingIdentifier),
     This(expression::ThisExpression),
     Array(expression::ArrayExpression),
@@ -229,77 +200,9 @@ node_enum!(pub enum Expression {
     Do(expression::DoExpression),
     JSX(jsx::Element),
 });
-impl misc::FirstSpecialToken for Expression {
-    fn first_special_token(&self) -> misc::SpecialToken {
-        match *self {
-            Expression::Binding(ref node) => node.first_special_token(),
-            Expression::This(ref node) => node.first_special_token(),
-            Expression::Array(ref node) => node.first_special_token(),
-            Expression::Object(ref node) => node.first_special_token(),
-            Expression::Null(ref node) => node.first_special_token(),
-            Expression::Boolean(ref node) => node.first_special_token(),
-            Expression::Numeric(ref node) => node.first_special_token(),
-            Expression::String(ref node) => node.first_special_token(),
-            Expression::Function(ref node) => node.first_special_token(),
-            Expression::Class(ref node) => node.first_special_token(),
-            Expression::Regex(ref node) => node.first_special_token(),
-            Expression::Template(ref node) => node.first_special_token(),
-            Expression::Member(ref node) => node.first_special_token(),
-            Expression::SuperMember(ref node) => node.first_special_token(),
-            Expression::Binary(ref node) => node.first_special_token(),
-            Expression::Unary(ref node) => node.first_special_token(),
-            Expression::Update(ref node) => node.first_special_token(),
-            Expression::Call(ref node) => node.first_special_token(),
-            Expression::New(ref node) => node.first_special_token(),
-            Expression::ImportCall(ref node) => node.first_special_token(),
-            Expression::SuperCall(ref node) => node.first_special_token(),
-            Expression::Conditional(ref node) => node.first_special_token(),
-            Expression::Assign(ref node) => node.first_special_token(),
-            Expression::AssignUpdate(ref node) => node.first_special_token(),
-            Expression::Sequence(ref node) => node.first_special_token(),
-            Expression::Arrow(ref node) => node.first_special_token(),
-            Expression::Do(ref node) => node.first_special_token(),
-            Expression::JSX(ref node) => node.first_special_token(),
-        }
-    }
-}
-impl misc::HasInOperator for Expression {
-    fn has_in_operator(&self) -> bool {
-        match *self {
-            Expression::Binding(ref node) => node.has_in_operator(),
-            Expression::This(ref node) => node.has_in_operator(),
-            Expression::Array(ref node) => node.has_in_operator(),
-            Expression::Object(ref node) => node.has_in_operator(),
-            Expression::Null(ref node) => node.has_in_operator(),
-            Expression::Boolean(ref node) => node.has_in_operator(),
-            Expression::Numeric(ref node) => node.has_in_operator(),
-            Expression::String(ref node) => node.has_in_operator(),
-            Expression::Function(ref node) => node.has_in_operator(),
-            Expression::Class(ref node) => node.has_in_operator(),
-            Expression::Regex(ref node) => node.has_in_operator(),
-            Expression::Template(ref node) => node.has_in_operator(),
-            Expression::Member(ref node) => node.has_in_operator(),
-            Expression::SuperMember(ref node) => node.has_in_operator(),
-            Expression::Binary(ref node) => node.has_in_operator(),
-            Expression::Unary(ref node) => node.has_in_operator(),
-            Expression::Update(ref node) => node.has_in_operator(),
-            Expression::Call(ref node) => node.has_in_operator(),
-            Expression::New(ref node) => node.has_in_operator(),
-            Expression::ImportCall(ref node) => node.has_in_operator(),
-            Expression::SuperCall(ref node) => node.has_in_operator(),
-            Expression::Conditional(ref node) => node.has_in_operator(),
-            Expression::Assign(ref node) => node.has_in_operator(),
-            Expression::AssignUpdate(ref node) => node.has_in_operator(),
-            Expression::Sequence(ref node) => node.has_in_operator(),
-            Expression::Arrow(ref node) => node.has_in_operator(),
-            Expression::Do(ref node) => node.has_in_operator(),
-            Expression::JSX(ref node) => node.has_in_operator(),
-        }
-    }
-}
 
 
-node_enum!(pub enum ExportDeclaration {
+node_enum!(@node_display pub enum ExportDeclaration {
     DefaultClass(modules::ExportDefaultClassDeclaration),
     DefaultFunction(modules::ExportDefaultFunctionDeclaration),
     DefaultExpression(modules::ExportDefaultExpression),
@@ -320,7 +223,7 @@ node_enum!(pub enum ExportDeclaration {
 });
 
 
-node_enum!(pub enum ImportDeclaration {
+node_enum!(@node_display pub enum ImportDeclaration {
     Named(modules::ImportNamedDeclaration),
     NamedAndNamespace(modules::ImportNamedAndNamespaceDeclaration),
     Namespace(modules::ImportNamespaceDeclaration),

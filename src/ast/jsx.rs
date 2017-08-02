@@ -67,7 +67,7 @@ impl display::NodeDisplay for Identifier {
 }
 
 
-node_enum!(pub enum ElementName {
+node_enum!(@node_display pub enum ElementName {
     Identifier(Identifier),
     Member(MemberExpression),
     Namespaced(NamespacedName),
@@ -86,7 +86,7 @@ impl display::NodeDisplay for MemberExpression {
     }
 }
 
-node_enum!(pub enum MemberObject {
+node_enum!(@node_display pub enum MemberObject {
     Identifier(Identifier),
     Member(MemberExpression),
 });
@@ -105,13 +105,13 @@ impl display::NodeDisplay for NamespacedName {
 }
 
 
-node_enum!(pub enum Attribute {
+node_enum!(@node_display pub enum Attribute {
     Spread(SpreadAttribute),
     Pair(PairAttribute),
 });
 
 
-node_enum!(pub enum AttributeName {
+node_enum!(@node_display pub enum AttributeName {
     Identifier(Identifier),
     Namespaced(NamespacedName),
 });
@@ -146,7 +146,7 @@ impl display::NodeDisplay for PairAttribute {
 }
 
 
-node_enum!(pub enum AttributeValue {
+node_enum!(@node_display pub enum AttributeValue {
     String(StringLiteral),
     Expression(Box<alias::Expression>),
     Element(Element),
@@ -165,7 +165,7 @@ impl display::NodeDisplay for StringLiteral {
 }
 
 
-node_enum!(pub enum Child {
+node_enum!(@node_display pub enum Child {
     Empty(Empty),
     Text(Text),
     Element(Element),

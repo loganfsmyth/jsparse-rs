@@ -189,7 +189,7 @@ impl misc::HasOrphanIf for ForStatement {
 }
 
 
-node_enum!(pub enum ForInit {
+node_enum!(@node_display pub enum ForInit {
     Var(VariableStatement),
     Let(LetDeclaration),
     Const(ConstDeclaration),
@@ -277,7 +277,7 @@ impl display::NodeDisplay for ForConstPattern {
 }
 
 
-node_enum!(pub enum ForInInit {
+node_enum!(@node_display pub enum ForInInit {
     Var(ForInVarPattern),
     Let(ForLetPattern),
     Const(ForConstPattern),
@@ -341,7 +341,7 @@ impl misc::HasOrphanIf for ForAwaitStatement {
     }
 }
 
-node_enum!(pub enum ForOfInit {
+node_enum!(@node_display pub enum ForOfInit {
     Var(ForVarPattern),
     Let(ForLetPattern),
     Const(ForConstPattern),
