@@ -44,12 +44,12 @@ impl display::NodeDisplay for Element {
             }
         }
 
-            Ok(())
+        Ok(())
     }
 }
 impl misc::HasInOperator for Element {
     fn has_in_operator(&self) -> bool {
-            false
+        false
     }
 }
 impl misc::FirstSpecialToken for Element {}
@@ -124,7 +124,9 @@ impl display::NodeDisplay for SpreadAttribute {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.punctuator(display::Punctuator::CurlyL)?;
         f.punctuator(display::Punctuator::Ellipsis)?;
-        f.require_precedence(display::Precedence::Assignment).node(&self.argument)?;
+        f.require_precedence(display::Precedence::Assignment).node(
+            &self.argument,
+        )?;
         f.punctuator(display::Punctuator::CurlyR)
     }
 }
@@ -179,7 +181,9 @@ node!(pub struct Expression {
 impl display::NodeDisplay for Expression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.punctuator(display::Punctuator::CurlyL)?;
-        f.require_precedence(display::Precedence::Assignment).node(&self.expression)?;
+        f.require_precedence(display::Precedence::Assignment).node(
+            &self.expression,
+        )?;
         f.punctuator(display::Punctuator::CurlyR)
     }
 }
@@ -192,7 +196,9 @@ impl display::NodeDisplay for ExpressionSpread {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.punctuator(display::Punctuator::CurlyL)?;
         f.punctuator(display::Punctuator::Ellipsis)?;
-        f.require_precedence(display::Precedence::Assignment).node(&self.expression)?;
+        f.require_precedence(display::Precedence::Assignment).node(
+            &self.expression,
+        )?;
         f.punctuator(display::Punctuator::CurlyR)
     }
 }
@@ -206,7 +212,8 @@ impl display::NodeDisplay for Empty {
 }
 
 node!(pub struct Text {
-    // Serialized string should contain HTML entities since it, allows all chars except {, }, <, and >
+    // Serialized string should contain HTML entities since it,
+    // allows all chars except {, }, <, and >
     value: string::String,
 });
 impl display::NodeDisplay for Text {

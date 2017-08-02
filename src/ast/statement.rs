@@ -13,7 +13,13 @@ mod tests {
 
     #[test]
     fn it_prints_block() {
-        assert_serialize!(BlockStatement, { body: Default::default() }, "{}");
+        assert_serialize!(
+            BlockStatement,
+            {
+                body: Default::default()
+            },
+            "{}"
+        );
     }
 
     #[test]
@@ -91,7 +97,9 @@ impl display::NodeDisplay for VariableDeclarator {
         f.node(&self.id);
         if let Some(ref init) = self.init {
             f.punctuator(display::Punctuator::Eq)?;
-            f.require_precedence(display::Precedence::Assignment).node(init)?;
+            f.require_precedence(display::Precedence::Assignment).node(
+                init,
+            )?;
         }
         Ok(())
     }
@@ -107,7 +115,9 @@ impl display::NodeDisplay for ExpressionStatement {
         let mut f = f.allow_in();
 
         if let misc::SpecialToken::None = self.expression.first_special_token() {
-            f.require_precedence(display::Precedence::Normal).node(&self.expression)?;
+            f.require_precedence(display::Precedence::Normal).node(
+                &self.expression,
+            )?;
         } else {
             f.wrap_parens().node(&self.expression)?;
         }
@@ -129,7 +139,9 @@ impl display::NodeDisplay for IfStatement {
         f.punctuator(display::Punctuator::ParenL)?;
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(&self.test)?;
+            f.require_precedence(display::Precedence::Normal).node(
+                &self.test,
+            )?;
         }
         f.punctuator(display::Punctuator::ParenR)?;
 
@@ -176,7 +188,9 @@ impl display::NodeDisplay for ForStatement {
         f.punctuator(display::Punctuator::Semicolon)?;
         if let Some(ref update) = self.update {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(update)?;
+            f.require_precedence(display::Precedence::Normal).node(
+                update,
+            )?;
         }
         f.punctuator(display::Punctuator::ParenR)?;
         f.node(&self.body)
@@ -214,7 +228,9 @@ impl display::NodeDisplay for ForInStatement {
         f.keyword(display::Keyword::In)?;
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(&self.right)?;
+            f.require_precedence(display::Precedence::Normal).node(
+                &self.right,
+            )?;
         }
         f.punctuator(display::Punctuator::ParenR)?;
 
@@ -300,7 +316,9 @@ impl display::NodeDisplay for ForOfStatement {
         f.punctuator(display::Punctuator::ParenL)?;
         f.node(&self.left)?;
         f.keyword(display::Keyword::Of)?;
-        f.require_precedence(display::Precedence::Normal).node(&self.right)?;
+        f.require_precedence(display::Precedence::Normal).node(
+            &self.right,
+        )?;
         f.punctuator(display::Punctuator::ParenR)?;
 
         f.node(&self.body)
@@ -328,7 +346,9 @@ impl display::NodeDisplay for ForAwaitStatement {
         f.keyword(display::Keyword::In)?;
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(&self.right)?;
+            f.require_precedence(display::Precedence::Normal).node(
+                &self.right,
+            )?;
         }
         f.punctuator(display::Punctuator::ParenR)?;
 
@@ -363,7 +383,9 @@ impl display::NodeDisplay for WhileStatement {
         f.punctuator(display::Punctuator::ParenL)?;
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(&self.test)?;
+            f.require_precedence(display::Precedence::Normal).node(
+                &self.test,
+            )?;
         }
         f.punctuator(display::Punctuator::ParenR)?;
         f.node(&self.body)
@@ -390,7 +412,9 @@ impl display::NodeDisplay for DoWhileStatement {
         f.punctuator(display::Punctuator::ParenL)?;
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(&self.test)?;
+            f.require_precedence(display::Precedence::Normal).node(
+                &self.test,
+            )?;
         }
         f.punctuator(display::Punctuator::ParenR)?;
         f.punctuator(display::Punctuator::Semicolon)
@@ -410,7 +434,9 @@ impl display::NodeDisplay for SwitchStatement {
         f.punctuator(display::Punctuator::ParenL)?;
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(&self.discriminant)?;
+            f.require_precedence(display::Precedence::Normal).node(
+                &self.discriminant,
+            )?;
         }
         f.punctuator(display::Punctuator::ParenR)?;
         f.punctuator(display::Punctuator::CurlyL)?;
@@ -459,7 +485,9 @@ impl display::NodeDisplay for WithStatement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.keyword(display::Keyword::With)?;
         f.punctuator(display::Punctuator::ParenL)?;
-        f.require_precedence(display::Precedence::Normal).node(&self.object)?;
+        f.require_precedence(display::Precedence::Normal).node(
+            &self.object,
+        )?;
         f.punctuator(display::Punctuator::ParenR)?;
         f.node(&self.body)
     }
@@ -498,7 +526,9 @@ impl display::NodeDisplay for ThrowStatement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         let mut f = f.allow_in();
         f.keyword(display::Keyword::Throw)?;
-        f.require_precedence(display::Precedence::Normal).node(&self.argument)?;
+        f.require_precedence(display::Precedence::Normal).node(
+            &self.argument,
+        )?;
 
         Ok(())
     }

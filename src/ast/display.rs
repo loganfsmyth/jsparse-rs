@@ -360,7 +360,8 @@ impl NodeFormatter {
             write!(self, "{}", value)?;
         } else {
             write!(self, "{}", value)?;
-            // Serialize "value", escaping anything that _must_ be escaped, like newlines and slashes
+            // Serialize "value", escaping anything that _must_ be escaped,
+            // like newlines and slashes
         }
         self.punctuator(Punctuator::SQuote)?;
 
@@ -368,14 +369,14 @@ impl NodeFormatter {
     }
     pub fn number(&mut self, value: &f64, raw: Option<&str>) -> NodeDisplayResult {
         // if let Some(ref _raw) = raw {
-            // Write raw value as-is, possibly setting flag
-            // self.ends_with_integer = true;
+        // Write raw value as-is, possibly setting flag
+        // self.ends_with_integer = true;
         // } else {
-            let s = format!("{}", value);
-            write!(self, "{}", s)?;
+        let s = format!("{}", value);
+        write!(self, "{}", s)?;
 
-            // Serialize number
-            self.ends_with_integer = !s.chars().any(|c| c == '.');;
+        // Serialize number
+        self.ends_with_integer = !s.chars().any(|c| c == '.');;
         // }
 
         Ok(())
@@ -434,8 +435,8 @@ impl fmt::Write for NodeFormatter {
 }
 
 pub struct CachePrecedence<'a> {
-  prec: Precedence,
-  fmt: &'a mut NodeFormatter,
+    prec: Precedence,
+    fmt: &'a mut NodeFormatter,
 }
 impl<'a> CachePrecedence<'a> {
     fn new(fmt: &mut NodeFormatter) -> CachePrecedence {
@@ -446,13 +447,13 @@ impl<'a> CachePrecedence<'a> {
     }
 }
 impl<'a> ::std::ops::Drop for CachePrecedence<'a> {
-  fn drop(&mut self) {
-    self.fmt.prec = self.prec;
-  }
+    fn drop(&mut self) {
+        self.fmt.prec = self.prec;
+    }
 }
 pub struct CacheIn<'a> {
-  in_operator: bool,
-  fmt: &'a mut NodeFormatter,
+    in_operator: bool,
+    fmt: &'a mut NodeFormatter,
 }
 impl<'a> CacheIn<'a> {
     fn new(fmt: &mut NodeFormatter) -> CacheIn {
@@ -463,66 +464,29 @@ impl<'a> CacheIn<'a> {
     }
 }
 impl<'a> ::std::ops::Drop for CacheIn<'a> {
-  fn drop(&mut self) {
-    self.fmt.in_operator = self.in_operator;
-  }
+    fn drop(&mut self) {
+        self.fmt.in_operator = self.in_operator;
+    }
 }
 
 pub struct WrapParens<'a> {
-  skip: bool,
-  fmt: &'a mut NodeFormatter,
+    skip: bool,
+    fmt: &'a mut NodeFormatter,
 }
 impl<'a> WrapParens<'a> {
     fn new(fmt: &mut NodeFormatter, skip: bool) -> WrapParens {
         fmt.punctuator(Punctuator::ParenL);
 
-        WrapParens {
-            skip,
-            fmt,
-        }
+        WrapParens { skip, fmt }
     }
 }
 impl<'a> ::std::ops::Drop for WrapParens<'a> {
-  fn drop(&mut self) {
-    if !self.skip { self.fmt.punctuator(Punctuator::ParenR); }
-  }
+    fn drop(&mut self) {
+        if !self.skip {
+            self.fmt.punctuator(Punctuator::ParenR);
+        }
+    }
 }
-
-// pub struct WrapSquare<'a> {
-//   fmt: &'a mut NodeFormatter,
-// }
-// impl<'a> WrapSquare<'a> {
-//     fn new(fmt: &mut NodeFormatter) -> WrapSquare {
-//         fmt.punctuator(Punctuator::SquareL);
-
-//         WrapSquare {
-//             fmt,
-//         }
-//     }
-// }
-// impl<'a> ::std::ops::Drop for WrapSquare<'a> {
-//   fn drop(&mut self) {
-//     self.fmt.punctuator(Punctuator::SquareR);
-//   }
-// }
-
-// pub struct WrapBlock<'a> {
-//   fmt: &'a mut NodeFormatter,
-// }
-// impl<'a> WrapBlock<'a> {
-//     fn new(fmt: &mut NodeFormatter) -> WrapBlock {
-//         fmt.punctuator(Punctuator::CurlyL);
-
-//         WrapBlock {
-//             fmt,
-//         }
-//     }
-// }
-// impl<'a> ::std::ops::Drop for WrapBlock<'a> {
-//   fn drop(&mut self) {
-//     self.fmt.punctuator(Punctuator::CurlyR);
-//   }
-// }
 
 macro_rules! impl_deref {
     ($id:ident) => {
@@ -544,7 +508,7 @@ macro_rules! impl_deref {
         impl_deref!($($ids),+);
     };
 }
-impl_deref!(CachePrecedence, CacheIn, WrapParens);//, WrapSquare, WrapBlock);
+impl_deref!(CachePrecedence, CacheIn, WrapParens);
 
 
 pub enum NodeDisplayError {
@@ -567,4 +531,3 @@ impl<T: NodeDisplay> NodeDisplay for Box<T> {
         NodeDisplay::fmt(&**self, f)
     }
 }
-

@@ -40,7 +40,9 @@ impl display::NodeDisplay for LetDeclarator {
         f.node(&self.id)?;
         if let Some(ref init) = self.init {
             f.punctuator(display::Punctuator::Eq)?;
-            f.require_precedence(display::Precedence::Assignment).node(init)?;
+            f.require_precedence(display::Precedence::Assignment).node(
+                init,
+            )?;
         }
         Ok(())
     }
@@ -67,7 +69,9 @@ impl display::NodeDisplay for ConstDeclarator {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.node(&self.id)?;
         f.punctuator(display::Punctuator::Eq)?;
-        f.require_precedence(display::Precedence::Assignment).node(&self.init)
+        f.require_precedence(display::Precedence::Assignment).node(
+            &self.init,
+        )
     }
 }
 
@@ -107,7 +111,9 @@ impl display::NodeDisplay for ClassDeclaration {
 
         if let Some(ref expr) = self.extends {
             f.keyword(display::Keyword::Extends)?;
-            f.require_precedence(display::Precedence::LeftHand).node(expr)?;
+            f.require_precedence(display::Precedence::LeftHand).node(
+                expr,
+            )?;
         }
 
         f.node(&self.body)

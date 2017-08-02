@@ -3,7 +3,7 @@ use std::string;
 use super::alias;
 use super::literal::{String, Numeric};
 use super::display;
-use super::expression::{MemberExpression};
+use super::expression::MemberExpression;
 
 macro_rules! node_enum_impl {
     ( ( $(@$label:tt)* ) pub enum $id:ident $body:tt ) => {
@@ -36,7 +36,9 @@ macro_rules! node_enum_impl {
     };
     (@node_display $name:ident { $( $key:ident($type:ty) ,)* }) => {
         impl $crate::ast::display::NodeDisplay for $name {
-            fn fmt(&self, f: &mut $crate::ast::display::NodeFormatter) -> $crate::ast::display::NodeDisplayResult {
+            fn fmt(&self, f: &mut $crate::ast::display::NodeFormatter)
+                -> $crate::ast::display::NodeDisplayResult
+            {
                 match *self {
                     $(
                         $name::$key(ref n) => f.node(n),
@@ -338,7 +340,9 @@ impl display::NodeDisplay for ObjectPatternIdentifierProperty {
             let mut f = f.allow_in();
 
             f.punctuator(display::Punctuator::Eq)?;
-            f.require_precedence(display::Precedence::Assignment).node(init)?;
+            f.require_precedence(display::Precedence::Assignment).node(
+                init,
+            )?;
         }
 
         Ok(())
@@ -358,7 +362,9 @@ impl display::NodeDisplay for ObjectPatternPatternProperty {
             let mut f = f.allow_in();
 
             f.punctuator(display::Punctuator::Eq)?;
-            f.require_precedence(display::Precedence::Assignment).node(init)?;
+            f.require_precedence(display::Precedence::Assignment).node(
+                init,
+            )?;
         }
 
         Ok(())
@@ -418,7 +424,9 @@ impl display::NodeDisplay for ArrayPatternElement {
             let mut f = f.allow_in();
 
             f.punctuator(display::Punctuator::Eq)?;
-            f.require_precedence(display::Precedence::Assignment).node(init)?;
+            f.require_precedence(display::Precedence::Assignment).node(
+                init,
+            )?;
         }
 
         Ok(())
@@ -468,7 +476,9 @@ impl display::NodeDisplay for Decorator {
         match *self {
             Decorator::Property(ref n) => f.node(n),
             Decorator::Call(ref n) => f.node(n),
-            Decorator::Expression(ref expr) => f.require_precedence(display::Precedence::Normal).node(expr),
+            Decorator::Expression(ref expr) => {
+                f.require_precedence(display::Precedence::Normal).node(expr)
+            }
         }
     }
 }
@@ -515,7 +525,9 @@ impl display::NodeDisplay for CallArguments {
 
         if let Some(ref spread) = self.spread {
             f.punctuator(display::Punctuator::Comma)?;
-            f.require_precedence(display::Precedence::Assignment).node(spread)?;
+            f.require_precedence(display::Precedence::Assignment).node(
+                spread,
+            )?;
         }
 
         f.punctuator(display::Punctuator::ParenR)
@@ -573,13 +585,13 @@ pub enum MethodKind {
 }
 impl display::NodeDisplay for MethodKind {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-    	match *self {
-    		MethodKind::Normal => Ok(()),
-    		MethodKind::Generator => f.punctuator(display::Punctuator::Star),
-    		MethodKind::Async => f.keyword(display::Keyword::Async),
-    		MethodKind::Get => f.keyword(display::Keyword::Set),
-    		MethodKind::Set => f.keyword(display::Keyword::Get),
-    	}
+        match *self {
+            MethodKind::Normal => Ok(()),
+            MethodKind::Generator => f.punctuator(display::Punctuator::Star),
+            MethodKind::Async => f.keyword(display::Keyword::Async),
+            MethodKind::Get => f.keyword(display::Keyword::Set),
+            MethodKind::Set => f.keyword(display::Keyword::Get),
+        }
     }
 }
 
@@ -600,7 +612,9 @@ impl display::NodeDisplay for ComputedPropertyName {
         let mut f = f.allow_in();
 
         f.punctuator(display::Punctuator::SquareL)?;
-        f.require_precedence(display::Precedence::Assignment).node(&self.expression)?;
+        f.require_precedence(display::Precedence::Assignment).node(
+            &self.expression,
+        )?;
         f.punctuator(display::Punctuator::SquareR)
     }
 }
@@ -617,7 +631,9 @@ node!(pub struct ComputedPropertyAccess {
 impl display::NodeDisplay for ComputedPropertyAccess {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.punctuator(display::Punctuator::SquareL)?;
-        f.require_precedence(display::Precedence::Assignment).node(&self.expression)?;
+        f.require_precedence(display::Precedence::Assignment).node(
+            &self.expression,
+        )?;
         f.punctuator(display::Punctuator::SquareR)
     }
 }
@@ -692,7 +708,9 @@ impl display::NodeDisplay for ClassField {
 
         if let Some(ref val) = self.value {
             f.punctuator(display::Punctuator::Eq)?;
-            f.require_precedence(display::Precedence::Assignment).node(val)?;
+            f.require_precedence(display::Precedence::Assignment).node(
+                val,
+            )?;
         }
 
         Ok(())

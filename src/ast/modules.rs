@@ -3,9 +3,9 @@ use super::misc;
 use super::alias;
 use super::display;
 
-use super::statement::{VariableStatement};
+use super::statement::VariableStatement;
 use super::declaration::{ClassDeclaration, FunctionDeclaration, LetDeclaration, ConstDeclaration};
-use super::literal::{String};
+use super::literal::String;
 use super::misc::FirstSpecialToken;
 
 node!(pub struct ModuleIdentifier {
@@ -164,7 +164,9 @@ impl display::NodeDisplay for ExportDefaultClassDeclaration {
         }
         if let Some(ref extends) = self.extends {
             f.keyword(display::Keyword::Extends)?;
-            f.require_precedence(display::Precedence::LeftHand).node(extends)?;
+            f.require_precedence(display::Precedence::LeftHand).node(
+                extends,
+            )?;
         }
         f.node(&self.body)
     }
@@ -184,7 +186,9 @@ impl display::NodeDisplay for ExportDefaultExpression {
         if let misc::SpecialToken::Declaration = self.expression.first_special_token() {
             f.wrap_parens().node(&self.expression)?;
         } else {
-            f.require_precedence(display::Precedence::Assignment).node(&self.expression)?;
+            f.require_precedence(display::Precedence::Assignment).node(
+                &self.expression,
+            )?;
         }
         f.punctuator(display::Punctuator::Semicolon)
     }
