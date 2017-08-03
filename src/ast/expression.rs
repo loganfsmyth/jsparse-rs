@@ -173,7 +173,7 @@ impl misc::HasInOperator for FunctionExpression {}
 
 // (class {})
 node!(pub struct ClassExpression {
-    decorators: Vec<misc::Decorator>, // experimental
+    decorators: Vec<misc::ClassDecorator>, // experimental
     id: Option<misc::BindingIdentifier>,
     extends: Option<Box<alias::Expression>>,
     body: misc::ClassBody,

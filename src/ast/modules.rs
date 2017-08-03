@@ -150,7 +150,7 @@ impl display::NodeDisplay for ExportDefaultFunctionDeclaration {
 
 // export default class name {}
 node!(pub struct ExportDefaultClassDeclaration {
-    decorators: Vec<misc::Decorator>, // experimental
+    decorators: Vec<misc::ClassDecorator>, // experimental
     id: Option<misc::BindingIdentifier>,
     extends: Option<Box<alias::Expression>>,
     body: misc::ClassBody,

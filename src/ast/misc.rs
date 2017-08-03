@@ -461,24 +461,50 @@ impl HasInOperator for FunctionBody {
     }
 }
 
+node!(pub struct ClassDecorator {
+    value: DecoratorValue,
+});
+impl display::NodeDisplay for ClassDecorator {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.punctuator(display::Punctuator::At);
+        f.node(&self.value)
+    }
+}
+node!(pub struct ClassItemDecorator {
+    value: DecoratorValue,
+});
+impl display::NodeDisplay for ClassItemDecorator {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.punctuator(display::Punctuator::At);
+        f.node(&self.value)
+    }
+}
+node!(pub struct FunctionParamDecorator {
+    value: DecoratorValue,
+});
+impl display::NodeDisplay for FunctionParamDecorator {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.punctuator(display::Punctuator::At);
+        f.node(&self.value)
+    }
+}
+
 
 // experimental
 // TODO: Enum fix
-node_enum!(pub enum Decorator {
+node_enum!(pub enum DecoratorValue {
     Property(DecoratorValueExpression),
     Call(DecoratorCallExpression),
 
     // Backward-compat for older decorator spec
     Expression(alias::Expression),
 });
-impl display::NodeDisplay for Decorator {
+impl display::NodeDisplay for DecoratorValue {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::At);
-
         match *self {
-            Decorator::Property(ref n) => f.node(n),
-            Decorator::Call(ref n) => f.node(n),
-            Decorator::Expression(ref expr) => {
+            DecoratorValue::Property(ref n) => f.node(n),
+            DecoratorValue::Call(ref n) => f.node(n),
+            DecoratorValue::Expression(ref expr) => {
                 f.require_precedence(display::Precedence::Normal).node(expr)
             }
         }
@@ -564,6 +590,7 @@ impl display::NodeDisplay for ClassEmpty {
 }
 
 
+// TODO: Should the class constructor be it's own item type to make "super()" checks easier?
 node_enum!(@node_display pub enum ClassItem {
     Method(ClassMethod),
     Field(ClassField),
@@ -689,7 +716,7 @@ node!(pub struct ClassMethod {
     id: ClassFieldId,
     params: FunctionParams,
     body: FunctionBody,
-    decorators: Vec<Decorator>,
+    decorators: Vec<ClassItemDecorator>,
 });
 impl display::NodeDisplay for ClassMethod {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -724,7 +751,7 @@ node_enum!(@node_display pub enum ClassFieldId {
 // experimental
 node!(pub struct ClassField {
     pos: FieldPosition,
-    decorators: Vec<Decorator>,
+    decorators: Vec<ClassItemDecorator>,
 
     id: ClassFieldId,
     value: Option<alias::Expression>,
@@ -774,7 +801,7 @@ impl display::NodeDisplay for FunctionParams {
     }
 }
 node!(pub struct FunctionParam {
-    decorators: Vec<Decorator>, // experimental
+    decorators: Vec<FunctionParamDecorator>, // experimental
     id: Pattern,
     init: Option<Box<alias::Expression>>,
 });

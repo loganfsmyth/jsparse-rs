@@ -94,7 +94,7 @@ impl display::NodeDisplay for FunctionDeclaration {
 
 // class name {}
 node!(pub struct ClassDeclaration {
-    decorators: Vec<misc::Decorator>, // experimental
+    decorators: Vec<misc::ClassDecorator>, // experimental
     id: misc::BindingIdentifier,
     extends: Option<Box<alias::Expression>>,
     body: misc::ClassBody,
