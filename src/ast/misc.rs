@@ -120,7 +120,7 @@ macro_rules! node_display {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
                 let mut node_fmt = display::NodeFormatter::new();
 
-                display::NodeDisplay::fmt(self, &mut node_fmt);
+                display::NodeDisplay::fmt(self, &mut node_fmt).unwrap();
 
                 write!(f, "{}", node_fmt.output)
             }
@@ -140,13 +140,13 @@ macro_rules! node {
 }
 
 pub struct NodePosition {
-    start: usize,
-    end: usize,
-    range: PositionRange,
+    pub start: usize,
+    pub end: usize,
+    pub range: PositionRange,
 }
 pub struct PositionRange {
-    start: (usize, usize),
-    end: (usize, usize),
+    pub start: (usize, usize),
+    pub end: (usize, usize),
 }
 
 pub trait WithPosition<T: Into<Option<Box<NodePosition>>>> {
@@ -570,9 +570,30 @@ pub enum FunctionKind {
     Generator,
     Async,
     AsyncGenerator, // experimental
+}
 
-    Get,
-    Set,
+impl display::NodeDisplay for FunctionKind {
+    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        match *self {
+            FunctionKind::Normal => {
+                f.keyword(display::Keyword::Function)?;
+            }
+            FunctionKind::Generator => {
+                f.keyword(display::Keyword::Function)?;
+                f.punctuator(display::Punctuator::Star)?;
+            }
+            FunctionKind::Async => {
+                f.keyword(display::Keyword::Async)?;
+                f.keyword(display::Keyword::Function)?;
+            }
+            FunctionKind::AsyncGenerator => {
+                f.keyword(display::Keyword::Async)?;
+                f.keyword(display::Keyword::Function)?;
+                f.punctuator(display::Punctuator::Star)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 
@@ -580,18 +601,25 @@ pub enum MethodKind {
     Normal,
     Generator,
     Async,
+    AsyncGenerator, // experimental
     Get,
     Set,
 }
 impl display::NodeDisplay for MethodKind {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
-            MethodKind::Normal => Ok(()),
-            MethodKind::Generator => f.punctuator(display::Punctuator::Star),
-            MethodKind::Async => f.keyword(display::Keyword::Async),
-            MethodKind::Get => f.keyword(display::Keyword::Set),
-            MethodKind::Set => f.keyword(display::Keyword::Get),
+            MethodKind::Normal => {},
+            MethodKind::Generator => f.punctuator(display::Punctuator::Star)?,
+            MethodKind::Async => f.keyword(display::Keyword::Async)?,
+            MethodKind::AsyncGenerator => {
+                f.keyword(display::Keyword::Async)?;
+                f.punctuator(display::Punctuator::Star)?;
+            }
+            MethodKind::Get => f.keyword(display::Keyword::Set)?,
+            MethodKind::Set => f.keyword(display::Keyword::Get)?,
         }
+
+        Ok(())
     }
 }
 

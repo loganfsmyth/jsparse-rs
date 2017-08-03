@@ -1,10 +1,9 @@
-use std::string;
 use super::misc;
 use super::alias;
 use super::display;
 
 // TODO: Enum fix?
-enum DeclaratorList<T: display::NodeDisplay> {
+pub enum DeclaratorList<T: display::NodeDisplay> {
     Last(T),
     List(T, Box<DeclaratorList<T>>),
 }
@@ -77,13 +76,14 @@ impl display::NodeDisplay for ConstDeclarator {
 
 // function name() {}
 node!(pub struct FunctionDeclaration {
+    kind: misc::FunctionKind,
     id: misc::BindingIdentifier,
     params: misc::FunctionParams,
     body: misc::FunctionBody,
-    fn_kind: misc::FunctionKind,
 });
 impl display::NodeDisplay for FunctionDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        f.node(&self.kind)?;
         f.keyword(display::Keyword::Function)?;
         f.node(&self.id)?;
         f.node(&self.params)?;

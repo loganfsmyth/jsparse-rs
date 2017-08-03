@@ -94,7 +94,7 @@ node!(pub struct VariableDeclarator {
 });
 impl display::NodeDisplay for VariableDeclarator {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.node(&self.id);
+        f.node(&self.id)?;
         if let Some(ref init) = self.init {
             f.punctuator(display::Punctuator::Eq)?;
             f.require_precedence(display::Precedence::Assignment).node(
@@ -178,6 +178,7 @@ impl display::NodeDisplay for ForStatement {
         f.keyword(display::Keyword::For)?;
         f.punctuator(display::Punctuator::ParenL)?;
         if let Some(ref init) = self.init {
+            let mut f = f.disallow_in();
             f.node(init)?;
         }
         f.punctuator(display::Punctuator::Semicolon)?;

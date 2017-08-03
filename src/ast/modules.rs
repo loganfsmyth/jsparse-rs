@@ -25,7 +25,7 @@ node!(pub struct ImportSpecifier {
 });
 impl display::NodeDisplay for ImportSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.node(&self.local);
+        f.node(&self.local)?;
 
         if let Some(ref imported) = self.imported {
             f.keyword(display::Keyword::As)?;
@@ -128,16 +128,17 @@ impl display::NodeDisplay for ImportSpecifiersDeclaration {
 
 // export default function name() {}
 node!(pub struct ExportDefaultFunctionDeclaration {
+    kind: misc::FunctionKind,
     id: Option<misc::BindingIdentifier>,
     params: misc::FunctionParams,
     body: misc::FunctionBody,
-    fn_kind: misc::FunctionKind,
 });
 impl display::NodeDisplay for ExportDefaultFunctionDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.keyword(display::Keyword::Export)?;
         f.keyword(display::Keyword::Default)?;
-        f.keyword(display::Keyword::Function)?;
+        f.node(&self.kind)?;
+
         if let Some(ref id) = self.id {
             f.node(id)?;
         }
@@ -158,6 +159,10 @@ impl display::NodeDisplay for ExportDefaultClassDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.keyword(display::Keyword::Export)?;
         f.keyword(display::Keyword::Default)?;
+
+        for dec in self.decorators.iter() {
+            f.node(dec)?;
+        }
         f.keyword(display::Keyword::Class)?;
         if let Some(ref id) = self.id {
             f.node(id)?;

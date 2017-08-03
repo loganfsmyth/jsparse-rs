@@ -39,7 +39,7 @@ pub enum Punctuator {
     Star,
     StarStar,
 
-    Add,
+    // Add,
     Plus,
     PlusPlus,
 
@@ -48,9 +48,10 @@ pub enum Punctuator {
     MinusMinus,
 
     Arrow,
+    ArrowStar,
 
     Caret,
-    BitwiseXor,
+    // BitwiseXor,
 
     LAngle,
     LAngleEq,
@@ -59,7 +60,7 @@ pub enum Punctuator {
     RAngle,
     RAngleEq,
     RAngleAngle,
-    RAngleAngleEq,
+    // RAngleAngleEq,
     RAngleAngleAngle,
 
     Mod,
@@ -311,22 +312,23 @@ impl NodeFormatter {
             Punctuator::Slash => write!(self, "/"),
             Punctuator::Star => write!(self, "*"),
             Punctuator::StarStar => write!(self, "**"),
-            Punctuator::Add => write!(self, "+"),
+            // Punctuator::Add => write!(self, "+"),
             Punctuator::Plus => write!(self, "+"),
             Punctuator::PlusPlus => write!(self, "++"),
             Punctuator::Subtract => write!(self, "-"),
             Punctuator::Minus => write!(self, "-"),
             Punctuator::MinusMinus => write!(self, "--"),
             Punctuator::Arrow => write!(self, "=>"),
+            Punctuator::ArrowStar => write!(self, "=*>"),
             Punctuator::Caret => write!(self, "^"),
-            Punctuator::BitwiseXor => write!(self, "^"),
+            // Punctuator::BitwiseXor => write!(self, "^"),
             Punctuator::LAngle => write!(self, "<"),
             Punctuator::LAngleEq => write!(self, "<="),
             Punctuator::LAngleAngle => write!(self, "<<"),
             Punctuator::RAngle => write!(self, ">"),
             Punctuator::RAngleEq => write!(self, ">="),
             Punctuator::RAngleAngle => write!(self, ">>"),
-            Punctuator::RAngleAngleEq => write!(self, ">>="),
+            // Punctuator::RAngleAngleEq => write!(self, ">>="),
             Punctuator::RAngleAngleAngle => write!(self, ">>>"),
             Punctuator::Mod => write!(self, "%"),
             Punctuator::Amp => write!(self, "&"),
@@ -367,7 +369,7 @@ impl NodeFormatter {
 
         Ok(())
     }
-    pub fn number(&mut self, value: &f64, raw: Option<&str>) -> NodeDisplayResult {
+    pub fn number(&mut self, value: &f64, _raw: Option<&str>) -> NodeDisplayResult {
         // if let Some(ref _raw) = raw {
         // Write raw value as-is, possibly setting flag
         // self.ends_with_integer = true;
@@ -382,12 +384,12 @@ impl NodeFormatter {
         Ok(())
     }
 
-    pub fn template_part(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
-        if let Some(ref _raw) = raw {
-            // Write raw value as-is
-        } else {
-            // Serialize "value"
-        }
+    pub fn template_part(&mut self, _value: &str, _raw: Option<&str>) -> NodeDisplayResult {
+        // if let Some(ref _raw) = raw {
+        //     // Write raw value as-is
+        // } else {
+        //     // Serialize "value"
+        // }
         Ok(())
     }
 
@@ -401,28 +403,28 @@ impl NodeFormatter {
         Ok(())
     }
 
-    pub fn jsx_identifier(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
-        if let Some(ref _raw) = raw {
-            // Write raw value as-is
-        } else {
-            // Serialize "name"
-        }
+    pub fn jsx_identifier(&mut self, _value: &str, _raw: Option<&str>) -> NodeDisplayResult {
+        // if let Some(ref _raw) = raw {
+        //     // Write raw value as-is
+        // } else {
+        //     // Serialize "name"
+        // }
         Ok(())
     }
-    pub fn jsx_string(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
-        if let Some(ref _raw) = raw {
-            // Write raw value as-is
-        } else {
-            // Serialize "value", encoding all entities like {}<>
-        }
+    pub fn jsx_string(&mut self, _value: &str, _raw: Option<&str>) -> NodeDisplayResult {
+        // if let Some(ref _raw) = raw {
+        //     // Write raw value as-is
+        // } else {
+        //     // Serialize "value", encoding all entities like {}<>
+        // }
         Ok(())
     }
-    pub fn jsx_text(&mut self, _value: &str, raw: Option<&str>) -> NodeDisplayResult {
-        if let Some(ref _raw) = raw {
-            // Write raw value as-is
-        } else {
-            // Serialize "value", encoding all entities like {}<>
-        }
+    pub fn jsx_text(&mut self, _value: &str, _raw: Option<&str>) -> NodeDisplayResult {
+        // if let Some(ref _raw) = raw {
+        //     // Write raw value as-is
+        // } else {
+        //     // Serialize "value", encoding all entities like {}<>
+        // }
         Ok(())
     }
 }
@@ -475,7 +477,7 @@ pub struct WrapParens<'a> {
 }
 impl<'a> WrapParens<'a> {
     fn new(fmt: &mut NodeFormatter, skip: bool) -> WrapParens {
-        fmt.punctuator(Punctuator::ParenL);
+        fmt.punctuator(Punctuator::ParenL).unwrap();
 
         WrapParens { skip, fmt }
     }
@@ -483,7 +485,7 @@ impl<'a> WrapParens<'a> {
 impl<'a> ::std::ops::Drop for WrapParens<'a> {
     fn drop(&mut self) {
         if !self.skip {
-            self.fmt.punctuator(Punctuator::ParenR);
+            self.fmt.punctuator(Punctuator::ParenR).unwrap();
         }
     }
 }
@@ -511,6 +513,7 @@ macro_rules! impl_deref {
 impl_deref!(CachePrecedence, CacheIn, WrapParens);
 
 
+#[derive(Debug)]
 pub enum NodeDisplayError {
     Fmt(fmt::Error),
 }

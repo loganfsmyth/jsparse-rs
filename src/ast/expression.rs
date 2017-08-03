@@ -1,5 +1,4 @@
 use std::string;
-use std::fmt;
 
 use super::misc;
 use super::alias;
@@ -134,7 +133,6 @@ node!(pub struct ObjectMethod {
     id: misc::PropertyName,
     params: misc::FunctionParams,
     body: misc::FunctionBody,
-    fn_kind: misc::FunctionKind,
 });
 impl display::NodeDisplay for ObjectMethod {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
@@ -148,14 +146,14 @@ impl display::NodeDisplay for ObjectMethod {
 
 // (function(){})
 node!(pub struct FunctionExpression {
+    kind: misc::FunctionKind,
     id: Option<misc::BindingIdentifier>,
     params: misc::FunctionParams,
     body: misc::FunctionBody,
-    fn_kind: misc::FunctionKind,
 });
 impl display::NodeDisplay for FunctionExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Function)?;
+        f.node(&self.kind)?;
 
         if let Some(ref id) = self.id {
             f.node(id)?;
@@ -271,11 +269,11 @@ impl display::NodeDisplay for TemplateLiteralPiece {
 
 node!(pub struct TemplatePart {
     value: string::String,
-    rawValue: Option<string::String>,
+    raw_value: Option<string::String>,
 });
 impl display::NodeDisplay for TemplatePart {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.template_part(&self.value, self.rawValue.as_ref().map(String::as_str))
+        f.template_part(&self.value, self.raw_value.as_ref().map(String::as_str))
     }
 }
 
@@ -811,6 +809,8 @@ node!(pub struct ConditionalExpression {
 });
 impl display::NodeDisplay for ConditionalExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+        let mut f = f.precedence(display::Precedence::Conditional);
+
         f.require_precedence(display::Precedence::LogicalOr).node(
             &self.test,
         )?;
@@ -824,7 +824,9 @@ impl display::NodeDisplay for ConditionalExpression {
         f.punctuator(display::Punctuator::Colon)?;
         f.require_precedence(display::Precedence::Assignment).node(
             &self.alternate,
-        )
+        )?;
+
+        Ok(())
     }
 }
 impl misc::FirstSpecialToken for ConditionalExpression {
@@ -962,29 +964,39 @@ impl misc::HasInOperator for SequenceExpression {
 // (foo) => bar
 node!(pub struct ArrowFunctionExpression {
     // TODO: Needs to handle single-param Ident output as type of params
+    kind: ArrowFunctionKind,
     params: misc::FunctionParams,
     body: ArrowFunctionBody,
-    fn_kind: ArrowFunctionKind,
 });
 pub enum ArrowFunctionKind {
     Normal,
     Async,
-
     Generator, // experimental
     AsyncGenerator, // experimental
 }
 impl display::NodeDisplay for ArrowFunctionExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        match self.fn_kind {
-            ArrowFunctionKind::Normal => {}
-            ArrowFunctionKind::Async => f.keyword(display::Keyword::Async)?,
-            _ => {
-                // TODO
+        match self.kind {
+            ArrowFunctionKind::Normal => {
+                f.node(&self.params)?;
+                f.punctuator(display::Punctuator::Arrow)?;
+            }
+            ArrowFunctionKind::Async => {
+                f.keyword(display::Keyword::Async)?;
+                f.node(&self.params)?;
+                f.punctuator(display::Punctuator::Arrow)?;
+            }
+            ArrowFunctionKind::Generator => {
+                f.node(&self.params)?;
+                f.punctuator(display::Punctuator::ArrowStar)?;
+            }
+            ArrowFunctionKind::AsyncGenerator => {
+                f.keyword(display::Keyword::Async)?;
+                f.node(&self.params)?;
+                f.punctuator(display::Punctuator::ArrowStar)?;
             }
         }
 
-        f.node(&self.params)?;
-        f.punctuator(display::Punctuator::Arrow)?;
         f.node(&self.body)
     }
 }
