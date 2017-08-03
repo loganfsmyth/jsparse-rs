@@ -13,7 +13,7 @@ impl<T: display::NodeDisplay> display::NodeDisplay for DeclaratorList<T> {
             DeclaratorList::Last(ref n) => f.node(n),
             DeclaratorList::List(ref n, ref list) => {
                 f.node(n)?;
-                f.punctuator(display::Punctuator::Comma)?;
+                f.punctuator(display::Punctuator::Comma);
                 f.node(list)
             }
         }
@@ -26,7 +26,7 @@ node!(pub struct LetDeclaration {
 });
 impl display::NodeDisplay for LetDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Let)?;
+        f.keyword(display::Keyword::Let);
         f.node(&self.declarators)
     }
 }
@@ -38,7 +38,7 @@ impl display::NodeDisplay for LetDeclarator {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.node(&self.id)?;
         if let Some(ref init) = self.init {
-            f.punctuator(display::Punctuator::Eq)?;
+            f.punctuator(display::Punctuator::Eq);
             f.require_precedence(display::Precedence::Assignment).node(
                 init,
             )?;
@@ -54,7 +54,7 @@ node!(pub struct ConstDeclaration {
 });
 impl display::NodeDisplay for ConstDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Const)?;
+        f.keyword(display::Keyword::Const);
         f.node(&self.declarators)
     }
 }
@@ -67,7 +67,7 @@ node!(pub struct ConstDeclarator {
 impl display::NodeDisplay for ConstDeclarator {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.node(&self.id)?;
-        f.punctuator(display::Punctuator::Eq)?;
+        f.punctuator(display::Punctuator::Eq);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.init,
         )
@@ -84,7 +84,7 @@ node!(pub struct FunctionDeclaration {
 impl display::NodeDisplay for FunctionDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.node(&self.kind)?;
-        f.keyword(display::Keyword::Function)?;
+        f.keyword(display::Keyword::Function);
         f.node(&self.id)?;
         f.node(&self.params)?;
         f.node(&self.body)
@@ -105,12 +105,12 @@ impl display::NodeDisplay for ClassDeclaration {
             f.node(dec)?;
         }
 
-        f.keyword(display::Keyword::Class)?;
+        f.keyword(display::Keyword::Class);
 
         f.node(&self.id)?;
 
         if let Some(ref expr) = self.extends {
-            f.keyword(display::Keyword::Extends)?;
+            f.keyword(display::Keyword::Extends);
             f.require_precedence(display::Precedence::LeftHand).node(
                 expr,
             )?;

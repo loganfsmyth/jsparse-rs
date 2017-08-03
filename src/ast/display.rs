@@ -220,7 +220,7 @@ impl NodeFormatter {
     pub fn comma_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
         for (i, item) in list.iter().enumerate() {
             if i != 0 {
-                self.punctuator(Punctuator::Comma)?;
+                self.punctuator(Punctuator::Comma);
             }
             self.require_precedence(Precedence::Assignment).node(item)?;
         }
@@ -232,8 +232,8 @@ impl NodeFormatter {
         s.fmt(self)
     }
 
-    pub fn keyword(&mut self, t: Keyword) -> NodeDisplayResult {
-        Ok(match t {
+    pub fn keyword(&mut self, t: Keyword) {
+        match t {
             Keyword::Export => write!(self, "export"),
             Keyword::Default => write!(self, "default"),
             Keyword::Function => write!(self, "function"),
@@ -282,11 +282,11 @@ impl NodeFormatter {
             Keyword::Set => write!(self, "set"),
             Keyword::Static => write!(self, "static"),
             Keyword::As => write!(self, "as"),
-        }?)
+        }.unwrap()
     }
 
-    pub fn punctuator(&mut self, p: Punctuator) -> NodeDisplayResult {
-        Ok(match p {
+    pub fn punctuator(&mut self, p: Punctuator) {
+        match p {
             Punctuator::Eq => write!(self, "="),
             Punctuator::EqEq => write!(self, "=="),
             Punctuator::EqEqEq => write!(self, "==="),
@@ -344,7 +344,7 @@ impl NodeFormatter {
             Punctuator::TemplateTick => write!(self, "`"),
             Punctuator::SlashAngle => write!(self, "/>"),
             Punctuator::AngleSlash => write!(self, "</"),
-        }?)
+        }.unwrap()
     }
 
     pub fn identifier(&mut self, _name: &str, raw: Option<&str>) -> NodeDisplayResult {
@@ -356,7 +356,7 @@ impl NodeFormatter {
         Ok(())
     }
     pub fn string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
-        self.punctuator(Punctuator::SQuote)?;
+        self.punctuator(Punctuator::SQuote);
         if let Some(ref _raw) = raw {
             // Ensure that single-quotes are escaped
             write!(self, "{}", value)?;
@@ -365,7 +365,7 @@ impl NodeFormatter {
             // Serialize "value", escaping anything that _must_ be escaped,
             // like newlines and slashes
         }
-        self.punctuator(Punctuator::SQuote)?;
+        self.punctuator(Punctuator::SQuote);
 
         Ok(())
     }
@@ -394,9 +394,9 @@ impl NodeFormatter {
     }
 
     pub fn regexp(&mut self, value: &str, flags: &[char]) -> NodeDisplayResult {
-        self.punctuator(Punctuator::Slash)?;
+        self.punctuator(Punctuator::Slash);
         write!(self, "{}", value)?;
-        self.punctuator(Punctuator::Slash)?;
+        self.punctuator(Punctuator::Slash);
         for f in flags.iter() {
             write!(self, "{}", f)?;
         }
@@ -477,7 +477,7 @@ pub struct WrapParens<'a> {
 }
 impl<'a> WrapParens<'a> {
     fn new(fmt: &mut NodeFormatter, skip: bool) -> WrapParens {
-        fmt.punctuator(Punctuator::ParenL).unwrap();
+        fmt.punctuator(Punctuator::ParenL);
 
         WrapParens { skip, fmt }
     }
@@ -485,7 +485,7 @@ impl<'a> WrapParens<'a> {
 impl<'a> ::std::ops::Drop for WrapParens<'a> {
     fn drop(&mut self) {
         if !self.skip {
-            self.fmt.punctuator(Punctuator::ParenR).unwrap();
+            self.fmt.punctuator(Punctuator::ParenR);
         }
     }
 }

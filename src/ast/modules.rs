@@ -28,7 +28,7 @@ impl display::NodeDisplay for ImportSpecifier {
         f.node(&self.local)?;
 
         if let Some(ref imported) = self.imported {
-            f.keyword(display::Keyword::As)?;
+            f.keyword(display::Keyword::As);
             f.node(imported)?;
         }
         Ok(())
@@ -42,9 +42,9 @@ node!(pub struct ImportNamedDeclaration {
 });
 impl display::NodeDisplay for ImportNamedDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Import)?;
+        f.keyword(display::Keyword::Import);
         f.node(&self.default)?;
-        f.keyword(display::Keyword::From)?;
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -58,13 +58,13 @@ node!(pub struct ImportNamedAndNamespaceDeclaration {
 });
 impl display::NodeDisplay for ImportNamedAndNamespaceDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Import)?;
+        f.keyword(display::Keyword::Import);
         f.node(&self.default)?;
-        f.punctuator(display::Punctuator::Comma)?;
-        f.punctuator(display::Punctuator::Star)?;
-        f.keyword(display::Keyword::As)?;
+        f.punctuator(display::Punctuator::Comma);
+        f.punctuator(display::Punctuator::Star);
+        f.keyword(display::Keyword::As);
         f.node(&self.namespace)?;
-        f.keyword(display::Keyword::From)?;
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -77,11 +77,11 @@ node!(pub struct ImportNamespaceDeclaration {
 });
 impl display::NodeDisplay for ImportNamespaceDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Import)?;
-        f.punctuator(display::Punctuator::Star)?;
-        f.keyword(display::Keyword::As)?;
+        f.keyword(display::Keyword::Import);
+        f.punctuator(display::Punctuator::Star);
+        f.keyword(display::Keyword::As);
         f.node(&self.namespace)?;
-        f.keyword(display::Keyword::From)?;
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -96,13 +96,13 @@ node!(pub struct ImportNamedAndSpecifiersDeclaration {
 });
 impl display::NodeDisplay for ImportNamedAndSpecifiersDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Import)?;
+        f.keyword(display::Keyword::Import);
         f.node(&self.default)?;
-        f.punctuator(display::Punctuator::Comma)?;
-        f.punctuator(display::Punctuator::CurlyL)?;
+        f.punctuator(display::Punctuator::Comma);
+        f.punctuator(display::Punctuator::CurlyL);
         f.comma_list(&self.specifiers)?;
-        f.punctuator(display::Punctuator::CurlyR)?;
-        f.keyword(display::Keyword::From)?;
+        f.punctuator(display::Punctuator::CurlyR);
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -116,11 +116,11 @@ node!(pub struct ImportSpecifiersDeclaration {
 });
 impl display::NodeDisplay for ImportSpecifiersDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Import)?;
-        f.punctuator(display::Punctuator::CurlyL)?;
+        f.keyword(display::Keyword::Import);
+        f.punctuator(display::Punctuator::CurlyL);
         f.comma_list(&self.specifiers)?;
-        f.punctuator(display::Punctuator::CurlyR)?;
-        f.keyword(display::Keyword::From)?;
+        f.punctuator(display::Punctuator::CurlyR);
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -135,8 +135,8 @@ node!(pub struct ExportDefaultFunctionDeclaration {
 });
 impl display::NodeDisplay for ExportDefaultFunctionDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
-        f.keyword(display::Keyword::Default)?;
+        f.keyword(display::Keyword::Export);
+        f.keyword(display::Keyword::Default);
         f.node(&self.kind)?;
 
         if let Some(ref id) = self.id {
@@ -157,18 +157,18 @@ node!(pub struct ExportDefaultClassDeclaration {
 });
 impl display::NodeDisplay for ExportDefaultClassDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
-        f.keyword(display::Keyword::Default)?;
+        f.keyword(display::Keyword::Export);
+        f.keyword(display::Keyword::Default);
 
         for dec in self.decorators.iter() {
             f.node(dec)?;
         }
-        f.keyword(display::Keyword::Class)?;
+        f.keyword(display::Keyword::Class);
         if let Some(ref id) = self.id {
             f.node(id)?;
         }
         if let Some(ref extends) = self.extends {
-            f.keyword(display::Keyword::Extends)?;
+            f.keyword(display::Keyword::Extends);
             f.require_precedence(display::Precedence::LeftHand).node(
                 extends,
             )?;
@@ -185,8 +185,8 @@ node!(pub struct ExportDefaultExpression {
 impl display::NodeDisplay for ExportDefaultExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         let mut f = f.allow_in();
-        f.keyword(display::Keyword::Export)?;
-        f.keyword(display::Keyword::Default)?;
+        f.keyword(display::Keyword::Export);
+        f.keyword(display::Keyword::Default);
 
         if let misc::SpecialToken::Declaration = self.expression.first_special_token() {
             f.wrap_parens().node(&self.expression)?;
@@ -195,7 +195,8 @@ impl display::NodeDisplay for ExportDefaultExpression {
                 &self.expression,
             )?;
         }
-        f.punctuator(display::Punctuator::Semicolon)
+        f.punctuator(display::Punctuator::Semicolon);
+        Ok(())
     }
 }
 
@@ -206,7 +207,7 @@ node!(pub struct ExportClassDeclaration {
 });
 impl display::NodeDisplay for ExportClassDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
+        f.keyword(display::Keyword::Export);
 
         f.node(&self.exported)
     }
@@ -219,7 +220,7 @@ node!(pub struct ExportFunctionDeclaration {
 });
 impl display::NodeDisplay for ExportFunctionDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
+        f.keyword(display::Keyword::Export);
 
         f.node(&self.exported)
     }
@@ -232,7 +233,7 @@ node!(pub struct ExportVarStatement {
 });
 impl display::NodeDisplay for ExportVarStatement {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
+        f.keyword(display::Keyword::Export);
 
         f.node(&self.exported)
     }
@@ -245,7 +246,7 @@ node!(pub struct ExportLetDeclaration {
 });
 impl display::NodeDisplay for ExportLetDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
+        f.keyword(display::Keyword::Export);
 
         f.node(&self.exported)
     }
@@ -258,7 +259,7 @@ node!(pub struct ExportConstDeclaration {
 });
 impl display::NodeDisplay for ExportConstDeclaration {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
+        f.keyword(display::Keyword::Export);
 
         f.node(&self.exported)
     }
@@ -272,10 +273,11 @@ node!(pub struct ExportLocalBindings {
 });
 impl display::NodeDisplay for ExportLocalBindings {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
-        f.punctuator(display::Punctuator::CurlyL)?;
+        f.keyword(display::Keyword::Export);
+        f.punctuator(display::Punctuator::CurlyL);
         f.comma_list(&self.specifiers)?;
-        f.punctuator(display::Punctuator::CurlyR)
+        f.punctuator(display::Punctuator::CurlyR);
+        Ok(())
     }
 }
 
@@ -289,7 +291,7 @@ impl display::NodeDisplay for LocalExportSpecifier {
         f.node(&self.local)?;
 
         if let Some(ref exported) = self.exported {
-            f.keyword(display::Keyword::As)?;
+            f.keyword(display::Keyword::As);
             f.node(exported)?;
         }
         Ok(())
@@ -305,13 +307,13 @@ node!(pub struct ExportSourceSpecifiers {
 });
 impl display::NodeDisplay for ExportSourceSpecifiers {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
+        f.keyword(display::Keyword::Export);
 
-        f.punctuator(display::Punctuator::CurlyL)?;
+        f.punctuator(display::Punctuator::CurlyL);
         f.comma_list(&self.specifiers)?;
-        f.punctuator(display::Punctuator::CurlyR)?;
+        f.punctuator(display::Punctuator::CurlyR);
 
-        f.keyword(display::Keyword::From)?;
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -326,7 +328,7 @@ impl display::NodeDisplay for SourceExportSpecifier {
         f.node(&self.imported)?;
 
         if let Some(ref exported) = self.exported {
-            f.keyword(display::Keyword::As)?;
+            f.keyword(display::Keyword::As);
             f.node(exported)?;
         }
         Ok(())
@@ -340,9 +342,9 @@ node!(pub struct ExportAllSpecifiers {
 });
 impl display::NodeDisplay for ExportAllSpecifiers {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
-        f.punctuator(display::Punctuator::Star)?;
-        f.keyword(display::Keyword::From)?;
+        f.keyword(display::Keyword::Export);
+        f.punctuator(display::Punctuator::Star);
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -355,9 +357,9 @@ node!(pub struct ExportNamedSpecifier {
 });
 impl display::NodeDisplay for ExportNamedSpecifier {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
+        f.keyword(display::Keyword::Export);
         f.node(&self.default)?;
-        f.keyword(display::Keyword::From)?;
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -371,13 +373,13 @@ node!(pub struct ExportNamedAndNamespace {
 });
 impl display::NodeDisplay for ExportNamedAndNamespace {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
+        f.keyword(display::Keyword::Export);
         f.node(&self.default)?;
-        f.punctuator(display::Punctuator::Comma)?;
-        f.punctuator(display::Punctuator::Star)?;
-        f.keyword(display::Keyword::As)?;
+        f.punctuator(display::Punctuator::Comma);
+        f.punctuator(display::Punctuator::Star);
+        f.keyword(display::Keyword::As);
         f.node(&self.namespace)?;
-        f.keyword(display::Keyword::From)?;
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -390,11 +392,11 @@ node!(pub struct ExportNamespace {
 });
 impl display::NodeDisplay for ExportNamespace {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
-        f.punctuator(display::Punctuator::Star)?;
-        f.keyword(display::Keyword::As)?;
+        f.keyword(display::Keyword::Export);
+        f.punctuator(display::Punctuator::Star);
+        f.keyword(display::Keyword::As);
         f.node(&self.namespace)?;
-        f.keyword(display::Keyword::From)?;
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }
@@ -409,15 +411,15 @@ node!(pub struct ExportNamedAndSpecifiers {
 });
 impl display::NodeDisplay for ExportNamedAndSpecifiers {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Export)?;
+        f.keyword(display::Keyword::Export);
         f.node(&self.default)?;
-        f.punctuator(display::Punctuator::Comma)?;
+        f.punctuator(display::Punctuator::Comma);
 
-        f.punctuator(display::Punctuator::CurlyL)?;
+        f.punctuator(display::Punctuator::CurlyL);
         f.comma_list(&self.specifiers)?;
-        f.punctuator(display::Punctuator::CurlyR)?;
+        f.punctuator(display::Punctuator::CurlyR);
 
-        f.keyword(display::Keyword::From)?;
+        f.keyword(display::Keyword::From);
         f.node(&self.source)
     }
 }

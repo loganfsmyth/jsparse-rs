@@ -11,7 +11,8 @@ use super::misc::FirstSpecialToken;
 node!(pub struct ThisExpression {});
 impl display::NodeDisplay for ThisExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::This)
+        f.keyword(display::Keyword::This);
+        Ok(())
     }
 }
 impl misc::FirstSpecialToken for ThisExpression {
@@ -44,11 +45,11 @@ impl display::NodeDisplay for ArrayExpression {
         let mut f = f.precedence(display::Precedence::Primary);
         let mut f = f.allow_in();
 
-        f.punctuator(display::Punctuator::SquareL)?;
+        f.punctuator(display::Punctuator::SquareL);
 
         for (i, el) in self.elements.iter().enumerate() {
             if i != 0 {
-                f.punctuator(display::Punctuator::Comma)?;
+                f.punctuator(display::Punctuator::Comma);
             }
 
             if let Some(ref expr) = *el {
@@ -79,13 +80,13 @@ node!(pub struct ObjectExpression {
 });
 impl display::NodeDisplay for ObjectExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::SquareL)?;
+        f.punctuator(display::Punctuator::SquareL);
 
         f.comma_list(&self.properties)?;
 
         if let Some(ref expr) = self.spread {
             if !self.properties.is_empty() {
-                f.punctuator(display::Punctuator::Comma)?;
+                f.punctuator(display::Punctuator::Comma);
             }
 
             f.require_precedence(display::Precedence::Assignment).node(
@@ -117,7 +118,7 @@ impl display::NodeDisplay for ObjectProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
 
         f.node(&self.name)?;
-        f.punctuator(display::Punctuator::Colon)?;
+        f.punctuator(display::Punctuator::Colon);
 
         let mut f = f.allow_in();
         f.require_precedence(display::Precedence::Assignment).node(
@@ -183,13 +184,13 @@ impl display::NodeDisplay for ClassExpression {
             f.node(dec)?;
         }
 
-        f.keyword(display::Keyword::Class)?;
+        f.keyword(display::Keyword::Class);
 
         if let Some(ref id) = self.id {
             f.node(id)?;
         }
         if let Some(ref expr) = self.extends {
-            f.keyword(display::Keyword::Extends)?;
+            f.keyword(display::Keyword::Extends);
             f.require_precedence(display::Precedence::LeftHand).node(
                 expr,
             )?;
@@ -233,7 +234,7 @@ node!(pub struct TemplateLiteral {
 });
 impl display::NodeDisplay for TemplateLiteral {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::TemplateTick)?;
+        f.punctuator(display::Punctuator::TemplateTick);
         f.node(&self.piece)
     }
 }
@@ -253,14 +254,15 @@ impl display::NodeDisplay for TemplateLiteralPiece {
         match *self {
             TemplateLiteralPiece::Piece(ref part, ref expr, ref next_literal) => {
                 f.node(part)?;
-                f.punctuator(display::Punctuator::TemplateClose)?;
+                f.punctuator(display::Punctuator::TemplateClose);
                 f.require_precedence(display::Precedence::Normal).node(expr)?;
-                f.punctuator(display::Punctuator::TemplateOpen)?;
+                f.punctuator(display::Punctuator::TemplateOpen);
                 f.node(next_literal)
             }
             TemplateLiteralPiece::End(ref part) => {
                 f.node(part)?;
-                f.punctuator(display::Punctuator::TemplateTick)
+                f.punctuator(display::Punctuator::TemplateTick);
+                Ok(())
             }
         }
     }
@@ -290,7 +292,7 @@ impl display::NodeDisplay for CallExpression {
             &self.callee,
         )?;
         if self.optional {
-            f.punctuator(display::Punctuator::Question)?;
+            f.punctuator(display::Punctuator::Question);
         }
         f.node(&self.arguments)
     }
@@ -310,7 +312,7 @@ node!(pub struct NewExpression {
 });
 impl display::NodeDisplay for NewExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::New)?;
+        f.keyword(display::Keyword::New);
         f.require_precedence(display::Precedence::New).node(
             &self.callee,
         )?;
@@ -328,12 +330,12 @@ node!(pub struct ImportCallExpression {
 });
 impl display::NodeDisplay for ImportCallExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Import)?;
-        f.punctuator(display::Punctuator::ParenL)?;
+        f.keyword(display::Keyword::Import);
+        f.punctuator(display::Punctuator::ParenL);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.argument,
         )?;
-        f.punctuator(display::Punctuator::ParenR)?;
+        f.punctuator(display::Punctuator::ParenR);
         Ok(())
     }
 }
@@ -346,7 +348,7 @@ node!(pub struct SuperCallExpression {
 });
 impl display::NodeDisplay for SuperCallExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Super)?;
+        f.keyword(display::Keyword::Super);
         f.node(&self.arguments)
     }
 }
@@ -368,9 +370,9 @@ impl display::NodeDisplay for MemberExpression {
             &self.object,
         )?;
         if self.optional {
-            f.punctuator(display::Punctuator::Question)?;
+            f.punctuator(display::Punctuator::Question);
         }
-        f.punctuator(display::Punctuator::Period)?;
+        f.punctuator(display::Punctuator::Period);
         f.node(&self.property)?;
         Ok(())
     }
@@ -394,7 +396,7 @@ node!(pub struct PrivateProperty {
 });
 impl display::NodeDisplay for PrivateProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::Hash)?;
+        f.punctuator(display::Punctuator::Hash);
         f.node(&self.property)
     }
 }
@@ -406,7 +408,7 @@ node!(pub struct PrivateExpression {
 });
 impl display::NodeDisplay for PrivateExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::Hash)?;
+        f.punctuator(display::Punctuator::Hash);
         f.node(&self.property)
     }
 }
@@ -432,14 +434,14 @@ impl display::NodeDisplay for UpdateExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match self.operator {
             UpdateOperator::PreIncrement => {
-                f.punctuator(display::Punctuator::PlusPlus)?;
+                f.punctuator(display::Punctuator::PlusPlus);
                 f.node(&self.value)?;
                 f.require_precedence(display::Precedence::Unary).node(
                     &self.value,
                 )
             }
             UpdateOperator::PreDecrement => {
-                f.punctuator(display::Punctuator::MinusMinus)?;
+                f.punctuator(display::Punctuator::MinusMinus);
                 f.require_precedence(display::Precedence::Unary).node(
                     &self.value,
                 )
@@ -448,13 +450,15 @@ impl display::NodeDisplay for UpdateExpression {
                 f.require_precedence(display::Precedence::LeftHand).node(
                     &self.value,
                 )?;
-                f.punctuator(display::Punctuator::PlusPlus)
+                f.punctuator(display::Punctuator::PlusPlus);
+                Ok(())
             }
             UpdateOperator::PostDecrement => {
                 f.require_precedence(display::Precedence::LeftHand).node(
                     &self.value,
                 )?;
-                f.punctuator(display::Punctuator::MinusMinus)
+                f.punctuator(display::Punctuator::MinusMinus);
+                Ok(())
             }
         }
     }
@@ -493,22 +497,22 @@ pub enum UnaryOperator {
 impl display::NodeDisplay for UnaryExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match self.operator {
-            UnaryOperator::Delete => f.keyword(display::Keyword::Delete)?,
-            UnaryOperator::Void => f.keyword(display::Keyword::Void)?,
-            UnaryOperator::Typeof => f.keyword(display::Keyword::Typeof)?,
-            UnaryOperator::Positive => f.punctuator(display::Punctuator::Plus)?,
-            UnaryOperator::Negative => f.punctuator(display::Punctuator::Minus)?,
-            UnaryOperator::BitNegate => f.punctuator(display::Punctuator::Tilde)?,
-            UnaryOperator::Negate => f.punctuator(display::Punctuator::Exclam)?,
-            UnaryOperator::Await => f.keyword(display::Keyword::Await)?,
-            UnaryOperator::Yield => f.keyword(display::Keyword::Yield)?,
+            UnaryOperator::Delete => f.keyword(display::Keyword::Delete),
+            UnaryOperator::Void => f.keyword(display::Keyword::Void),
+            UnaryOperator::Typeof => f.keyword(display::Keyword::Typeof),
+            UnaryOperator::Positive => f.punctuator(display::Punctuator::Plus),
+            UnaryOperator::Negative => f.punctuator(display::Punctuator::Minus),
+            UnaryOperator::BitNegate => f.punctuator(display::Punctuator::Tilde),
+            UnaryOperator::Negate => f.punctuator(display::Punctuator::Exclam),
+            UnaryOperator::Await => f.keyword(display::Keyword::Await),
+            UnaryOperator::Yield => f.keyword(display::Keyword::Yield),
             UnaryOperator::YieldDelegate => {
-                f.keyword(display::Keyword::Yield)?;
-                f.punctuator(display::Punctuator::Star)?
+                f.keyword(display::Keyword::Yield);
+                f.punctuator(display::Punctuator::Star)
             }
 
             // TODO: Precedence on this is hard
-            UnaryOperator::Bind => f.punctuator(display::Punctuator::Bind)?,
+            UnaryOperator::Bind => f.punctuator(display::Punctuator::Bind),
         }
 
         f.require_precedence(display::Precedence::Unary).node(
@@ -563,21 +567,21 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::Add => {
                 let mut f = f.precedence(display::Precedence::Additive);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::Plus)?;
+                f.punctuator(display::Punctuator::Plus);
                 f.require_precedence(display::Precedence::Multiplicative)
                     .node(&self.right)?;
             }
             BinaryOperator::Subtract => {
                 let mut f = f.precedence(display::Precedence::Additive);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::Minus)?;
+                f.punctuator(display::Punctuator::Minus);
                 f.require_precedence(display::Precedence::Multiplicative)
                     .node(&self.right)?;
             }
             BinaryOperator::LeftShift => {
                 let mut f = f.precedence(display::Precedence::Shift);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::LAngleAngle)?;
+                f.punctuator(display::Punctuator::LAngleAngle);
                 f.require_precedence(display::Precedence::Additive).node(
                     &self.right,
                 )?;
@@ -585,7 +589,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::RightShift => {
                 let mut f = f.precedence(display::Precedence::Shift);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::RAngleAngle)?;
+                f.punctuator(display::Punctuator::RAngleAngle);
                 f.require_precedence(display::Precedence::Additive).node(
                     &self.right,
                 )?;
@@ -593,7 +597,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::RightShiftSigned => {
                 let mut f = f.precedence(display::Precedence::Shift);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::RAngleAngleAngle)?;
+                f.punctuator(display::Punctuator::RAngleAngleAngle);
                 f.require_precedence(display::Precedence::Additive).node(
                     &self.right,
                 )?;
@@ -601,28 +605,28 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::Divide => {
                 let mut f = f.precedence(display::Precedence::Multiplicative);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::Slash)?;
+                f.punctuator(display::Punctuator::Slash);
                 f.require_precedence(display::Precedence::Exponential)
                     .node(&self.right)?;
             }
             BinaryOperator::Multiply => {
                 let mut f = f.precedence(display::Precedence::Multiplicative);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::Star)?;
+                f.punctuator(display::Punctuator::Star);
                 f.require_precedence(display::Precedence::Exponential)
                     .node(&self.right)?;
             }
             BinaryOperator::Modulus => {
                 let mut f = f.precedence(display::Precedence::Multiplicative);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::Mod)?;
+                f.punctuator(display::Punctuator::Mod);
                 f.require_precedence(display::Precedence::Exponential)
                     .node(&self.right)?;
             }
             BinaryOperator::BitAnd => {
                 let mut f = f.precedence(display::Precedence::BitwiseAnd);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::Amp)?;
+                f.punctuator(display::Punctuator::Amp);
                 f.require_precedence(display::Precedence::Equality).node(
                     &self.right,
                 )?;
@@ -630,7 +634,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::BitOr => {
                 let mut f = f.precedence(display::Precedence::BitwiseOr);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::Bar)?;
+                f.punctuator(display::Punctuator::Bar);
                 f.require_precedence(display::Precedence::BitwiseXOr).node(
                     &self.right,
                 )?;
@@ -638,7 +642,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::BitXor => {
                 let mut f = f.precedence(display::Precedence::BitwiseXOr);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::Caret)?;
+                f.punctuator(display::Punctuator::Caret);
                 f.require_precedence(display::Precedence::BitwiseAnd).node(
                     &self.right,
                 )?;
@@ -646,14 +650,14 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::Power => {
                 let mut f = f.precedence(display::Precedence::Update);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::StarStar)?;
+                f.punctuator(display::Punctuator::StarStar);
                 f.require_precedence(display::Precedence::Exponential)
                     .node(&self.right)?;
             }
             BinaryOperator::Compare => {
                 let mut f = f.precedence(display::Precedence::Equality);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::EqEq)?;
+                f.punctuator(display::Punctuator::EqEq);
                 f.require_precedence(display::Precedence::Relational).node(
                     &self.right,
                 )?;
@@ -661,7 +665,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::StrictCompare => {
                 let mut f = f.precedence(display::Precedence::Equality);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::EqEqEq)?;
+                f.punctuator(display::Punctuator::EqEqEq);
                 f.require_precedence(display::Precedence::Relational).node(
                     &self.right,
                 )?;
@@ -669,7 +673,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::NegateCompare => {
                 let mut f = f.precedence(display::Precedence::Equality);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::Neq)?;
+                f.punctuator(display::Punctuator::Neq);
                 f.require_precedence(display::Precedence::Relational).node(
                     &self.right,
                 )?;
@@ -677,7 +681,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::NegateStrictCompare => {
                 let mut f = f.precedence(display::Precedence::Equality);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::NeqEq)?;
+                f.punctuator(display::Punctuator::NeqEq);
                 f.require_precedence(display::Precedence::Relational).node(
                     &self.right,
                 )?;
@@ -685,7 +689,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::LessThan => {
                 let mut f = f.precedence(display::Precedence::Relational);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::LAngle)?;
+                f.punctuator(display::Punctuator::LAngle);
                 f.require_precedence(display::Precedence::Shift).node(
                     &self.right,
                 )?;
@@ -693,7 +697,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::LessThanEq => {
                 let mut f = f.precedence(display::Precedence::Relational);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::LAngleEq)?;
+                f.punctuator(display::Punctuator::LAngleEq);
                 f.require_precedence(display::Precedence::Shift).node(
                     &self.right,
                 )?;
@@ -701,7 +705,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::GreaterThan => {
                 let mut f = f.precedence(display::Precedence::Relational);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::RAngle)?;
+                f.punctuator(display::Punctuator::RAngle);
                 f.require_precedence(display::Precedence::Shift).node(
                     &self.right,
                 )?;
@@ -709,7 +713,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::GreaterThanEq => {
                 let mut f = f.precedence(display::Precedence::Relational);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::RAngleEq)?;
+                f.punctuator(display::Punctuator::RAngleEq);
                 f.require_precedence(display::Precedence::Shift).node(
                     &self.right,
                 )?;
@@ -717,7 +721,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::In => {
                 let mut f = f.precedence(display::Precedence::Relational);
                 f.node(&self.left)?;
-                f.keyword(display::Keyword::In)?;
+                f.keyword(display::Keyword::In);
                 f.require_precedence(display::Precedence::Shift).node(
                     &self.right,
                 )?;
@@ -725,7 +729,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::Instanceof => {
                 let mut f = f.precedence(display::Precedence::Relational);
                 f.node(&self.left)?;
-                f.keyword(display::Keyword::Instanceof)?;
+                f.keyword(display::Keyword::Instanceof);
                 f.require_precedence(display::Precedence::Shift).node(
                     &self.right,
                 )?;
@@ -733,7 +737,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::And => {
                 let mut f = f.precedence(display::Precedence::LogicalAnd);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::AmpAmp)?;
+                f.punctuator(display::Punctuator::AmpAmp);
                 f.require_precedence(display::Precedence::BitwiseOr).node(
                     &self.right,
                 )?;
@@ -741,7 +745,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::Or => {
                 let mut f = f.precedence(display::Precedence::LogicalOr);
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::BarBar)?;
+                f.punctuator(display::Punctuator::BarBar);
                 f.require_precedence(display::Precedence::LogicalAnd).node(
                     &self.right,
                 )?;
@@ -749,7 +753,7 @@ impl display::NodeDisplay for BinaryExpression {
             BinaryOperator::Bind => {
                 // TODO: Precedence
                 f.node(&self.left)?;
-                f.punctuator(display::Punctuator::ColonColon)?;
+                f.punctuator(display::Punctuator::ColonColon);
                 f.node(&self.right)?;
             }
         }
@@ -814,14 +818,14 @@ impl display::NodeDisplay for ConditionalExpression {
         f.require_precedence(display::Precedence::LogicalOr).node(
             &self.test,
         )?;
-        f.punctuator(display::Punctuator::Question)?;
+        f.punctuator(display::Punctuator::Question);
         {
             let mut f = f.allow_in();
             f.require_precedence(display::Precedence::Assignment).node(
                 &self.consequent,
             )?;
         }
-        f.punctuator(display::Punctuator::Colon)?;
+        f.punctuator(display::Punctuator::Colon);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.alternate,
         )?;
@@ -851,7 +855,7 @@ impl display::NodeDisplay for AssignmentExpression {
         f.require_precedence(display::Precedence::LeftHand).node(
             &self.left,
         )?;
-        f.punctuator(display::Punctuator::Eq)?;
+        f.punctuator(display::Punctuator::Eq);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.right,
         )
@@ -895,22 +899,22 @@ impl display::NodeDisplay for AssignmentUpdateExpression {
             &self.left,
         )?;
         match self.operator {
-            AssignmentUpdateOperator::Add => f.punctuator(display::Punctuator::Plus)?,
-            AssignmentUpdateOperator::Subtract => f.punctuator(display::Punctuator::Subtract)?,
-            AssignmentUpdateOperator::LeftShift => f.punctuator(display::Punctuator::LAngleAngle)?,
-            AssignmentUpdateOperator::RightShift => f.punctuator(display::Punctuator::RAngleAngle)?,
+            AssignmentUpdateOperator::Add => f.punctuator(display::Punctuator::Plus),
+            AssignmentUpdateOperator::Subtract => f.punctuator(display::Punctuator::Subtract),
+            AssignmentUpdateOperator::LeftShift => f.punctuator(display::Punctuator::LAngleAngle),
+            AssignmentUpdateOperator::RightShift => f.punctuator(display::Punctuator::RAngleAngle),
             AssignmentUpdateOperator::RightShiftSigned => {
-                f.punctuator(display::Punctuator::RAngleAngleAngle)?
+                f.punctuator(display::Punctuator::RAngleAngleAngle)
             }
-            AssignmentUpdateOperator::Divide => f.punctuator(display::Punctuator::Slash)?,
-            AssignmentUpdateOperator::Multiply => f.punctuator(display::Punctuator::Star)?,
-            AssignmentUpdateOperator::Modulus => f.punctuator(display::Punctuator::Mod)?,
-            AssignmentUpdateOperator::BitAnd => f.punctuator(display::Punctuator::Amp)?,
-            AssignmentUpdateOperator::BitOr => f.punctuator(display::Punctuator::Bar)?,
-            AssignmentUpdateOperator::BitXor => f.punctuator(display::Punctuator::Caret)?,
-            AssignmentUpdateOperator::Power => f.punctuator(display::Punctuator::StarStar)?,
+            AssignmentUpdateOperator::Divide => f.punctuator(display::Punctuator::Slash),
+            AssignmentUpdateOperator::Multiply => f.punctuator(display::Punctuator::Star),
+            AssignmentUpdateOperator::Modulus => f.punctuator(display::Punctuator::Mod),
+            AssignmentUpdateOperator::BitAnd => f.punctuator(display::Punctuator::Amp),
+            AssignmentUpdateOperator::BitOr => f.punctuator(display::Punctuator::Bar),
+            AssignmentUpdateOperator::BitXor => f.punctuator(display::Punctuator::Caret),
+            AssignmentUpdateOperator::Power => f.punctuator(display::Punctuator::StarStar),
         }
-        f.punctuator(display::Punctuator::Eq)?;
+        f.punctuator(display::Punctuator::Eq);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.right,
         )
@@ -938,7 +942,7 @@ impl display::NodeDisplay for SequenceExpression {
         let mut f = f.precedence(display::Precedence::Normal);
 
         f.node(&self.left)?;
-        f.punctuator(display::Punctuator::Comma)?;
+        f.punctuator(display::Punctuator::Comma);
 
         // Note: This precedence isn't needed to reproduce functionality, but it is to make the
         // AST reproduce properly from the serialized code. Parens can be avoided by reordering AST.
@@ -979,21 +983,21 @@ impl display::NodeDisplay for ArrowFunctionExpression {
         match self.kind {
             ArrowFunctionKind::Normal => {
                 f.node(&self.params)?;
-                f.punctuator(display::Punctuator::Arrow)?;
+                f.punctuator(display::Punctuator::Arrow);
             }
             ArrowFunctionKind::Async => {
-                f.keyword(display::Keyword::Async)?;
+                f.keyword(display::Keyword::Async);
                 f.node(&self.params)?;
-                f.punctuator(display::Punctuator::Arrow)?;
+                f.punctuator(display::Punctuator::Arrow);
             }
             ArrowFunctionKind::Generator => {
                 f.node(&self.params)?;
-                f.punctuator(display::Punctuator::ArrowStar)?;
+                f.punctuator(display::Punctuator::ArrowStar);
             }
             ArrowFunctionKind::AsyncGenerator => {
-                f.keyword(display::Keyword::Async)?;
+                f.keyword(display::Keyword::Async);
                 f.node(&self.params)?;
-                f.punctuator(display::Punctuator::ArrowStar)?;
+                f.punctuator(display::Punctuator::ArrowStar);
             }
         }
 
@@ -1043,7 +1047,7 @@ node!(pub struct DoExpression {
 });
 impl display::NodeDisplay for DoExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Do)?;
+        f.keyword(display::Keyword::Do);
         f.node(&self.body)
     }
 }
@@ -1069,26 +1073,28 @@ impl display::NodeDisplay for MetaProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match self.kind {
             MetaPropertyKind::NewTarget => {
-                f.keyword(display::Keyword::New)?;
-                f.punctuator(display::Punctuator::Period)?;
-                f.keyword(display::Keyword::Target)
+                f.keyword(display::Keyword::New);
+                f.punctuator(display::Punctuator::Period);
+                f.keyword(display::Keyword::Target);
             }
             MetaPropertyKind::ImportMeta => {
-                f.keyword(display::Keyword::Import)?;
-                f.punctuator(display::Punctuator::Period)?;
-                f.keyword(display::Keyword::Meta)
+                f.keyword(display::Keyword::Import);
+                f.punctuator(display::Punctuator::Period);
+                f.keyword(display::Keyword::Meta);
             }
             MetaPropertyKind::FunctionSent => {
-                f.keyword(display::Keyword::Function)?;
-                f.punctuator(display::Punctuator::Period)?;
-                f.keyword(display::Keyword::Sent)
+                f.keyword(display::Keyword::Function);
+                f.punctuator(display::Punctuator::Period);
+                f.keyword(display::Keyword::Sent);
             }
             MetaPropertyKind::FunctionArguments => {
-                f.keyword(display::Keyword::Function)?;
-                f.punctuator(display::Punctuator::Period)?;
-                f.keyword(display::Keyword::Arguments)
+                f.keyword(display::Keyword::Function);
+                f.punctuator(display::Punctuator::Period);
+                f.keyword(display::Keyword::Arguments);
             }
         }
+
+        Ok(())
     }
 }
 impl misc::FirstSpecialToken for MetaProperty {}
@@ -1102,7 +1108,7 @@ node!(pub struct SuperMemberExpression {
 });
 impl display::NodeDisplay for SuperMemberExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Super)?;
+        f.keyword(display::Keyword::Super);
         f.node(&self.property)
     }
 }

@@ -41,7 +41,8 @@ mod tests {
 node!(pub struct Null {});
 impl display::NodeDisplay for Null {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Null)
+        f.keyword(display::Keyword::Null);
+        Ok(())
     }
 }
 impl misc::HasInOperator for Null {
@@ -59,10 +60,11 @@ node!(pub struct Boolean {
 impl display::NodeDisplay for Boolean {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         if self.value {
-            f.keyword(display::Keyword::True)
+            f.keyword(display::Keyword::True);
         } else {
-            f.keyword(display::Keyword::False)
+            f.keyword(display::Keyword::False);
         }
+        Ok(())
     }
 }
 impl misc::HasInOperator for Boolean {

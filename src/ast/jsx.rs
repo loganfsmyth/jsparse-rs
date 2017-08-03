@@ -12,7 +12,7 @@ node!(pub struct Element {
 });
 impl display::NodeDisplay for Element {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::AngleL)?;
+        f.punctuator(display::Punctuator::AngleL);
         f.node(&self.opening)?;
 
         for attr in self.attributes.iter() {
@@ -20,27 +20,27 @@ impl display::NodeDisplay for Element {
         }
 
         if self.children.len() > 0 {
-            f.punctuator(display::Punctuator::AngleR)?;
+            f.punctuator(display::Punctuator::AngleR);
 
             for child in self.children.iter() {
                 f.node(child)?;
             }
 
-            f.punctuator(display::Punctuator::AngleSlash)?;
+            f.punctuator(display::Punctuator::AngleSlash);
             if let Some(ref close) = self.closing {
                 f.node(close)?;
             } else {
                 f.node(&self.opening)?;
             }
-            f.punctuator(display::Punctuator::AngleR)?;
+            f.punctuator(display::Punctuator::AngleR);
         } else {
             if let Some(ref close) = self.closing {
-                f.punctuator(display::Punctuator::AngleR)?;
-                f.punctuator(display::Punctuator::AngleSlash)?;
+                f.punctuator(display::Punctuator::AngleR);
+                f.punctuator(display::Punctuator::AngleSlash);
                 f.node(close)?;
-                f.punctuator(display::Punctuator::AngleR)?;
+                f.punctuator(display::Punctuator::AngleR);
             } else {
-                f.punctuator(display::Punctuator::SlashAngle)?;
+                f.punctuator(display::Punctuator::SlashAngle);
             }
         }
 
@@ -81,7 +81,7 @@ node!(pub struct MemberExpression {
 impl display::NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.node(&self.object)?;
-        f.punctuator(display::Punctuator::Period)?;
+        f.punctuator(display::Punctuator::Period);
         f.node(&self.property)
     }
 }
@@ -99,7 +99,7 @@ node!(pub struct NamespacedName {
 impl display::NodeDisplay for NamespacedName {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.node(&self.namespace)?;
-        f.punctuator(display::Punctuator::Colon)?;
+        f.punctuator(display::Punctuator::Colon);
         f.node(&self.name)
     }
 }
@@ -122,12 +122,13 @@ node!(pub struct SpreadAttribute {
 });
 impl display::NodeDisplay for SpreadAttribute {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL)?;
-        f.punctuator(display::Punctuator::Ellipsis)?;
+        f.punctuator(display::Punctuator::CurlyL);
+        f.punctuator(display::Punctuator::Ellipsis);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.argument,
         )?;
-        f.punctuator(display::Punctuator::CurlyR)
+        f.punctuator(display::Punctuator::CurlyR);
+        Ok(())
     }
 }
 
@@ -140,7 +141,7 @@ impl display::NodeDisplay for PairAttribute {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.node(&self.name)?;
         if let Some(ref value) = self.value {
-            f.punctuator(display::Punctuator::Eq)?;
+            f.punctuator(display::Punctuator::Eq);
             f.node(value)?;
         }
         Ok(())
@@ -180,11 +181,12 @@ node!(pub struct Expression {
 });
 impl display::NodeDisplay for Expression {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL)?;
+        f.punctuator(display::Punctuator::CurlyL);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(display::Punctuator::CurlyR)
+        f.punctuator(display::Punctuator::CurlyR);
+        Ok(())
     }
 }
 
@@ -194,20 +196,22 @@ node!(pub struct ExpressionSpread {
 });
 impl display::NodeDisplay for ExpressionSpread {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL)?;
-        f.punctuator(display::Punctuator::Ellipsis)?;
+        f.punctuator(display::Punctuator::CurlyL);
+        f.punctuator(display::Punctuator::Ellipsis);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(display::Punctuator::CurlyR)
+        f.punctuator(display::Punctuator::CurlyR);
+        Ok(())
     }
 }
 
 node!(pub struct Empty {});
 impl display::NodeDisplay for Empty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL)?;
-        f.punctuator(display::Punctuator::CurlyR)
+        f.punctuator(display::Punctuator::CurlyL);
+        f.punctuator(display::Punctuator::CurlyR);
+        Ok(())
     }
 }
 

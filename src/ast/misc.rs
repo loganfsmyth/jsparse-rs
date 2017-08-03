@@ -305,21 +305,22 @@ node!(pub struct ObjectPattern {
 });
 impl display::NodeDisplay for ObjectPattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL)?;
+        f.punctuator(display::Punctuator::CurlyL);
 
         f.comma_list(&self.properties)?;
 
         if let Some(ref p) = self.rest {
             if !self.properties.is_empty() {
-                f.punctuator(display::Punctuator::Comma)?;
+                f.punctuator(display::Punctuator::Comma);
             }
 
-            f.punctuator(display::Punctuator::Ellipsis)?;
+            f.punctuator(display::Punctuator::Ellipsis);
 
             f.node(p)?;
         }
 
-        f.punctuator(display::Punctuator::CurlyR)
+        f.punctuator(display::Punctuator::CurlyR);
+        Ok(())
     }
 }
 impl FirstSpecialToken for ObjectPattern {
@@ -339,7 +340,7 @@ impl display::NodeDisplay for ObjectPatternIdentifierProperty {
         if let Some(ref init) = self.init {
             let mut f = f.allow_in();
 
-            f.punctuator(display::Punctuator::Eq)?;
+            f.punctuator(display::Punctuator::Eq);
             f.require_precedence(display::Precedence::Assignment).node(
                 init,
             )?;
@@ -356,12 +357,12 @@ node!(pub struct ObjectPatternPatternProperty {
 impl display::NodeDisplay for ObjectPatternPatternProperty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.node(&self.name)?;
-        f.punctuator(display::Punctuator::Colon)?;
+        f.punctuator(display::Punctuator::Colon);
         f.node(&self.pattern)?;
         if let Some(ref init) = self.init {
             let mut f = f.allow_in();
 
-            f.punctuator(display::Punctuator::Eq)?;
+            f.punctuator(display::Punctuator::Eq);
             f.require_precedence(display::Precedence::Assignment).node(
                 init,
             )?;
@@ -384,11 +385,11 @@ node!(pub struct ArrayPattern {
 });
 impl display::NodeDisplay for ArrayPattern {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::SquareL)?;
+        f.punctuator(display::Punctuator::SquareL);
 
         for (i, prop) in self.items.iter().enumerate() {
             if i != 0 {
-                f.punctuator(display::Punctuator::Comma)?;
+                f.punctuator(display::Punctuator::Comma);
             }
 
             if let Some(ref prop) = *prop {
@@ -398,15 +399,16 @@ impl display::NodeDisplay for ArrayPattern {
 
         if let Some(ref p) = self.rest {
             if !self.items.is_empty() {
-                f.punctuator(display::Punctuator::Comma)?;
+                f.punctuator(display::Punctuator::Comma);
             }
 
-            f.punctuator(display::Punctuator::Ellipsis)?;
+            f.punctuator(display::Punctuator::Ellipsis);
 
             f.node(p)?;
         }
 
-        f.punctuator(display::Punctuator::SquareR)
+        f.punctuator(display::Punctuator::SquareR);
+        Ok(())
     }
 }
 impl FirstSpecialToken for ArrayPattern {}
@@ -423,7 +425,7 @@ impl display::NodeDisplay for ArrayPatternElement {
         if let Some(ref init) = self.init {
             let mut f = f.allow_in();
 
-            f.punctuator(display::Punctuator::Eq)?;
+            f.punctuator(display::Punctuator::Eq);
             f.require_precedence(display::Precedence::Assignment).node(
                 init,
             )?;
@@ -471,7 +473,7 @@ node_enum!(pub enum Decorator {
 });
 impl display::NodeDisplay for Decorator {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::At)?;
+        f.punctuator(display::Punctuator::At);
 
         match *self {
             Decorator::Property(ref n) => f.node(n),
@@ -490,7 +492,7 @@ node!(pub struct DecoratorMemberAccess {
 impl display::NodeDisplay for DecoratorMemberAccess {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         f.node(&self.object)?;
-        f.punctuator(display::Punctuator::Period)?;
+        f.punctuator(display::Punctuator::Period);
         f.node(&self.property)
     }
 }
@@ -519,18 +521,19 @@ node!(pub struct CallArguments {
 });
 impl display::NodeDisplay for CallArguments {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::ParenL)?;
+        f.punctuator(display::Punctuator::ParenL);
 
         f.comma_list(&self.args)?;
 
         if let Some(ref spread) = self.spread {
-            f.punctuator(display::Punctuator::Comma)?;
+            f.punctuator(display::Punctuator::Comma);
             f.require_precedence(display::Precedence::Assignment).node(
                 spread,
             )?;
         }
 
-        f.punctuator(display::Punctuator::ParenR)
+        f.punctuator(display::Punctuator::ParenR);
+        Ok(())
     }
 }
 
@@ -540,13 +543,14 @@ node!(pub struct ClassBody {
 });
 impl display::NodeDisplay for ClassBody {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL)?;
+        f.punctuator(display::Punctuator::CurlyL);
 
         for item in self.items.iter() {
             f.node(item)?;
         }
 
-        f.punctuator(display::Punctuator::CurlyR)
+        f.punctuator(display::Punctuator::CurlyR);
+        Ok(())
     }
 }
 
@@ -554,7 +558,8 @@ impl display::NodeDisplay for ClassBody {
 node!(pub struct ClassEmpty {});
 impl display::NodeDisplay for ClassEmpty {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::Semicolon)
+        f.punctuator(display::Punctuator::Semicolon);
+        Ok(())
     }
 }
 
@@ -576,20 +581,20 @@ impl display::NodeDisplay for FunctionKind {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
             FunctionKind::Normal => {
-                f.keyword(display::Keyword::Function)?;
+                f.keyword(display::Keyword::Function);
             }
             FunctionKind::Generator => {
-                f.keyword(display::Keyword::Function)?;
-                f.punctuator(display::Punctuator::Star)?;
+                f.keyword(display::Keyword::Function);
+                f.punctuator(display::Punctuator::Star);
             }
             FunctionKind::Async => {
-                f.keyword(display::Keyword::Async)?;
-                f.keyword(display::Keyword::Function)?;
+                f.keyword(display::Keyword::Async);
+                f.keyword(display::Keyword::Function);
             }
             FunctionKind::AsyncGenerator => {
-                f.keyword(display::Keyword::Async)?;
-                f.keyword(display::Keyword::Function)?;
-                f.punctuator(display::Punctuator::Star)?;
+                f.keyword(display::Keyword::Async);
+                f.keyword(display::Keyword::Function);
+                f.punctuator(display::Punctuator::Star);
             }
         }
         Ok(())
@@ -609,14 +614,14 @@ impl display::NodeDisplay for MethodKind {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         match *self {
             MethodKind::Normal => {},
-            MethodKind::Generator => f.punctuator(display::Punctuator::Star)?,
-            MethodKind::Async => f.keyword(display::Keyword::Async)?,
+            MethodKind::Generator => f.punctuator(display::Punctuator::Star),
+            MethodKind::Async => f.keyword(display::Keyword::Async),
             MethodKind::AsyncGenerator => {
-                f.keyword(display::Keyword::Async)?;
-                f.punctuator(display::Punctuator::Star)?;
+                f.keyword(display::Keyword::Async);
+                f.punctuator(display::Punctuator::Star);
             }
-            MethodKind::Get => f.keyword(display::Keyword::Set)?,
-            MethodKind::Set => f.keyword(display::Keyword::Get)?,
+            MethodKind::Get => f.keyword(display::Keyword::Set),
+            MethodKind::Set => f.keyword(display::Keyword::Get),
         }
 
         Ok(())
@@ -639,11 +644,12 @@ impl display::NodeDisplay for ComputedPropertyName {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
         let mut f = f.allow_in();
 
-        f.punctuator(display::Punctuator::SquareL)?;
+        f.punctuator(display::Punctuator::SquareL);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(display::Punctuator::SquareR)
+        f.punctuator(display::Punctuator::SquareR);
+        Ok(())
     }
 }
 
@@ -658,11 +664,12 @@ node!(pub struct ComputedPropertyAccess {
 });
 impl display::NodeDisplay for ComputedPropertyAccess {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::SquareL)?;
+        f.punctuator(display::Punctuator::SquareL);
         f.require_precedence(display::Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(display::Punctuator::SquareR)
+        f.punctuator(display::Punctuator::SquareR);
+        Ok(())
     }
 }
 node!(pub struct IdentifierPropertyAccess {
@@ -670,7 +677,7 @@ node!(pub struct IdentifierPropertyAccess {
 });
 impl display::NodeDisplay for IdentifierPropertyAccess {
     fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::Period)?;
+        f.punctuator(display::Punctuator::Period);
         f.node(&self.id)
     }
 }
@@ -691,7 +698,7 @@ impl display::NodeDisplay for ClassMethod {
         }
 
         if let FieldPosition::Static = self.pos {
-            f.keyword(display::Keyword::Static)?;
+            f.keyword(display::Keyword::Static);
         }
 
         f.node(&self.kind)?;
@@ -729,13 +736,13 @@ impl display::NodeDisplay for ClassField {
         }
 
         if let FieldPosition::Static = self.pos {
-            f.keyword(display::Keyword::Static)?;
+            f.keyword(display::Keyword::Static);
         }
 
         f.node(&self.id)?;
 
         if let Some(ref val) = self.value {
-            f.punctuator(display::Punctuator::Eq)?;
+            f.punctuator(display::Punctuator::Eq);
             f.require_precedence(display::Precedence::Assignment).node(
                 val,
             )?;
@@ -757,10 +764,10 @@ impl display::NodeDisplay for FunctionParams {
 
         if let Some(ref param) = self.rest {
             if !self.params.is_empty() {
-                f.punctuator(display::Punctuator::Comma)?;
+                f.punctuator(display::Punctuator::Comma);
             }
 
-            f.punctuator(display::Punctuator::Ellipsis)?;
+            f.punctuator(display::Punctuator::Ellipsis);
             f.node(param)?;
         }
         Ok(())
