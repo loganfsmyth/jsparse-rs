@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::Write;
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Punctuator {
     Eq,
     EqEq,
@@ -85,6 +86,7 @@ pub enum Punctuator {
     AngleSlash,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Keyword {
     Export,
     Default,
@@ -193,6 +195,7 @@ pub struct NodeFormatter {
     in_operator: bool,
 
     ends_with_integer: bool,
+    ends_with_keyword: bool,
 
     pub output: String,
 }
@@ -202,6 +205,7 @@ impl NodeFormatter {
             prec: Precedence::Normal,
             in_operator: true,
             ends_with_integer: false,
+            ends_with_keyword: false,
             output: String::with_capacity(512 * 1024),
         }
     }
@@ -259,6 +263,14 @@ impl NodeFormatter {
     }
 
     pub fn keyword(&mut self, t: Keyword) {
+        // println!("{:?}", t);
+
+        if self.ends_with_keyword {
+            write!(self, " ").unwrap();
+        }
+        self.ends_with_keyword = true;
+        self.ends_with_integer = false;
+
         match t {
             Keyword::Export => write!(self, "export"),
             Keyword::Default => write!(self, "default"),
@@ -312,6 +324,9 @@ impl NodeFormatter {
     }
 
     pub fn punctuator(&mut self, p: Punctuator) {
+        self.ends_with_keyword = false;
+        self.ends_with_integer = false;
+
         match p {
             Punctuator::Eq => write!(self, "="),
             Punctuator::EqEq => write!(self, "=="),
@@ -373,12 +388,19 @@ impl NodeFormatter {
         }.unwrap()
     }
 
-    pub fn identifier(&mut self, _name: &str, raw: Option<&str>) -> NodeDisplayResult {
+    pub fn identifier(&mut self, name: &str, raw: Option<&str>) -> NodeDisplayResult {
+        if self.ends_with_keyword {
+            write!(self, " ").unwrap();
+        }
+        self.ends_with_keyword = true;
+        self.ends_with_integer = false;
+
         if let Some(_raw) = raw {
             // Write raw value as-is
         } else {
             // Serialize "name"
         }
+        write!(self, "{}", name)?;
         Ok(())
     }
     pub fn string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {

@@ -15,6 +15,9 @@ node!(pub struct ExportDefaultClassDeclaration {
     extends: Option<Box<alias::Expression>>,
     body: ClassBody,
 });
+
+// display_dsl!(ExportDefaultClassDeclaration: export default @[decorators] class @?id @?extends[extends @] @body);
+
 impl NodeDisplay for ExportDefaultClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Export);
@@ -45,6 +48,8 @@ node!(pub struct ClassDeclaration {
     extends: Option<Box<alias::Expression>>,
     body: ClassBody,
 });
+// display_dsl!(ClassDeclaration: export default @[decorators] class @id @?extends[extends @] @body);
+
 impl NodeDisplay for ClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         for dec in self.decorators.iter() {
@@ -74,6 +79,8 @@ node!(pub struct ClassExpression {
     extends: Option<Box<alias::Expression>>,
     body: ClassBody,
 });
+// display_dsl!(ClassExpression: @[decorators] class @?id @?extends[extends @] @body);
+
 impl NodeDisplay for ClassExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         for dec in self.decorators.iter() {
@@ -107,6 +114,7 @@ impl HasInOperator for ClassExpression {}
 node!(pub struct ClassBody {
     items: Vec<ClassItem>,
 });
+// display_dsl!(ClassBody: { @[items] });
 impl NodeDisplay for ClassBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::CurlyL);
@@ -121,6 +129,7 @@ impl NodeDisplay for ClassBody {
 }
 
 node!(pub struct ClassEmpty {});
+// display_dsl!(ClassEmpty: ;);
 impl NodeDisplay for ClassEmpty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::Semicolon);
@@ -150,15 +159,15 @@ node!(pub struct ClassField {
     id: ClassFieldId,
     value: Option<alias::Expression>,
 });
+// display_dsl!(ClassField: @[decorators] @pos @id @?value[= @]);
+
 impl NodeDisplay for ClassField {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         for dec in self.decorators.iter() {
             f.node(dec)?;
         }
 
-        if let FieldPosition::Static = self.pos {
-            f.keyword(Keyword::Static);
-        }
+        f.node(&self.pos)?;
 
         f.node(&self.id)?;
 
@@ -174,23 +183,22 @@ impl NodeDisplay for ClassField {
 }
 
 node!(pub struct ClassMethod {
+    decorators: Vec<ClassItemDecorator>,
     pos: FieldPosition,
     kind: MethodKind,
     id: ClassFieldId,
     params: FunctionParams,
     body: FunctionBody,
-    decorators: Vec<ClassItemDecorator>,
 });
+// display_dsl!(ClassMethod: @[decorators] @pos @kind @id @params @body);
+
 impl NodeDisplay for ClassMethod {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         for dec in self.decorators.iter() {
             f.node(dec)?;
         }
 
-        if let FieldPosition::Static = self.pos {
-            f.keyword(Keyword::Static);
-        }
-
+        f.node(&self.pos)?;
         f.node(&self.kind)?;
 
         f.node(&self.id)?;
@@ -204,10 +212,19 @@ node_kind!(pub enum FieldPosition {
     Instance,
     Static,
 });
+impl NodeDisplay for FieldPosition {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        if let FieldPosition::Static = *self {
+            f.keyword(Keyword::Static);
+        }
+        Ok(())
+    }
+}
 
 node!(pub struct ClassDecorator {
     value: DecoratorValue,
 });
+// display_dsl!(ClassDecorator: @@ @value);
 impl NodeDisplay for ClassDecorator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::At);
@@ -218,6 +235,7 @@ impl NodeDisplay for ClassDecorator {
 node!(pub struct ClassItemDecorator {
     value: DecoratorValue,
 });
+// display_dsl!(ClassItemDecorator: @@ @value);
 impl NodeDisplay for ClassItemDecorator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::At);

@@ -34,6 +34,16 @@ node!(pub struct ObjectPattern {
     properties: Vec<ObjectPatternProperty>,
     rest: Option<Box<LeftHandComplexAssign>>,
 });
+// display_dsl!(ClassDecorator: {
+//     @[properties,]
+
+//     @?rest[
+//         // TODO: Needs a comma here _sometimes_
+//         ...@
+//     ]
+// });
+
+
 impl NodeDisplay for ObjectPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::CurlyL);
@@ -65,6 +75,8 @@ node!(pub struct ObjectPatternIdentifierProperty {
     id: BindingIdentifier,
     init: Option<alias::Expression>,
 });
+// display_dsl!(ObjectPatternIdentifierProperty: @id @?init[= @in {}]
+
 impl NodeDisplay for ObjectPatternIdentifierProperty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.id)?;

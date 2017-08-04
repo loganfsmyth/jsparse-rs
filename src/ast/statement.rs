@@ -34,7 +34,7 @@ mod tests {
                 init: None,
                 position: None,
             }),
-        }, "{}");
+        }, "var myVar;");
     }
 
 }
@@ -44,6 +44,8 @@ mod tests {
 node!(pub struct BlockStatement {
     body: Vec<alias::StatementItem>,
 });
+// display_dsl!(BlockStatement: @in { @[body] });
+
 impl NodeDisplay for BlockStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
@@ -63,9 +65,14 @@ impl HasOrphanIf for BlockStatement {}
 node!(pub struct VariableStatement {
     declarations: VariableDeclaratorList,
 });
+// display_dsl!(VariableStatement: var @declarations ;);
+
 impl NodeDisplay for VariableStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.node(&self.declarations)
+        f.keyword(Keyword::Var);
+        f.node(&self.declarations)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
     }
 }
 impl HasOrphanIf for VariableStatement {}
@@ -75,6 +82,8 @@ node!(pub struct VariableDeclarator {
     id: Pattern,
     init: Option<alias::Expression>,
 });
+// display_dsl!(VariableDeclarator: @id @?init[= @]);
+
 impl NodeDisplay for VariableDeclarator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.id)?;
