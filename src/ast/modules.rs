@@ -14,7 +14,7 @@ use ast::general::BindingIdentifier;
 // identifiers used as names of imports and exports
 node!(pub struct ModuleIdentifier {
     // Identifier with "default"
-    id: string::String,
+    pub id: string::String,
 });
 impl NodeDisplay for ModuleIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -23,8 +23,8 @@ impl NodeDisplay for ModuleIdentifier {
 }
 
 node!(pub struct ImportSpecifier {
-    local: BindingIdentifier,
-    imported: Option<ModuleIdentifier>,
+    pub local: BindingIdentifier,
+    pub imported: Option<ModuleIdentifier>,
 });
 impl NodeDisplay for ImportSpecifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -40,8 +40,8 @@ impl NodeDisplay for ImportSpecifier {
 
 // import foo from "";
 node!(pub struct ImportNamedDeclaration {
-    default: BindingIdentifier,
-    source: String,
+    pub default: BindingIdentifier,
+    pub source: String,
 });
 impl NodeDisplay for ImportNamedDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -55,9 +55,9 @@ impl NodeDisplay for ImportNamedDeclaration {
 
 // import foo, * as bar from "";
 node!(pub struct ImportNamedAndNamespaceDeclaration {
-    default: BindingIdentifier,
-    namespace: BindingIdentifier,
-    source: String,
+    pub default: BindingIdentifier,
+    pub namespace: BindingIdentifier,
+    pub source: String,
 });
 impl NodeDisplay for ImportNamedAndNamespaceDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -75,8 +75,8 @@ impl NodeDisplay for ImportNamedAndNamespaceDeclaration {
 
 // import * as bar from "";
 node!(pub struct ImportNamespaceDeclaration {
-    namespace: BindingIdentifier,
-    source: String,
+    pub namespace: BindingIdentifier,
+    pub source: String,
 });
 impl NodeDisplay for ImportNamespaceDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -93,9 +93,9 @@ impl NodeDisplay for ImportNamespaceDeclaration {
 // import foo, {bar} from "";
 // import foo, {bar as bar} from "";
 node!(pub struct ImportNamedAndSpecifiersDeclaration {
-    default: BindingIdentifier,
-    specifiers: Vec<ImportSpecifier>,
-    source: String,
+    pub default: BindingIdentifier,
+    pub specifiers: Vec<ImportSpecifier>,
+    pub source: String,
 });
 impl NodeDisplay for ImportNamedAndSpecifiersDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -114,8 +114,8 @@ impl NodeDisplay for ImportNamedAndSpecifiersDeclaration {
 // import {bar} from "";
 // import {bar as bar} from "";
 node!(pub struct ImportSpecifiersDeclaration {
-    specifiers: Vec<ImportSpecifier>,
-    source: String,
+    pub specifiers: Vec<ImportSpecifier>,
+    pub source: String,
 });
 impl NodeDisplay for ImportSpecifiersDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -133,7 +133,7 @@ impl NodeDisplay for ImportSpecifiersDeclaration {
 
 // export default 4;
 node!(pub struct ExportDefaultExpression {
-    expression: alias::Expression,
+    pub expression: alias::Expression,
 });
 impl NodeDisplay for ExportDefaultExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -156,7 +156,7 @@ impl NodeDisplay for ExportDefaultExpression {
 
 // export class foo {}
 node!(pub struct ExportClassDeclaration {
-    exported: ClassDeclaration,
+    pub exported: ClassDeclaration,
 });
 impl NodeDisplay for ExportClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -169,7 +169,7 @@ impl NodeDisplay for ExportClassDeclaration {
 
 // export function foo() {}
 node!(pub struct ExportFunctionDeclaration {
-    exported: FunctionDeclaration,
+    pub exported: FunctionDeclaration,
 });
 impl NodeDisplay for ExportFunctionDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -182,7 +182,7 @@ impl NodeDisplay for ExportFunctionDeclaration {
 
 // export var foo;
 node!(pub struct ExportVarStatement {
-    exported: VariableStatement,
+    pub exported: VariableStatement,
 });
 impl NodeDisplay for ExportVarStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -195,7 +195,7 @@ impl NodeDisplay for ExportVarStatement {
 
 // export let foo;
 node!(pub struct ExportLetDeclaration {
-    exported: LetDeclaration,
+    pub exported: LetDeclaration,
 });
 impl NodeDisplay for ExportLetDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -208,7 +208,7 @@ impl NodeDisplay for ExportLetDeclaration {
 
 // export const foo;
 node!(pub struct ExportConstDeclaration {
-    exported: ConstDeclaration,
+    pub exported: ConstDeclaration,
 });
 impl NodeDisplay for ExportConstDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -222,7 +222,7 @@ impl NodeDisplay for ExportConstDeclaration {
 // export {foo};
 // export {foo as bar};
 node!(pub struct ExportLocalBindings {
-    specifiers: Vec<LocalExportSpecifier>,
+    pub specifiers: Vec<LocalExportSpecifier>,
 });
 impl NodeDisplay for ExportLocalBindings {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -236,8 +236,8 @@ impl NodeDisplay for ExportLocalBindings {
 
 
 node!(pub struct LocalExportSpecifier {
-    local: BindingIdentifier,
-    exported: Option<ModuleIdentifier>,
+    pub local: BindingIdentifier,
+    pub exported: Option<ModuleIdentifier>,
 });
 impl NodeDisplay for LocalExportSpecifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -255,8 +255,8 @@ impl NodeDisplay for LocalExportSpecifier {
 // export {foo} from "";
 // export {foo as bar} from "";
 node!(pub struct ExportSourceSpecifiers {
-        specifiers: Vec<SourceExportSpecifier>,
-        source: String,
+    pub specifiers: Vec<SourceExportSpecifier>,
+    pub source: String,
 });
 impl NodeDisplay for ExportSourceSpecifiers {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -273,8 +273,8 @@ impl NodeDisplay for ExportSourceSpecifiers {
 
 
 node!(pub struct SourceExportSpecifier {
-    imported: ModuleIdentifier,
-    exported: Option<ModuleIdentifier>,
+    pub imported: ModuleIdentifier,
+    pub exported: Option<ModuleIdentifier>,
 });
 impl NodeDisplay for SourceExportSpecifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -291,7 +291,7 @@ impl NodeDisplay for SourceExportSpecifier {
 
 // export * from "";
 node!(pub struct ExportAllSpecifiers {
-    source: String,
+    pub source: String,
 });
 impl NodeDisplay for ExportAllSpecifiers {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -305,8 +305,8 @@ impl NodeDisplay for ExportAllSpecifiers {
 
 // export foo from "";
 node!(pub struct ExportNamedSpecifier {
-    default: ModuleIdentifier,
-    source: String,
+    pub default: ModuleIdentifier,
+    pub source: String,
 });
 impl NodeDisplay for ExportNamedSpecifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -320,9 +320,9 @@ impl NodeDisplay for ExportNamedSpecifier {
 
 // export foo, * as foo from "";
 node!(pub struct ExportNamedAndNamespace {
-    default: ModuleIdentifier,
-    namespace: ModuleIdentifier,
-    source: String,
+    pub default: ModuleIdentifier,
+    pub namespace: ModuleIdentifier,
+    pub source: String,
 });
 impl NodeDisplay for ExportNamedAndNamespace {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -340,8 +340,8 @@ impl NodeDisplay for ExportNamedAndNamespace {
 
 // export * as foo from "";
 node!(pub struct ExportNamespace {
-    namespace: ModuleIdentifier,
-    source: String,
+    pub namespace: ModuleIdentifier,
+    pub source: String,
 });
 impl NodeDisplay for ExportNamespace {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -358,9 +358,9 @@ impl NodeDisplay for ExportNamespace {
 // export foo, {foo} from "";
 // export foo, {foo as bar} from "";
 node!(pub struct ExportNamedAndSpecifiers {
-    default: ModuleIdentifier,
-    specifiers: Vec<SourceExportSpecifier>,
-    source: String,
+    pub default: ModuleIdentifier,
+    pub specifiers: Vec<SourceExportSpecifier>,
+    pub source: String,
 });
 impl NodeDisplay for ExportNamedAndSpecifiers {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

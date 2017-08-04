@@ -31,8 +31,8 @@ node_enum!(@node_display pub enum Pattern {
 
 // ({     } =
 node!(pub struct ObjectPattern {
-    properties: Vec<ObjectPatternProperty>,
-    rest: Option<Box<LeftHandComplexAssign>>,
+    pub properties: Vec<ObjectPatternProperty>,
+    pub rest: Option<Box<LeftHandComplexAssign>>,
 });
 // display_dsl!(ClassDecorator: {
 //     @[properties,]
@@ -72,8 +72,8 @@ impl FirstSpecialToken for ObjectPattern {
 
 
 node!(pub struct ObjectPatternIdentifierProperty {
-    id: BindingIdentifier,
-    init: Option<alias::Expression>,
+    pub id: BindingIdentifier,
+    pub init: Option<alias::Expression>,
 });
 // display_dsl!(ObjectPatternIdentifierProperty: @id @?init[= @in {}]
 
@@ -93,9 +93,9 @@ impl NodeDisplay for ObjectPatternIdentifierProperty {
     }
 }
 node!(pub struct ObjectPatternPatternProperty {
-    name: PropertyName,
-    pattern: LeftHandComplexAssign,
-    init: Option<alias::Expression>,
+    pub name: PropertyName,
+    pub pattern: LeftHandComplexAssign,
+    pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for ObjectPatternPatternProperty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -123,8 +123,8 @@ node_enum!(@node_display pub enum ObjectPatternProperty {
 
 // ([     ] =
 node!(pub struct ArrayPattern {
-    items: Vec<Option<ArrayPatternElement>>,
-    rest: Option<Box<Pattern>>,
+    pub items: Vec<Option<ArrayPatternElement>>,
+    pub rest: Option<Box<Pattern>>,
 });
 impl NodeDisplay for ArrayPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -158,8 +158,8 @@ impl FirstSpecialToken for ArrayPattern {}
 
 
 node!(pub struct ArrayPatternElement {
-    id: LeftHandComplexAssign,
-    init: Option<alias::Expression>,
+    pub id: LeftHandComplexAssign,
+    pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for ArrayPatternElement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

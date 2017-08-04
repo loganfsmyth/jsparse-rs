@@ -55,7 +55,7 @@ impl FirstSpecialToken for Null {}
 
 // true/false
 node!(pub struct Boolean {
-    value: bool,
+    pub value: bool,
 });
 impl NodeDisplay for Boolean {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -77,8 +77,8 @@ impl FirstSpecialToken for Boolean {}
 
 // 12
 node!(pub struct Numeric {
-    raw: Option<string::String>,
-    value: f64,
+    pub raw: Option<string::String>,
+    pub value: f64,
 });
 impl NodeDisplay for Numeric {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -95,8 +95,8 @@ impl FirstSpecialToken for Numeric {}
 
 // "foo"
 node!(pub struct String {
-    raw: Option<string::String>,
-    value: string::String,
+    pub raw: Option<string::String>,
+    pub value: string::String,
 });
 impl NodeDisplay for String {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -113,8 +113,8 @@ impl FirstSpecialToken for String {}
 
 // /foo/g
 node!(pub struct RegExp {
-    value: string::String,
-    flags: Vec<char>,
+    pub value: string::String,
+    pub flags: Vec<char>,
 });
 impl NodeDisplay for RegExp {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

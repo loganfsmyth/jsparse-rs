@@ -42,7 +42,7 @@ mod tests {
 
 // { ... }
 node!(pub struct BlockStatement {
-    body: Vec<alias::StatementItem>,
+    pub body: Vec<alias::StatementItem>,
 });
 // display_dsl!(BlockStatement: @in { @[body] });
 
@@ -63,7 +63,7 @@ impl HasOrphanIf for BlockStatement {}
 
 // var foo, bar;
 node!(pub struct VariableStatement {
-    declarations: VariableDeclaratorList,
+    pub declarations: VariableDeclaratorList,
 });
 // display_dsl!(VariableStatement: var @declarations ;);
 
@@ -79,8 +79,8 @@ impl HasOrphanIf for VariableStatement {}
 
 type VariableDeclaratorList = DeclaratorList<VariableDeclarator>;
 node!(pub struct VariableDeclarator {
-    id: Pattern,
-    init: Option<alias::Expression>,
+    pub id: Pattern,
+    pub init: Option<alias::Expression>,
 });
 // display_dsl!(VariableDeclarator: @id @?init[= @]);
 
@@ -117,7 +117,7 @@ impl<T: NodeDisplay> NodeDisplay for DeclaratorList<T> {
 
 // let foo, bar;
 node!(pub struct LetDeclaration {
-    declarators: LetDeclaratorList,
+    pub declarators: LetDeclaratorList,
 });
 impl NodeDisplay for LetDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -129,8 +129,8 @@ impl NodeDisplay for LetDeclaration {
 
 type LetDeclaratorList = DeclaratorList<LetDeclarator>;
 node!(pub struct LetDeclarator {
-    id: Pattern,
-    init: Option<alias::Expression>,
+    pub id: Pattern,
+    pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for LetDeclarator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -148,7 +148,7 @@ impl NodeDisplay for LetDeclarator {
 
 // const foo = 4, bar = 5;
 node!(pub struct ConstDeclaration {
-    declarators: ConstDeclaratorList,
+    pub declarators: ConstDeclaratorList,
 });
 impl NodeDisplay for ConstDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -160,8 +160,8 @@ impl NodeDisplay for ConstDeclaration {
 
 type ConstDeclaratorList = DeclaratorList<ConstDeclarator>;
 node!(pub struct ConstDeclarator {
-    id: Pattern,
-    init: alias::Expression,
+    pub id: Pattern,
+    pub init: alias::Expression,
 });
 impl NodeDisplay for ConstDeclarator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -175,7 +175,7 @@ impl NodeDisplay for ConstDeclarator {
 
 // foo;
 node!(pub struct ExpressionStatement {
-    expression: alias::Expression,
+    pub expression: alias::Expression,
 });
 impl NodeDisplay for ExpressionStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -197,9 +197,9 @@ impl HasOrphanIf for ExpressionStatement {}
 
 // if () {}
 node!(pub struct IfStatement {
-    test: alias::Expression,
-    consequent: Box<alias::Statement>,
-    alternate: Option<Box<alias::Statement>>,
+    pub test: alias::Expression,
+    pub consequent: Box<alias::Statement>,
+    pub alternate: Option<Box<alias::Statement>>,
 });
 impl NodeDisplay for IfStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -236,10 +236,10 @@ impl HasOrphanIf for IfStatement {
 
 // for( ; ; ) {}
 node!(pub struct ForStatement {
-    init: Option<ForInit>,
-    test: Option<Box<alias::Expression>>,
-    update: Option<Box<alias::Expression>>,
-    body: Box<alias::Statement>,
+    pub init: Option<ForInit>,
+    pub test: Option<Box<alias::Expression>>,
+    pub update: Option<Box<alias::Expression>>,
+    pub body: Box<alias::Statement>,
 });
 impl NodeDisplay for ForStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -285,9 +285,9 @@ node_enum!(@node_display pub enum ForInit {
 
 // for ... in
 node!(pub struct ForInStatement {
-    left: ForInInit,
-    right: Box<alias::Expression>,
-    body: Box<alias::Statement>,
+    pub left: ForInInit,
+    pub right: Box<alias::Expression>,
+    pub body: Box<alias::Statement>,
 });
 impl NodeDisplay for ForInStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -313,8 +313,8 @@ impl HasOrphanIf for ForInStatement {
 }
 
 node!(pub struct ForInVarPattern {
-    pattern: Pattern,
-    init: Option<alias::Expression>,
+    pub pattern: Pattern,
+    pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for ForInVarPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -330,7 +330,7 @@ impl NodeDisplay for ForInVarPattern {
 
 
 node!(pub struct ForVarPattern {
-    pattern: Pattern,
+    pub pattern: Pattern,
 });
 impl NodeDisplay for ForVarPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -341,7 +341,7 @@ impl NodeDisplay for ForVarPattern {
 
 
 node!(pub struct ForLetPattern {
-    pattern: Pattern,
+    pub pattern: Pattern,
 });
 impl NodeDisplay for ForLetPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -352,7 +352,7 @@ impl NodeDisplay for ForLetPattern {
 
 
 node!(pub struct ForConstPattern {
-    pattern: Pattern,
+    pub pattern: Pattern,
 });
 impl NodeDisplay for ForConstPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -375,9 +375,9 @@ node_enum!(@node_display pub enum ForInInit {
 
 // for ... of
 node!(pub struct ForOfStatement {
-    left: ForOfInit,
-    right: Box<alias::Expression>,
-    body: Box<alias::Statement>,
+    pub left: ForOfInit,
+    pub right: Box<alias::Expression>,
+    pub body: Box<alias::Statement>,
 });
 impl NodeDisplay for ForOfStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -402,9 +402,9 @@ impl HasOrphanIf for ForOfStatement {
 
 // for await .. of
 node!(pub struct ForAwaitStatement {
-    left: ForOfInit,
-    right: Box<alias::Expression>,
-    body: Box<alias::Statement>,
+    pub left: ForOfInit,
+    pub right: Box<alias::Expression>,
+    pub body: Box<alias::Statement>,
 });
 impl NodeDisplay for ForAwaitStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -443,8 +443,8 @@ node_enum!(@node_display pub enum ForOfInit {
 
 // while(...) ;
 node!(pub struct WhileStatement {
-    test: Box<alias::Expression>,
-    body: Box<alias::Statement>,
+    pub test: Box<alias::Expression>,
+    pub body: Box<alias::Statement>,
 });
 impl NodeDisplay for WhileStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -469,8 +469,8 @@ impl HasOrphanIf for WhileStatement {
 
 // do ; while(...) ;
 node!(pub struct DoWhileStatement {
-    test: Box<alias::Expression>,
-    body: Box<alias::Statement>,
+    pub test: Box<alias::Expression>,
+    pub body: Box<alias::Statement>,
 });
 impl NodeDisplay for DoWhileStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -495,8 +495,8 @@ impl HasOrphanIf for DoWhileStatement {}
 
 // switch (...) { ...    }
 node!(pub struct SwitchStatement {
-    discriminant: Box<alias::Expression>,
-    cases: Vec<SwitchCase>,
+    pub discriminant: Box<alias::Expression>,
+    pub cases: Vec<SwitchCase>,
 });
 impl NodeDisplay for SwitchStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -523,8 +523,8 @@ impl HasOrphanIf for SwitchStatement {}
 // case foo:
 // default:
 node!(pub struct SwitchCase {
-    test: Option<Box<alias::Expression>>,
-    consequent: Vec<alias::StatementItem>,
+    pub test: Option<Box<alias::Expression>>,
+    pub consequent: Vec<alias::StatementItem>,
 });
 impl NodeDisplay for SwitchCase {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -549,8 +549,8 @@ impl NodeDisplay for SwitchCase {
 
 // with(...) ;
 node!(pub struct WithStatement {
-    object: Box<alias::Expression>,
-    body: Box<alias::Statement>,
+    pub object: Box<alias::Expression>,
+    pub body: Box<alias::Statement>,
 });
 impl NodeDisplay for WithStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -572,8 +572,8 @@ impl HasOrphanIf for WithStatement {
 
 // identifiers used as labels
 node!(pub struct LabelIdentifier {
-    value: string::String,
-    raw: string::String,
+    pub value: string::String,
+    pub raw: string::String,
 });
 impl NodeDisplay for LabelIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -584,8 +584,8 @@ impl NodeDisplay for LabelIdentifier {
 
 // foo: while(false) ;
 node!(pub struct LabelledStatement {
-    label: LabelIdentifier,
-    body: Box<alias::Statement>,
+    pub label: LabelIdentifier,
+    pub body: Box<alias::Statement>,
 });
 impl NodeDisplay for LabelledStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -603,7 +603,7 @@ impl HasOrphanIf for LabelledStatement {
 
 // throw foo;
 node!(pub struct ThrowStatement {
-    argument: Box<alias::Expression>,
+    pub argument: Box<alias::Expression>,
 });
 impl NodeDisplay for ThrowStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -621,8 +621,8 @@ impl HasOrphanIf for ThrowStatement {}
 
 // try {} catch(foo) {}
 node!(pub struct TryCatchStatement {
-    block: BlockStatement,
-    handler: CatchClause,
+    pub block: BlockStatement,
+    pub handler: CatchClause,
 });
 impl NodeDisplay for TryCatchStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -636,9 +636,9 @@ impl HasOrphanIf for TryCatchStatement {}
 
 // try {} catch(foo) {} finally {}
 node!(pub struct TryCatchFinallyStatement {
-    block: BlockStatement,
-    handler: CatchClause,
-    finalizer: BlockStatement,
+    pub block: BlockStatement,
+    pub handler: CatchClause,
+    pub finalizer: BlockStatement,
 });
 impl NodeDisplay for TryCatchFinallyStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -656,8 +656,8 @@ impl HasOrphanIf for TryCatchFinallyStatement {}
 
 // try {} finally {}
 node!(pub struct TryFinallyStatement {
-    block: BlockStatement,
-    finalizer: BlockStatement,
+    pub block: BlockStatement,
+    pub finalizer: BlockStatement,
 });
 impl NodeDisplay for TryFinallyStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -673,8 +673,8 @@ impl HasOrphanIf for TryFinallyStatement {}
 
 node!(pub struct CatchClause {
     // Missing param is experimental
-    param: Option<Pattern>,
-    body: BlockStatement,
+    pub param: Option<Pattern>,
+    pub body: BlockStatement,
 });
 impl NodeDisplay for CatchClause {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -692,7 +692,7 @@ impl NodeDisplay for CatchClause {
 // continue;
 // continue foo;
 node!(pub struct ContinueStatement {
-    label: Option<LabelIdentifier>,
+    pub label: Option<LabelIdentifier>,
 });
 impl NodeDisplay for ContinueStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -709,7 +709,7 @@ impl HasOrphanIf for ContinueStatement {}
 // break;
 // break foo;
 node!(pub struct BreakStatement {
-    label: Option<LabelIdentifier>,
+    pub label: Option<LabelIdentifier>,
 });
 impl NodeDisplay for BreakStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -726,7 +726,7 @@ impl HasOrphanIf for BreakStatement {}
 // return;
 // return foo;
 node!(pub struct ReturnStatement {
-    argument: Option<Box<alias::Expression>>,
+    pub argument: Option<Box<alias::Expression>>,
 });
 impl NodeDisplay for ReturnStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

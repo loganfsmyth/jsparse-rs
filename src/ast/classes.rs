@@ -10,10 +10,10 @@ use ast::alias;
 
 // export default class name {}
 node!(pub struct ExportDefaultClassDeclaration {
-    decorators: Vec<ClassDecorator>, // experimental
-    id: Option<BindingIdentifier>,
-    extends: Option<Box<alias::Expression>>,
-    body: ClassBody,
+    pub decorators: Vec<ClassDecorator>, // experimental
+    pub id: Option<BindingIdentifier>,
+    pub extends: Option<Box<alias::Expression>>,
+    pub body: ClassBody,
 });
 
 // display_dsl!(ExportDefaultClassDeclaration: export default @[decorators] class @?id @?extends[extends @] @body);
@@ -43,10 +43,10 @@ impl NodeDisplay for ExportDefaultClassDeclaration {
 
 // class name {}
 node!(pub struct ClassDeclaration {
-    decorators: Vec<ClassDecorator>, // experimental
-    id: BindingIdentifier,
-    extends: Option<Box<alias::Expression>>,
-    body: ClassBody,
+    pub decorators: Vec<ClassDecorator>, // experimental
+    pub id: BindingIdentifier,
+    pub extends: Option<Box<alias::Expression>>,
+    pub body: ClassBody,
 });
 // display_dsl!(ClassDeclaration: export default @[decorators] class @id @?extends[extends @] @body);
 
@@ -74,10 +74,10 @@ impl NodeDisplay for ClassDeclaration {
 
 // (class {})
 node!(pub struct ClassExpression {
-    decorators: Vec<ClassDecorator>, // experimental
-    id: Option<BindingIdentifier>,
-    extends: Option<Box<alias::Expression>>,
-    body: ClassBody,
+    pub decorators: Vec<ClassDecorator>, // experimental
+    pub id: Option<BindingIdentifier>,
+    pub extends: Option<Box<alias::Expression>>,
+    pub body: ClassBody,
 });
 // display_dsl!(ClassExpression: @[decorators] class @?id @?extends[extends @] @body);
 
@@ -112,7 +112,7 @@ impl HasInOperator for ClassExpression {}
 
 
 node!(pub struct ClassBody {
-    items: Vec<ClassItem>,
+    pub items: Vec<ClassItem>,
 });
 // display_dsl!(ClassBody: { @[items] });
 impl NodeDisplay for ClassBody {
@@ -153,11 +153,11 @@ node_enum!(@node_display pub enum ClassFieldId {
 
 // experimental
 node!(pub struct ClassField {
-    pos: FieldPosition,
-    decorators: Vec<ClassItemDecorator>,
+    pub pos: FieldPosition,
+    pub decorators: Vec<ClassItemDecorator>,
 
-    id: ClassFieldId,
-    value: Option<alias::Expression>,
+    pub id: ClassFieldId,
+    pub value: Option<alias::Expression>,
 });
 // display_dsl!(ClassField: @[decorators] @pos @id @?value[= @]);
 
@@ -183,12 +183,12 @@ impl NodeDisplay for ClassField {
 }
 
 node!(pub struct ClassMethod {
-    decorators: Vec<ClassItemDecorator>,
-    pos: FieldPosition,
-    kind: MethodKind,
-    id: ClassFieldId,
-    params: FunctionParams,
-    body: FunctionBody,
+    pub decorators: Vec<ClassItemDecorator>,
+    pub pos: FieldPosition,
+    pub kind: MethodKind,
+    pub id: ClassFieldId,
+    pub params: FunctionParams,
+    pub body: FunctionBody,
 });
 // display_dsl!(ClassMethod: @[decorators] @pos @kind @id @params @body);
 
@@ -222,7 +222,7 @@ impl NodeDisplay for FieldPosition {
 }
 
 node!(pub struct ClassDecorator {
-    value: DecoratorValue,
+    pub value: DecoratorValue,
 });
 // display_dsl!(ClassDecorator: @@ @value);
 impl NodeDisplay for ClassDecorator {
@@ -233,7 +233,7 @@ impl NodeDisplay for ClassDecorator {
 }
 
 node!(pub struct ClassItemDecorator {
-    value: DecoratorValue,
+    pub value: DecoratorValue,
 });
 // display_dsl!(ClassItemDecorator: @@ @value);
 impl NodeDisplay for ClassItemDecorator {

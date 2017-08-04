@@ -10,8 +10,8 @@ node_enum!(@node_display pub enum Ast {
 
 
 node!(pub struct Script {
-    directives: Vec<Directive>,
-    body: Vec<alias::StatementItem>,
+    pub directives: Vec<Directive>,
+    pub body: Vec<alias::StatementItem>,
 });
 impl NodeDisplay for Script {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -29,8 +29,8 @@ impl NodeDisplay for Script {
 
 
 node!(pub struct Module {
-    directives: Vec<Directive>,
-    body: Vec<alias::ModuleStatementItem>,
+    pub directives: Vec<Directive>,
+    pub body: Vec<alias::ModuleStatementItem>,
 });
 impl NodeDisplay for Module {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

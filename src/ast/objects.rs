@@ -7,8 +7,8 @@ use ast::functions::{FunctionParams, FunctionBody};
 
 // {a: 1, ...b}
 node!(pub struct ObjectExpression {
-    properties: Vec<ObjectProperty>,
-    spread: Option<Box<alias::Expression>>, // experimental
+    pub properties: Vec<ObjectProperty>,
+    pub spread: Option<Box<alias::Expression>>, // experimental
 });
 impl NodeDisplay for ObjectExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -71,10 +71,10 @@ impl NodeDisplay for MethodKind {
 
 
 node!(pub struct ObjectMethod {
-    kind: MethodKind,
-    id: PropertyName,
-    params: FunctionParams,
-    body: FunctionBody,
+    pub kind: MethodKind,
+    pub id: PropertyName,
+    pub params: FunctionParams,
+    pub body: FunctionBody,
 });
 impl NodeDisplay for ObjectMethod {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -87,8 +87,8 @@ impl NodeDisplay for ObjectMethod {
 
 
 node!(pub struct ObjectProperty {
-    name: PropertyName,
-    value: Box<alias::Expression>,
+    pub name: PropertyName,
+    pub value: Box<alias::Expression>,
 });
 impl NodeDisplay for ObjectProperty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -108,8 +108,8 @@ impl NodeDisplay for ObjectProperty {
 
 // [1, 2, 3, ...4]
 node!(pub struct ArrayExpression {
-    elements: Vec<Option<Box<alias::Expression>>>,
-    spread: Option<Box<alias::Expression>>,
+    pub elements: Vec<Option<Box<alias::Expression>>>,
+    pub spread: Option<Box<alias::Expression>>,
 });
 impl NodeDisplay for ArrayExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

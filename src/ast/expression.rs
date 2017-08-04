@@ -28,7 +28,7 @@ impl HasInOperator for ThisExpression {}
 
 
 node!(pub struct ParenthesizedExpression {
-    expr: Box<alias::Expression>,
+    pub expr: Box<alias::Expression>,
 });
 impl NodeDisplay for ParenthesizedExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -41,8 +41,8 @@ impl HasInOperator for ParenthesizedExpression {}
 
 // fn`content`
 node!(pub struct TaggedTemplateLiteral {
-    tag: Box<alias::Expression>,
-    template: TemplateLiteral,
+    pub tag: Box<alias::Expression>,
+    pub template: TemplateLiteral,
 });
 impl NodeDisplay for TaggedTemplateLiteral {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -62,7 +62,7 @@ impl HasInOperator for TaggedTemplateLiteral {}
 
 // `content`
 node!(pub struct TemplateLiteral {
-    piece: TemplateLiteralPiece,
+    pub piece: TemplateLiteralPiece,
 });
 impl NodeDisplay for TemplateLiteral {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -102,8 +102,8 @@ impl NodeDisplay for TemplateLiteralPiece {
 
 
 node!(pub struct TemplatePart {
-    value: string::String,
-    raw_value: Option<string::String>,
+    pub value: string::String,
+    pub raw_value: Option<string::String>,
 });
 impl NodeDisplay for TemplatePart {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -113,8 +113,8 @@ impl NodeDisplay for TemplatePart {
 
 
 node!(pub struct CallArguments {
-    args: Vec<Box<alias::Expression>>,
-    spread: Option<Box<alias::Expression>>,
+    pub args: Vec<Box<alias::Expression>>,
+    pub spread: Option<Box<alias::Expression>>,
 });
 impl NodeDisplay for CallArguments {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -136,9 +136,9 @@ impl NodeDisplay for CallArguments {
 
 // foo()
 node!(pub struct CallExpression {
-    callee: Box<alias::Expression>,
-    arguments: CallArguments,
-    optional: bool,
+    pub callee: Box<alias::Expression>,
+    pub arguments: CallArguments,
+    pub optional: bool,
 });
 impl NodeDisplay for CallExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -161,8 +161,8 @@ impl HasInOperator for CallExpression {}
 
 // new foo()
 node!(pub struct NewExpression {
-    callee: Box<alias::Expression>,
-    arguments: CallArguments,
+    pub callee: Box<alias::Expression>,
+    pub arguments: CallArguments,
 });
 impl NodeDisplay for NewExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -180,7 +180,7 @@ impl HasInOperator for NewExpression {}
 // experimental
 // import(foo)
 node!(pub struct ImportCallExpression {
-    argument: Box<alias::Expression>,
+    pub argument: Box<alias::Expression>,
 });
 impl NodeDisplay for ImportCallExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -198,7 +198,7 @@ impl HasInOperator for ImportCallExpression {}
 
 
 node!(pub struct SuperCallExpression {
-    arguments: CallArguments,
+    pub arguments: CallArguments,
 });
 impl NodeDisplay for SuperCallExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -214,9 +214,9 @@ impl HasInOperator for SuperCallExpression {}
 // foo.#bar
 // foo?.#bar
 node!(pub struct MemberExpression {
-    object: Box<alias::Expression>,
-    property: PropertyAccess,
-    optional: bool,
+    pub object: Box<alias::Expression>,
+    pub property: PropertyAccess,
+    pub optional: bool,
 });
 impl NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -247,7 +247,7 @@ node_enum!(@node_display pub enum PropertyAccess {
 
 
 node!(pub struct ComputedPropertyAccess {
-    expression: Box<alias::Expression>,
+    pub expression: Box<alias::Expression>,
 });
 impl NodeDisplay for ComputedPropertyAccess {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -262,7 +262,7 @@ impl NodeDisplay for ComputedPropertyAccess {
 
 
 node!(pub struct IdentifierPropertyAccess {
-    id: PropertyIdentifier,
+    pub id: PropertyIdentifier,
 });
 impl NodeDisplay for IdentifierPropertyAccess {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -273,7 +273,7 @@ impl NodeDisplay for IdentifierPropertyAccess {
 
 
 node!(pub struct PrivatePropertyAccess {
-    property: PropertyIdentifier,
+    pub property: PropertyIdentifier,
 });
 impl NodeDisplay for PrivatePropertyAccess {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -288,8 +288,8 @@ impl NodeDisplay for PrivatePropertyAccess {
 // ++i
 // --i
 node!(pub struct UpdateExpression {
-    value: LeftHandSimpleAssign,
-    operator: UpdateOperator,
+    pub value: LeftHandSimpleAssign,
+    pub operator: UpdateOperator,
 });
 node_kind!(pub enum UpdateOperator {
     PreIncrement,
@@ -345,8 +345,8 @@ impl HasInOperator for UpdateExpression {}
 
 // void foo
 node!(pub struct UnaryExpression {
-    value: Box<alias::Expression>,
-    operator: UnaryOperator,
+    pub value: Box<alias::Expression>,
+    pub operator: UnaryOperator,
 });
 node_kind!(pub enum UnaryOperator {
     Delete,
@@ -393,9 +393,9 @@ impl HasInOperator for UnaryExpression {}
 
 // foo OP bar
 node!(pub struct BinaryExpression {
-    left: Box<alias::Expression>,
-    operator: BinaryOperator,
-    right: Box<alias::Expression>,
+    pub left: Box<alias::Expression>,
+    pub operator: BinaryOperator,
+    pub right: Box<alias::Expression>,
 });
 node_kind!(pub enum BinaryOperator {
     Add,
@@ -674,9 +674,9 @@ impl HasInOperator for BinaryExpression {
 
 // foo ? bar : baz
 node!(pub struct ConditionalExpression {
-    test: Box<alias::Expression>,
-    consequent: Box<alias::Expression>,
-    alternate: Box<alias::Expression>,
+    pub test: Box<alias::Expression>,
+    pub consequent: Box<alias::Expression>,
+    pub alternate: Box<alias::Expression>,
 });
 impl NodeDisplay for ConditionalExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -714,8 +714,8 @@ impl HasInOperator for ConditionalExpression {
 
 // foo = bar
 node!(pub struct AssignmentExpression {
-    left: Box<LeftHandComplexAssign>,
-    right: Box<alias::Expression>,
+    pub left: Box<LeftHandComplexAssign>,
+    pub right: Box<alias::Expression>,
 });
 impl NodeDisplay for AssignmentExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -742,9 +742,9 @@ impl HasInOperator for AssignmentExpression {
 
 // foo OP= bar
 node!(pub struct AssignmentUpdateExpression {
-    left: Box<LeftHandSimpleAssign>,
-    operator: AssignmentUpdateOperator,
-    right: Box<alias::Expression>,
+    pub left: Box<LeftHandSimpleAssign>,
+    pub operator: AssignmentUpdateOperator,
+    pub right: Box<alias::Expression>,
 });
 node_kind!(pub enum AssignmentUpdateOperator {
     Add,
@@ -801,8 +801,8 @@ impl HasInOperator for AssignmentUpdateExpression {
 
 // foo, bar
 node!(pub struct SequenceExpression {
-    left: Box<alias::Expression>,
-    right: Box<alias::Expression>,
+    pub left: Box<alias::Expression>,
+    pub right: Box<alias::Expression>,
 });
 impl NodeDisplay for SequenceExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -833,7 +833,7 @@ impl HasInOperator for SequenceExpression {
 
 // do { foo; }
 node!(pub struct DoExpression {
-    body: BlockStatement,
+    pub body: BlockStatement,
 });
 impl NodeDisplay for DoExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -851,7 +851,7 @@ impl HasInOperator for DoExpression {}
 
 // new.target
 node!(pub struct MetaProperty {
-    kind: MetaPropertyKind,
+    pub kind: MetaPropertyKind,
 });
 node_kind!(pub enum MetaPropertyKind {
     NewTarget,
@@ -894,7 +894,7 @@ impl HasInOperator for MetaProperty {}
 // super.foo
 // super[foo]
 node!(pub struct SuperMemberExpression {
-    property: SuperMemberAccess,
+    pub property: SuperMemberAccess,
 });
 impl NodeDisplay for SuperMemberExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

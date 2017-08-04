@@ -10,7 +10,7 @@ use ast::decorators::DecoratorValue;
 
 
 node!(pub struct Directive {
-    value: string::String,
+    pub value: string::String,
 });
 impl NodeDisplay for Directive {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -51,8 +51,8 @@ impl NodeDisplay for FunctionKind {
 
 
 node!(pub struct FunctionParams {
-    params: Vec<FunctionParam>,
-    rest: Option<FunctionRestParam>,
+    pub params: Vec<FunctionParam>,
+    pub rest: Option<FunctionRestParam>,
 });
 impl NodeDisplay for FunctionParams {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -74,9 +74,9 @@ impl NodeDisplay for FunctionParams {
 
 
 node!(pub struct FunctionParam {
-    decorators: Vec<FunctionParamDecorator>, // experimental
-    id: Pattern,
-    init: Option<Box<alias::Expression>>,
+    pub decorators: Vec<FunctionParamDecorator>, // experimental
+    pub id: Pattern,
+    pub init: Option<Box<alias::Expression>>,
 });
 impl NodeDisplay for FunctionParam {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -95,7 +95,7 @@ impl NodeDisplay for FunctionParam {
 
 
 node!(pub struct FunctionRestParam {
-    id: Pattern,
+    pub id: Pattern,
 });
 impl NodeDisplay for FunctionRestParam {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -107,8 +107,8 @@ impl NodeDisplay for FunctionRestParam {
 
 
 node!(pub struct FunctionBody {
-    directives: Vec<Directive>,
-    body: Vec<alias::StatementItem>,
+    pub directives: Vec<Directive>,
+    pub body: Vec<alias::StatementItem>,
 });
 impl NodeDisplay for FunctionBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -132,7 +132,7 @@ impl HasInOperator for FunctionBody {
 }
 
 node!(pub struct FunctionParamDecorator {
-    value: DecoratorValue,
+    pub value: DecoratorValue,
 });
 impl NodeDisplay for FunctionParamDecorator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -144,10 +144,10 @@ impl NodeDisplay for FunctionParamDecorator {
 
 // export default function name() {}
 node!(pub struct ExportDefaultFunctionDeclaration {
-    kind: FunctionKind,
-    id: Option<BindingIdentifier>,
-    params: FunctionParams,
-    body: FunctionBody,
+    pub kind: FunctionKind,
+    pub id: Option<BindingIdentifier>,
+    pub params: FunctionParams,
+    pub body: FunctionBody,
 });
 impl NodeDisplay for ExportDefaultFunctionDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -165,10 +165,10 @@ impl NodeDisplay for ExportDefaultFunctionDeclaration {
 
 // function name() {}
 node!(pub struct FunctionDeclaration {
-    kind: FunctionKind,
-    id: BindingIdentifier,
-    params: FunctionParams,
-    body: FunctionBody,
+    pub kind: FunctionKind,
+    pub id: BindingIdentifier,
+    pub params: FunctionParams,
+    pub body: FunctionBody,
 });
 impl NodeDisplay for FunctionDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -182,10 +182,10 @@ impl NodeDisplay for FunctionDeclaration {
 
 // (function(){})
 node!(pub struct FunctionExpression {
-    kind: FunctionKind,
-    id: Option<BindingIdentifier>,
-    params: FunctionParams,
-    body: FunctionBody,
+    pub kind: FunctionKind,
+    pub id: Option<BindingIdentifier>,
+    pub params: FunctionParams,
+    pub body: FunctionBody,
 });
 impl NodeDisplay for FunctionExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -209,9 +209,9 @@ impl HasInOperator for FunctionExpression {}
 // (foo) => bar
 node!(pub struct ArrowFunctionExpression {
     // TODO: Needs to handle single-param Ident output as type of params
-    kind: ArrowFunctionKind,
-    params: FunctionParams,
-    body: ArrowFunctionBody,
+    pub kind: ArrowFunctionKind,
+    pub params: FunctionParams,
+    pub body: ArrowFunctionBody,
 });
 node_kind!(pub enum ArrowFunctionKind {
     Normal,
@@ -254,7 +254,7 @@ impl HasInOperator for ArrowFunctionExpression {
 
 
 node!(pub struct ArrowFunctionExpressionBody {
-    expression: Box<alias::Expression>,
+    pub expression: Box<alias::Expression>,
 });
 impl NodeDisplay for ArrowFunctionExpressionBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

@@ -7,8 +7,8 @@ use ast::literal;
 // identifiers used as variables
 // TODO: Split this into a binding-declaration type and a binding-reference type
 node!(pub struct BindingIdentifier {
-    value: string::String,
-    raw: Option<string::String>,
+    pub value: string::String,
+    pub raw: Option<string::String>,
 });
 impl NodeDisplay for BindingIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -26,8 +26,8 @@ impl FirstSpecialToken for BindingIdentifier {}
 
 // identifiers used as properties
 node!(pub struct PropertyIdentifier {
-    value: string::String,
-    raw: string::String,
+    pub value: string::String,
+    pub raw: string::String,
 });
 impl NodeDisplay for PropertyIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -44,7 +44,7 @@ node_enum!(@node_display pub enum PropertyName {
 });
 
 node!(pub struct ComputedPropertyName {
-    expression: Box<alias::Expression>,
+    pub expression: Box<alias::Expression>,
 });
 impl NodeDisplay for ComputedPropertyName {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

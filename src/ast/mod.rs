@@ -119,7 +119,7 @@ macro_rules! node_display {
 }
 
 macro_rules! node {
-    (pub struct $id:ident { $($field_id:ident: $field_type:ty ,)* }) => {
+    (pub struct $id:ident { $(pub $field_id:ident: $field_type:ty ,)* }) => {
         pub struct $id {
             // TODO: This 'pub' should be in the declarations themselves.
             $(pub $field_id: $field_type,)*

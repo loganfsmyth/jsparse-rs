@@ -5,10 +5,10 @@ use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Pr
 use ast::alias;
 
 node!(pub struct Element {
-    opening: ElementName,
-    attributes: Vec<Attribute>,
-    children: Vec<Child>,
-    closing: Option<ElementName>,
+    pub opening: ElementName,
+    pub attributes: Vec<Attribute>,
+    pub children: Vec<Child>,
+    pub closing: Option<ElementName>,
 });
 impl NodeDisplay for Element {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -57,8 +57,8 @@ impl FirstSpecialToken for Element {}
 
 node!(pub struct Identifier {
     // Same as a JS identifier, but allows "-"
-    raw: string::String,
-    value: string::String,
+    pub raw: string::String,
+    pub value: string::String,
 });
 impl NodeDisplay for Identifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -75,8 +75,8 @@ node_enum!(@node_display pub enum ElementName {
 
 
 node!(pub struct MemberExpression {
-    object: Box<MemberObject>,
-    property: Identifier,
+    pub object: Box<MemberObject>,
+    pub property: Identifier,
 });
 impl NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -93,8 +93,8 @@ node_enum!(@node_display pub enum MemberObject {
 
 
 node!(pub struct NamespacedName {
-    namespace: Identifier,
-    name: Identifier,
+    pub namespace: Identifier,
+    pub name: Identifier,
 });
 impl NodeDisplay for NamespacedName {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -118,7 +118,7 @@ node_enum!(@node_display pub enum AttributeName {
 
 
 node!(pub struct SpreadAttribute {
-    argument: alias::Expression,
+    pub argument: alias::Expression,
 });
 impl NodeDisplay for SpreadAttribute {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -134,8 +134,8 @@ impl NodeDisplay for SpreadAttribute {
 
 
 node!(pub struct PairAttribute {
-    name: AttributeName,
-    value: Option<AttributeValue>,
+    pub name: AttributeName,
+    pub value: Option<AttributeValue>,
 });
 impl NodeDisplay for PairAttribute {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -158,8 +158,8 @@ node_enum!(@node_display pub enum AttributeValue {
 
 node!(pub struct StringLiteral {
     // String literal that allows _all_ chars, except closing quote
-    raw: string::String,
-    value: string::String,
+    pub raw: string::String,
+    pub value: string::String,
 });
 impl NodeDisplay for StringLiteral {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -177,7 +177,7 @@ node_enum!(@node_display pub enum Child {
 });
 
 node!(pub struct Expression {
-    expression: Box<alias::Expression>,
+    pub expression: Box<alias::Expression>,
 });
 impl NodeDisplay for Expression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -192,7 +192,7 @@ impl NodeDisplay for Expression {
 
 // experimental?
 node!(pub struct ExpressionSpread {
-    expression: Box<alias::Expression>,
+    pub expression: Box<alias::Expression>,
 });
 impl NodeDisplay for ExpressionSpread {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -218,7 +218,7 @@ impl NodeDisplay for Empty {
 node!(pub struct Text {
     // Serialized string should contain HTML entities since it,
     // allows all chars except {, }, <, and >
-    value: string::String,
+    pub value: string::String,
 });
 impl NodeDisplay for Text {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

@@ -27,8 +27,8 @@ impl NodeDisplay for DecoratorValue {
 }
 
 node!(pub struct DecoratorMemberAccess {
-    object: Box<DecoratorValueExpression>,
-    property: PropertyIdentifier,
+    pub object: Box<DecoratorValueExpression>,
+    pub property: PropertyIdentifier,
 });
 impl NodeDisplay for DecoratorMemberAccess {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -46,8 +46,8 @@ node_enum!(@node_display pub enum DecoratorValueExpression {
 
 // experimental
 node!(pub struct DecoratorCallExpression {
-    callee: DecoratorValueExpression,
-    arguments: CallArguments,
+    pub callee: DecoratorValueExpression,
+    pub arguments: CallArguments,
 });
 impl NodeDisplay for DecoratorCallExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
