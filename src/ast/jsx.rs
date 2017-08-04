@@ -1,6 +1,7 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence, HasInOperator, FirstSpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence,
+                   HasInOperator, FirstSpecialToken};
 
 use ast::alias;
 
@@ -219,6 +220,7 @@ node!(pub struct Text {
     // Serialized string should contain HTML entities since it,
     // allows all chars except {, }, <, and >
     pub value: string::String,
+    pub raw: Option<string::String>,
 });
 impl NodeDisplay for Text {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

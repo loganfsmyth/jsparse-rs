@@ -1,6 +1,7 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, HasInOperator, FirstSpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, HasInOperator,
+                   FirstSpecialToken};
 // use super::misc;
 
 // #[cfg(test)]

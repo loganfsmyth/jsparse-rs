@@ -1,6 +1,7 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence, HasInOperator, FirstSpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence,
+                   HasInOperator, FirstSpecialToken};
 use ast::alias;
 use ast::literal;
 

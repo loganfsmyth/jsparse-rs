@@ -1,7 +1,8 @@
 use std::string;
 use std::default;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasOrphanIf, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
+                   HasOrphanIf, FirstSpecialToken, SpecialToken};
 
 use ast::patterns::{LeftHandComplexAssign, Pattern};
 
@@ -87,9 +88,7 @@ impl NodeDisplay for VariableDeclarator {
         f.node(&self.id)?;
         if let Some(ref init) = self.init {
             f.punctuator(Punctuator::Eq);
-            f.require_precedence(Precedence::Assignment).node(
-                init,
-            )?;
+            f.require_precedence(Precedence::Assignment).node(init)?;
         }
         Ok(())
     }
@@ -102,38 +101,46 @@ mod tests_var {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(VariableStatement {
-            declarations: DeclaratorList::Last(VariableDeclarator {
-                id: BindingIdentifier {
-                    value: "myVar".into(),
-                    raw: None,
+        assert_serialize!(
+            VariableStatement {
+                declarations: DeclaratorList::Last(VariableDeclarator {
+                    id: BindingIdentifier {
+                        value: "myVar".into(),
+                        raw: None,
+                        position: None,
+                    }.into(),
+                    init: None,
                     position: None,
-                }.into(),
-                init: None,
+                }),
                 position: None,
-            }),
-            position: None,
-        }, "var myVar;");
+            },
+            "var myVar;"
+        );
     }
 
     #[test]
     fn it_prints_with_init() {
-        assert_serialize!(VariableStatement {
-            declarations: DeclaratorList::Last(VariableDeclarator {
-                id: BindingIdentifier {
-                    value: "myVar".into(),
-                    raw: None,
+        assert_serialize!(
+            VariableStatement {
+                declarations: DeclaratorList::Last(VariableDeclarator {
+                    id: BindingIdentifier {
+                        value: "myVar".into(),
+                        raw: None,
+                        position: None,
+                    }.into(),
+                    init: Some(
+                        BindingIdentifier {
+                            value: "initialVal".into(),
+                            raw: None,
+                            position: None,
+                        }.into(),
+                    ),
                     position: None,
-                }.into(),
-                init: Some(BindingIdentifier {
-                    value: "initialVal".into(),
-                    raw: None,
-                    position: None,
-                }.into()),
+                }),
                 position: None,
-            }),
-            position: None,
-        }, "var myVar=initialVal;");
+            },
+            "var myVar=initialVal;"
+        );
     }
 
     // #[test]
@@ -198,9 +205,7 @@ impl NodeDisplay for LetDeclarator {
         f.node(&self.id)?;
         if let Some(ref init) = self.init {
             f.punctuator(Punctuator::Eq);
-            f.require_precedence(Precedence::Assignment).node(
-                init,
-            )?;
+            f.require_precedence(Precedence::Assignment).node(init)?;
         }
         Ok(())
     }
@@ -276,9 +281,7 @@ impl NodeDisplay for IfStatement {
         f.punctuator(Punctuator::ParenL);
         {
             let mut f = f.allow_in();
-            f.require_precedence(Precedence::Normal).node(
-                &self.test,
-            )?;
+            f.require_precedence(Precedence::Normal).node(&self.test)?;
         }
         f.punctuator(Punctuator::ParenR);
 
@@ -337,9 +340,7 @@ impl NodeDisplay for ForStatement {
         f.punctuator(Punctuator::Semicolon);
         if let Some(ref update) = self.update {
             let mut f = f.allow_in();
-            f.require_precedence(Precedence::Normal).node(
-                update,
-            )?;
+            f.require_precedence(Precedence::Normal).node(update)?;
         }
         f.punctuator(Punctuator::ParenR);
         f.node(&self.body)
@@ -377,9 +378,7 @@ impl NodeDisplay for ForInStatement {
         f.keyword(Keyword::In);
         {
             let mut f = f.allow_in();
-            f.require_precedence(Precedence::Normal).node(
-                &self.right,
-            )?;
+            f.require_precedence(Precedence::Normal).node(&self.right)?;
         }
         f.punctuator(Punctuator::ParenR);
 
@@ -465,9 +464,7 @@ impl NodeDisplay for ForOfStatement {
         f.punctuator(Punctuator::ParenL);
         f.node(&self.left)?;
         f.keyword(Keyword::Of);
-        f.require_precedence(Precedence::Normal).node(
-            &self.right,
-        )?;
+        f.require_precedence(Precedence::Normal).node(&self.right)?;
         f.punctuator(Punctuator::ParenR);
 
         f.node(&self.body)
@@ -495,9 +492,7 @@ impl NodeDisplay for ForAwaitStatement {
         f.keyword(Keyword::In);
         {
             let mut f = f.allow_in();
-            f.require_precedence(Precedence::Normal).node(
-                &self.right,
-            )?;
+            f.require_precedence(Precedence::Normal).node(&self.right)?;
         }
         f.punctuator(Punctuator::ParenR);
 
@@ -532,9 +527,7 @@ impl NodeDisplay for WhileStatement {
         f.punctuator(Punctuator::ParenL);
         {
             let mut f = f.allow_in();
-            f.require_precedence(Precedence::Normal).node(
-                &self.test,
-            )?;
+            f.require_precedence(Precedence::Normal).node(&self.test)?;
         }
         f.punctuator(Punctuator::ParenR);
         f.node(&self.body)
@@ -561,9 +554,7 @@ impl NodeDisplay for DoWhileStatement {
         f.punctuator(Punctuator::ParenL);
         {
             let mut f = f.allow_in();
-            f.require_precedence(Precedence::Normal).node(
-                &self.test,
-            )?;
+            f.require_precedence(Precedence::Normal).node(&self.test)?;
         }
         f.punctuator(Punctuator::ParenR);
         f.punctuator(Punctuator::Semicolon);
@@ -636,9 +627,7 @@ impl NodeDisplay for WithStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::With);
         f.punctuator(Punctuator::ParenL);
-        f.require_precedence(Precedence::Normal).node(
-            &self.object,
-        )?;
+        f.require_precedence(Precedence::Normal).node(&self.object)?;
         f.punctuator(Punctuator::ParenR);
         f.node(&self.body)
     }

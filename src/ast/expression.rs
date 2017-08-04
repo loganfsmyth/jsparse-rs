@@ -1,6 +1,7 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
+                   HasInOperator, FirstSpecialToken, SpecialToken};
 
 // use super::misc;
 use ast::alias;
@@ -8,7 +9,7 @@ use ast::alias;
 
 use ast::patterns::{LeftHandSimpleAssign, LeftHandComplexAssign};
 use ast::statement::BlockStatement;
-use ast::general::{PropertyIdentifier};
+use ast::general::PropertyIdentifier;
 
 
 // this
@@ -46,9 +47,7 @@ node!(pub struct TaggedTemplateLiteral {
 });
 impl NodeDisplay for TaggedTemplateLiteral {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.require_precedence(Precedence::Member).node(
-            &self.tag,
-        )?;
+        f.require_precedence(Precedence::Member).node(&self.tag)?;
         f.node(&self.template)
     }
 }
@@ -125,9 +124,7 @@ impl NodeDisplay for CallArguments {
 
         if let Some(ref spread) = self.spread {
             f.punctuator(Punctuator::Comma);
-            f.require_precedence(Precedence::Assignment).node(
-                spread,
-            )?;
+            f.require_precedence(Precedence::Assignment).node(spread)?;
         }
 
         f.punctuator(Punctuator::ParenR);
@@ -143,9 +140,7 @@ node!(pub struct CallExpression {
 });
 impl NodeDisplay for CallExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.require_precedence(Precedence::New).node(
-            &self.callee,
-        )?;
+        f.require_precedence(Precedence::New).node(&self.callee)?;
         if self.optional {
             f.punctuator(Punctuator::Question);
         }
@@ -168,9 +163,7 @@ node!(pub struct NewExpression {
 impl NodeDisplay for NewExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::New);
-        f.require_precedence(Precedence::New).node(
-            &self.callee,
-        )?;
+        f.require_precedence(Precedence::New).node(&self.callee)?;
         f.node(&self.arguments)
     }
 }
@@ -221,9 +214,7 @@ node!(pub struct MemberExpression {
 });
 impl NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.require_precedence(Precedence::Member).node(
-            &self.object,
-        )?;
+        f.require_precedence(Precedence::Member).node(&self.object)?;
         if self.optional {
             f.punctuator(Punctuator::Question);
         }
@@ -304,27 +295,19 @@ impl NodeDisplay for UpdateExpression {
             UpdateOperator::PreIncrement => {
                 f.punctuator(Punctuator::PlusPlus);
                 f.node(&self.value)?;
-                f.require_precedence(Precedence::Unary).node(
-                    &self.value,
-                )
+                f.require_precedence(Precedence::Unary).node(&self.value)
             }
             UpdateOperator::PreDecrement => {
                 f.punctuator(Punctuator::MinusMinus);
-                f.require_precedence(Precedence::Unary).node(
-                    &self.value,
-                )
+                f.require_precedence(Precedence::Unary).node(&self.value)
             }
             UpdateOperator::PostIncrement => {
-                f.require_precedence(Precedence::LeftHand).node(
-                    &self.value,
-                )?;
+                f.require_precedence(Precedence::LeftHand).node(&self.value)?;
                 f.punctuator(Punctuator::PlusPlus);
                 Ok(())
             }
             UpdateOperator::PostDecrement => {
-                f.require_precedence(Precedence::LeftHand).node(
-                    &self.value,
-                )?;
+                f.require_precedence(Precedence::LeftHand).node(&self.value)?;
                 f.punctuator(Punctuator::MinusMinus);
                 Ok(())
             }
@@ -383,9 +366,7 @@ impl NodeDisplay for UnaryExpression {
             UnaryOperator::Bind => f.punctuator(Punctuator::Bind),
         }
 
-        f.require_precedence(Precedence::Unary).node(
-            &self.value,
-        )
+        f.require_precedence(Precedence::Unary).node(&self.value)
     }
 }
 impl FirstSpecialToken for UnaryExpression {}
@@ -436,68 +417,65 @@ impl NodeDisplay for BinaryExpression {
                 let mut f = f.precedence(Precedence::Additive);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::Plus);
-                f.require_precedence(Precedence::Multiplicative)
-                    .node(&self.right)?;
+                f.require_precedence(Precedence::Multiplicative).node(
+                    &self.right,
+                )?;
             }
             BinaryOperator::Subtract => {
                 let mut f = f.precedence(Precedence::Additive);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::Minus);
-                f.require_precedence(Precedence::Multiplicative)
-                    .node(&self.right)?;
+                f.require_precedence(Precedence::Multiplicative).node(
+                    &self.right,
+                )?;
             }
             BinaryOperator::LeftShift => {
                 let mut f = f.precedence(Precedence::Shift);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::LAngleAngle);
-                f.require_precedence(Precedence::Additive).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Additive).node(&self.right)?;
             }
             BinaryOperator::RightShift => {
                 let mut f = f.precedence(Precedence::Shift);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::RAngleAngle);
-                f.require_precedence(Precedence::Additive).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Additive).node(&self.right)?;
             }
             BinaryOperator::RightShiftSigned => {
                 let mut f = f.precedence(Precedence::Shift);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::RAngleAngleAngle);
-                f.require_precedence(Precedence::Additive).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Additive).node(&self.right)?;
             }
             BinaryOperator::Divide => {
                 let mut f = f.precedence(Precedence::Multiplicative);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::Slash);
-                f.require_precedence(Precedence::Exponential)
-                    .node(&self.right)?;
+                f.require_precedence(Precedence::Exponential).node(
+                    &self.right,
+                )?;
             }
             BinaryOperator::Multiply => {
                 let mut f = f.precedence(Precedence::Multiplicative);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::Star);
-                f.require_precedence(Precedence::Exponential)
-                    .node(&self.right)?;
+                f.require_precedence(Precedence::Exponential).node(
+                    &self.right,
+                )?;
             }
             BinaryOperator::Modulus => {
                 let mut f = f.precedence(Precedence::Multiplicative);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::Mod);
-                f.require_precedence(Precedence::Exponential)
-                    .node(&self.right)?;
+                f.require_precedence(Precedence::Exponential).node(
+                    &self.right,
+                )?;
             }
             BinaryOperator::BitAnd => {
                 let mut f = f.precedence(Precedence::BitwiseAnd);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::Amp);
-                f.require_precedence(Precedence::Equality).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Equality).node(&self.right)?;
             }
             BinaryOperator::BitOr => {
                 let mut f = f.precedence(Precedence::BitwiseOr);
@@ -519,8 +497,9 @@ impl NodeDisplay for BinaryExpression {
                 let mut f = f.precedence(Precedence::Update);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::StarStar);
-                f.require_precedence(Precedence::Exponential)
-                    .node(&self.right)?;
+                f.require_precedence(Precedence::Exponential).node(
+                    &self.right,
+                )?;
             }
             BinaryOperator::Compare => {
                 let mut f = f.precedence(Precedence::Equality);
@@ -558,49 +537,37 @@ impl NodeDisplay for BinaryExpression {
                 let mut f = f.precedence(Precedence::Relational);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::LAngle);
-                f.require_precedence(Precedence::Shift).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Shift).node(&self.right)?;
             }
             BinaryOperator::LessThanEq => {
                 let mut f = f.precedence(Precedence::Relational);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::LAngleEq);
-                f.require_precedence(Precedence::Shift).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Shift).node(&self.right)?;
             }
             BinaryOperator::GreaterThan => {
                 let mut f = f.precedence(Precedence::Relational);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::RAngle);
-                f.require_precedence(Precedence::Shift).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Shift).node(&self.right)?;
             }
             BinaryOperator::GreaterThanEq => {
                 let mut f = f.precedence(Precedence::Relational);
                 f.node(&self.left)?;
                 f.punctuator(Punctuator::RAngleEq);
-                f.require_precedence(Precedence::Shift).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Shift).node(&self.right)?;
             }
             BinaryOperator::In => {
                 let mut f = f.precedence(Precedence::Relational);
                 f.node(&self.left)?;
                 f.keyword(Keyword::In);
-                f.require_precedence(Precedence::Shift).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Shift).node(&self.right)?;
             }
             BinaryOperator::Instanceof => {
                 let mut f = f.precedence(Precedence::Relational);
                 f.node(&self.left)?;
                 f.keyword(Keyword::Instanceof);
-                f.require_precedence(Precedence::Shift).node(
-                    &self.right,
-                )?;
+                f.require_precedence(Precedence::Shift).node(&self.right)?;
             }
             BinaryOperator::And => {
                 let mut f = f.precedence(Precedence::LogicalAnd);
@@ -683,9 +650,7 @@ impl NodeDisplay for ConditionalExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.precedence(Precedence::Conditional);
 
-        f.require_precedence(Precedence::LogicalOr).node(
-            &self.test,
-        )?;
+        f.require_precedence(Precedence::LogicalOr).node(&self.test)?;
         f.punctuator(Punctuator::Question);
         {
             let mut f = f.allow_in();
@@ -720,9 +685,7 @@ node!(pub struct AssignmentExpression {
 });
 impl NodeDisplay for AssignmentExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.require_precedence(Precedence::LeftHand).node(
-            &self.left,
-        )?;
+        f.require_precedence(Precedence::LeftHand).node(&self.left)?;
         f.punctuator(Punctuator::Eq);
         f.require_precedence(Precedence::Assignment).node(
             &self.right,
@@ -763,9 +726,7 @@ node_kind!(pub enum AssignmentUpdateOperator {
 });
 impl NodeDisplay for AssignmentUpdateExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.require_precedence(Precedence::LeftHand).node(
-            &self.left,
-        )?;
+        f.require_precedence(Precedence::LeftHand).node(&self.left)?;
         match self.operator {
             AssignmentUpdateOperator::Add => f.punctuator(Punctuator::Plus),
             AssignmentUpdateOperator::Subtract => f.punctuator(Punctuator::Subtract),

@@ -3,7 +3,7 @@ use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Pr
 use ast::general::{BindingIdentifier, PropertyIdentifier};
 use ast::alias;
 
-use ast::expression::{CallArguments};
+use ast::expression::CallArguments;
 
 // experimental
 // TODO: Enum fix

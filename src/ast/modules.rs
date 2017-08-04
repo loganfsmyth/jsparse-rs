@@ -1,10 +1,11 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
+                   FirstSpecialToken, SpecialToken};
 
 use ast::statement::{VariableStatement, LetDeclaration, ConstDeclaration};
-use ast::classes::{ClassDeclaration};
-use ast::functions::{FunctionDeclaration};
+use ast::classes::ClassDeclaration;
+use ast::functions::FunctionDeclaration;
 use ast::literal::String;
 use ast::alias;
 

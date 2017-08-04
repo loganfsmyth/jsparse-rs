@@ -253,7 +253,9 @@ macro_rules! display_dsl {
 
     ($name:ident : $($t:tt)*) => {
         impl $crate::ast::display::NodeDisplay for $name {
-            fn fmt(&self, f: &mut $crate::ast::display::NodeFormatter) -> $crate::ast::display::NodeDisplayResult {
+            fn fmt(&self, f: &mut $crate::ast::display::NodeFormatter)
+                -> $crate::ast::display::NodeDisplayResult
+            {
                 display_dsl!(@dsl self f $($t)*);
 
                 Ok(())

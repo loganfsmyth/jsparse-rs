@@ -1,9 +1,10 @@
 use std::string;
 use std::default;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
+                   HasInOperator, FirstSpecialToken, SpecialToken};
 
-use ast::general::{BindingIdentifier};
+use ast::general::BindingIdentifier;
 use ast::alias;
 use ast::patterns::Pattern;
 

@@ -53,7 +53,6 @@ pub enum Punctuator {
 
     Caret,
     // BitwiseXor,
-
     LAngle,
     LAngleEq,
     LAngleAngle,

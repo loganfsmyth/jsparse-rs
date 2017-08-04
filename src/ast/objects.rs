@@ -1,6 +1,7 @@
 use std::default;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
+                   HasInOperator, FirstSpecialToken, SpecialToken};
 
 use ast::alias;
 
@@ -23,9 +24,7 @@ impl NodeDisplay for ObjectExpression {
                 f.punctuator(Punctuator::Comma);
             }
 
-            f.require_precedence(Precedence::Assignment).node(
-                expr,
-            )?;
+            f.require_precedence(Precedence::Assignment).node(expr)?;
         }
 
         Ok(())
@@ -62,7 +61,7 @@ impl default::Default for MethodKind {
 impl NodeDisplay for MethodKind {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         match *self {
-            MethodKind::Normal => {},
+            MethodKind::Normal => {}
             MethodKind::Generator => f.punctuator(Punctuator::Star),
             MethodKind::Async => f.keyword(Keyword::Async),
             MethodKind::AsyncGenerator => {
@@ -133,16 +132,12 @@ impl NodeDisplay for ArrayExpression {
 
             if let Some(ref expr) = *el {
                 let mut f = f.allow_in();
-                f.require_precedence(Precedence::Assignment).node(
-                    expr,
-                )?;
+                f.require_precedence(Precedence::Assignment).node(expr)?;
             }
         }
 
         if let Some(ref expr) = self.spread {
-            f.require_precedence(Precedence::Assignment).node(
-                expr,
-            )?;
+            f.require_precedence(Precedence::Assignment).node(expr)?;
         }
 
         Ok(())

@@ -1,4 +1,5 @@
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
+                   HasInOperator, FirstSpecialToken, SpecialToken};
 
 // TODO: Should we have a MethodBody?
 use ast::functions::{FunctionParams, FunctionBody};
@@ -16,7 +17,8 @@ node!(#[derive(Default)] pub struct ExportDefaultClassDeclaration {
     pub body: ClassBody,
 });
 
-// display_dsl!(ExportDefaultClassDeclaration: export default @[decorators] class @?id @?extends[extends @] @body);
+// display_dsl!(ExportDefaultClassDeclaration:
+//   export default @[decorators] class @?id @?extends[extends @] @body);
 
 impl NodeDisplay for ExportDefaultClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -32,9 +34,7 @@ impl NodeDisplay for ExportDefaultClassDeclaration {
         }
         if let Some(ref extends) = self.extends {
             f.keyword(Keyword::Extends);
-            f.require_precedence(Precedence::LeftHand).node(
-                extends,
-            )?;
+            f.require_precedence(Precedence::LeftHand).node(extends)?;
         }
         f.node(&self.body)
     }
@@ -48,7 +48,8 @@ node!(pub struct ClassDeclaration {
     pub extends: Option<Box<alias::Expression>>,
     pub body: ClassBody,
 });
-// display_dsl!(ClassDeclaration: export default @[decorators] class @id @?extends[extends @] @body);
+// display_dsl!(ClassDeclaration:
+//   export default @[decorators] class @id @?extends[extends @] @body);
 
 impl NodeDisplay for ClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -62,9 +63,7 @@ impl NodeDisplay for ClassDeclaration {
 
         if let Some(ref expr) = self.extends {
             f.keyword(Keyword::Extends);
-            f.require_precedence(Precedence::LeftHand).node(
-                expr,
-            )?;
+            f.require_precedence(Precedence::LeftHand).node(expr)?;
         }
 
         f.node(&self.body)
@@ -94,9 +93,7 @@ impl NodeDisplay for ClassExpression {
         }
         if let Some(ref expr) = self.extends {
             f.keyword(Keyword::Extends);
-            f.require_precedence(Precedence::LeftHand).node(
-                expr,
-            )?;
+            f.require_precedence(Precedence::LeftHand).node(expr)?;
         }
 
         f.node(&self.body)
@@ -173,9 +170,7 @@ impl NodeDisplay for ClassField {
 
         if let Some(ref val) = self.value {
             f.punctuator(Punctuator::Eq);
-            f.require_precedence(Precedence::Assignment).node(
-                val,
-            )?;
+            f.require_precedence(Precedence::Assignment).node(val)?;
         }
 
         Ok(())
@@ -242,5 +237,3 @@ impl NodeDisplay for ClassItemDecorator {
         f.node(&self.value)
     }
 }
-
-

@@ -1,10 +1,11 @@
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence,
+                   FirstSpecialToken, SpecialToken};
 
 use ast::alias;
 use ast::general::{BindingIdentifier, PropertyName};
 
 // TODO: Should we split member expression into an member access and member assign?
-use ast::expression::{MemberExpression};
+use ast::expression::MemberExpression;
 
 node_enum!(@node_display @first_special_token pub enum LeftHandSimpleAssign {
     // TODO: Parenthesized ident and member?
@@ -84,9 +85,7 @@ impl NodeDisplay for ObjectPatternIdentifierProperty {
             let mut f = f.allow_in();
 
             f.punctuator(Punctuator::Eq);
-            f.require_precedence(Precedence::Assignment).node(
-                init,
-            )?;
+            f.require_precedence(Precedence::Assignment).node(init)?;
         }
 
         Ok(())
@@ -106,9 +105,7 @@ impl NodeDisplay for ObjectPatternPatternProperty {
             let mut f = f.allow_in();
 
             f.punctuator(Punctuator::Eq);
-            f.require_precedence(Precedence::Assignment).node(
-                init,
-            )?;
+            f.require_precedence(Precedence::Assignment).node(init)?;
         }
 
         Ok(())
@@ -169,9 +166,7 @@ impl NodeDisplay for ArrayPatternElement {
             let mut f = f.allow_in();
 
             f.punctuator(Punctuator::Eq);
-            f.require_precedence(Precedence::Assignment).node(
-                init,
-            )?;
+            f.require_precedence(Precedence::Assignment).node(init)?;
         }
 
         Ok(())
