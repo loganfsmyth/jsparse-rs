@@ -9,7 +9,7 @@ node_enum!(@node_display pub enum Ast {
 });
 
 
-node!(pub struct Script {
+node!(#[derive(Default)] pub struct Script {
     pub directives: Vec<Directive>,
     pub body: Vec<alias::StatementItem>,
 });
@@ -28,7 +28,7 @@ impl NodeDisplay for Script {
 }
 
 
-node!(pub struct Module {
+node!(#[derive(Default)] pub struct Module {
     pub directives: Vec<Directive>,
     pub body: Vec<alias::ModuleStatementItem>,
 });

@@ -30,7 +30,7 @@ node_enum!(@node_display pub enum Pattern {
 
 
 // ({     } =
-node!(pub struct ObjectPattern {
+node!(#[derive(Default)] pub struct ObjectPattern {
     pub properties: Vec<ObjectPatternProperty>,
     pub rest: Option<Box<LeftHandComplexAssign>>,
 });
@@ -122,7 +122,7 @@ node_enum!(@node_display pub enum ObjectPatternProperty {
 
 
 // ([     ] =
-node!(pub struct ArrayPattern {
+node!(#[derive(Default)] pub struct ArrayPattern {
     pub items: Vec<Option<ArrayPatternElement>>,
     pub rest: Option<Box<Pattern>>,
 });

@@ -9,7 +9,7 @@ use ast::general::{BindingIdentifier, PropertyIdentifier, PropertyName};
 use ast::alias;
 
 // export default class name {}
-node!(pub struct ExportDefaultClassDeclaration {
+node!(#[derive(Default)] pub struct ExportDefaultClassDeclaration {
     pub decorators: Vec<ClassDecorator>, // experimental
     pub id: Option<BindingIdentifier>,
     pub extends: Option<Box<alias::Expression>>,
@@ -73,7 +73,7 @@ impl NodeDisplay for ClassDeclaration {
 
 
 // (class {})
-node!(pub struct ClassExpression {
+node!(#[derive(Default)] pub struct ClassExpression {
     pub decorators: Vec<ClassDecorator>, // experimental
     pub id: Option<BindingIdentifier>,
     pub extends: Option<Box<alias::Expression>>,
@@ -111,7 +111,7 @@ impl HasInOperator for ClassExpression {}
 
 
 
-node!(pub struct ClassBody {
+node!(#[derive(Default)] pub struct ClassBody {
     pub items: Vec<ClassItem>,
 });
 // display_dsl!(ClassBody: { @[items] });
@@ -128,7 +128,7 @@ impl NodeDisplay for ClassBody {
     }
 }
 
-node!(pub struct ClassEmpty {});
+node!(#[derive(Default)] pub struct ClassEmpty {});
 // display_dsl!(ClassEmpty: ;);
 impl NodeDisplay for ClassEmpty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

@@ -1,4 +1,5 @@
 use std::string;
+use std::default;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, FirstSpecialToken, SpecialToken};
 
@@ -25,6 +26,12 @@ node_kind!(pub enum FunctionKind {
     Async,
     AsyncGenerator, // experimental
 });
+impl default::Default for FunctionKind {
+    fn default() -> FunctionKind {
+        FunctionKind::Normal
+    }
+}
+
 impl NodeDisplay for FunctionKind {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         match *self {
@@ -50,7 +57,7 @@ impl NodeDisplay for FunctionKind {
 }
 
 
-node!(pub struct FunctionParams {
+node!(#[derive(Default)] pub struct FunctionParams {
     pub params: Vec<FunctionParam>,
     pub rest: Option<FunctionRestParam>,
 });
@@ -106,7 +113,7 @@ impl NodeDisplay for FunctionRestParam {
 }
 
 
-node!(pub struct FunctionBody {
+node!(#[derive(Default)] pub struct FunctionBody {
     pub directives: Vec<Directive>,
     pub body: Vec<alias::StatementItem>,
 });
@@ -143,7 +150,7 @@ impl NodeDisplay for FunctionParamDecorator {
 
 
 // export default function name() {}
-node!(pub struct ExportDefaultFunctionDeclaration {
+node!(#[derive(Default)] pub struct ExportDefaultFunctionDeclaration {
     pub kind: FunctionKind,
     pub id: Option<BindingIdentifier>,
     pub params: FunctionParams,
@@ -181,7 +188,7 @@ impl NodeDisplay for FunctionDeclaration {
 }
 
 // (function(){})
-node!(pub struct FunctionExpression {
+node!(#[derive(Default)] pub struct FunctionExpression {
     pub kind: FunctionKind,
     pub id: Option<BindingIdentifier>,
     pub params: FunctionParams,
@@ -207,7 +214,7 @@ impl HasInOperator for FunctionExpression {}
 
 
 // (foo) => bar
-node!(pub struct ArrowFunctionExpression {
+node!(#[derive(Default)] pub struct ArrowFunctionExpression {
     // TODO: Needs to handle single-param Ident output as type of params
     pub kind: ArrowFunctionKind,
     pub params: FunctionParams,
@@ -219,6 +226,11 @@ node_kind!(pub enum ArrowFunctionKind {
     Generator, // experimental
     AsyncGenerator, // experimental
 });
+impl default::Default for ArrowFunctionKind {
+    fn default() -> ArrowFunctionKind {
+        ArrowFunctionKind::Normal
+    }
+}
 impl NodeDisplay for ArrowFunctionExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         match self.kind {
@@ -279,3 +291,8 @@ node_enum!(@node_display @has_in_operator pub enum ArrowFunctionBody {
     // TODO: Do we need an async arrow body for fn return val
     Block(FunctionBody),
 });
+impl default::Default for ArrowFunctionBody {
+    fn default() -> ArrowFunctionBody {
+        ArrowFunctionBody::Block(Default::default())
+    }
+}

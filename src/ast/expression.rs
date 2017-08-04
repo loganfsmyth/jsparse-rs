@@ -12,7 +12,7 @@ use ast::general::{PropertyIdentifier};
 
 
 // this
-node!(pub struct ThisExpression {});
+node!(#[derive(Default)] pub struct ThisExpression {});
 impl NodeDisplay for ThisExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::This);
@@ -75,6 +75,7 @@ impl HasInOperator for TemplateLiteral {}
 
 
 // TODO: Enum fix?
+#[derive(Debug)]
 pub enum TemplateLiteralPiece {
     Piece(TemplatePart, Box<alias::Expression>, Box<TemplateLiteralPiece>),
     End(TemplatePart),
@@ -112,7 +113,7 @@ impl NodeDisplay for TemplatePart {
 }
 
 
-node!(pub struct CallArguments {
+node!(#[derive(Default)] pub struct CallArguments {
     pub args: Vec<Box<alias::Expression>>,
     pub spread: Option<Box<alias::Expression>>,
 });
@@ -832,7 +833,7 @@ impl HasInOperator for SequenceExpression {
 }
 
 // do { foo; }
-node!(pub struct DoExpression {
+node!(#[derive(Default)] pub struct DoExpression {
     pub body: BlockStatement,
 });
 impl NodeDisplay for DoExpression {

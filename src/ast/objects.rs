@@ -1,3 +1,5 @@
+use std::default;
+
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, FirstSpecialToken, SpecialToken};
 
 use ast::alias;
@@ -6,7 +8,7 @@ use ast::general::PropertyName;
 use ast::functions::{FunctionParams, FunctionBody};
 
 // {a: 1, ...b}
-node!(pub struct ObjectExpression {
+node!(#[derive(Default)] pub struct ObjectExpression {
     pub properties: Vec<ObjectProperty>,
     pub spread: Option<Box<alias::Expression>>, // experimental
 });
@@ -51,6 +53,12 @@ node_kind!(pub enum MethodKind {
     Get,
     Set,
 });
+impl default::Default for MethodKind {
+    fn default() -> MethodKind {
+        MethodKind::Normal
+    }
+}
+
 impl NodeDisplay for MethodKind {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         match *self {
@@ -107,7 +115,7 @@ impl NodeDisplay for ObjectProperty {
 
 
 // [1, 2, 3, ...4]
-node!(pub struct ArrayExpression {
+node!(#[derive(Default)] pub struct ArrayExpression {
     pub elements: Vec<Option<Box<alias::Expression>>>,
     pub spread: Option<Box<alias::Expression>>,
 });

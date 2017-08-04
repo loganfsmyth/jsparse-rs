@@ -1,4 +1,5 @@
 use std::string;
+use std::default;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasOrphanIf, FirstSpecialToken, SpecialToken};
 
@@ -6,42 +7,10 @@ use ast::patterns::{LeftHandComplexAssign, Pattern};
 
 use ast::alias;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ast::general::BindingIdentifier;
-
-    #[test]
-    fn it_prints_block() {
-        assert_serialize!(
-            BlockStatement,
-            {
-                body: Default::default()
-            },
-            "{}"
-        );
-    }
-
-    #[test]
-    fn it_prints_var() {
-        assert_serialize!(VariableStatement, {
-            declarations: DeclaratorList::Last(VariableDeclarator {
-                id: BindingIdentifier {
-                    value: "myVar".into(),
-                    raw: None,
-                    position: None,
-                }.into(),
-                init: None,
-                position: None,
-            }),
-        }, "var myVar;");
-    }
-
-}
 
 
 // { ... }
-node!(pub struct BlockStatement {
+node!(#[derive(Default)] pub struct BlockStatement {
     pub body: Vec<alias::StatementItem>,
 });
 // display_dsl!(BlockStatement: @in { @[body] });
@@ -59,6 +28,35 @@ impl NodeDisplay for BlockStatement {
     }
 }
 impl HasOrphanIf for BlockStatement {}
+
+#[cfg(test)]
+mod tests_block {
+    use super::*;
+    use ast::general::BindingIdentifier;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            BlockStatement {
+                body: Default::default(),
+                position: None,
+            },
+            "{}"
+        );
+    }
+    #[test]
+    fn it_prints_with_items() {
+        assert_serialize!(
+            BlockStatement {
+                body: vec![
+                    ExpressionStatement::new(BindingIdentifier::new("someWord")).into(),
+                ],
+                position: None,
+            },
+            "{someWord;}"
+        );
+    }
+}
 
 
 // var foo, bar;
@@ -97,7 +95,70 @@ impl NodeDisplay for VariableDeclarator {
     }
 }
 
+#[cfg(test)]
+mod tests_var {
+    use super::*;
+    use ast::general::BindingIdentifier;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(VariableStatement {
+            declarations: DeclaratorList::Last(VariableDeclarator {
+                id: BindingIdentifier {
+                    value: "myVar".into(),
+                    raw: None,
+                    position: None,
+                }.into(),
+                init: None,
+                position: None,
+            }),
+            position: None,
+        }, "var myVar;");
+    }
+
+    #[test]
+    fn it_prints_with_init() {
+        assert_serialize!(VariableStatement {
+            declarations: DeclaratorList::Last(VariableDeclarator {
+                id: BindingIdentifier {
+                    value: "myVar".into(),
+                    raw: None,
+                    position: None,
+                }.into(),
+                init: Some(BindingIdentifier {
+                    value: "initialVal".into(),
+                    raw: None,
+                    position: None,
+                }.into()),
+                position: None,
+            }),
+            position: None,
+        }, "var myVar=initialVal;");
+    }
+
+    // #[test]
+    // fn it_prints_with_pattern() {
+    //     assert_serialize!(VariableStatement {
+    //         declarations: DeclaratorList::Last(VariableDeclarator {
+    //             id: patt {
+    //                 value: "myVar".into(),
+    //                 raw: None,
+    //                 position: None,
+    //             }.into(),
+    //             init: Some(BindingIdentifier {
+    //                 value: "initialVal".into(),
+    //                 raw: None,
+    //                 position: None,
+    //             }.into()),
+    //             position: None,
+    //         }),
+    //         position: None,
+    //     }, "var myVar=initialVal;");
+    // }
+}
+
 // TODO: Enum fix?
+#[derive(Debug)]
 pub enum DeclaratorList<T: NodeDisplay> {
     Last(T),
     List(T, Box<DeclaratorList<T>>),
@@ -177,6 +238,14 @@ impl NodeDisplay for ConstDeclarator {
 node!(pub struct ExpressionStatement {
     pub expression: alias::Expression,
 });
+impl ExpressionStatement {
+    fn new<T: Into<alias::Expression>>(expr: T) -> ExpressionStatement {
+        ExpressionStatement {
+            expression: expr.into(),
+            position: None,
+        }
+    }
+}
 impl NodeDisplay for ExpressionStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
@@ -241,6 +310,17 @@ node!(pub struct ForStatement {
     pub update: Option<Box<alias::Expression>>,
     pub body: Box<alias::Statement>,
 });
+impl default::Default for ForStatement {
+    fn default() -> ForStatement {
+        ForStatement {
+            init: None,
+            test: None,
+            update: None,
+            body: Box::new(BlockStatement::default().into()),
+            position: None,
+        }
+    }
+}
 impl NodeDisplay for ForStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::For);
@@ -522,7 +602,7 @@ impl HasOrphanIf for SwitchStatement {}
 
 // case foo:
 // default:
-node!(pub struct SwitchCase {
+node!(#[derive(Default)] pub struct SwitchCase {
     pub test: Option<Box<alias::Expression>>,
     pub consequent: Vec<alias::StatementItem>,
 });
@@ -573,11 +653,20 @@ impl HasOrphanIf for WithStatement {
 // identifiers used as labels
 node!(pub struct LabelIdentifier {
     pub value: string::String,
-    pub raw: string::String,
+    pub raw: Option<string::String>,
 });
+impl LabelIdentifier {
+    pub fn new<T: Into<string::String>>(s: T) -> LabelIdentifier {
+        LabelIdentifier {
+            value: s.into(),
+            raw: None,
+            position: None,
+        }
+    }
+}
 impl NodeDisplay for LabelIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.identifier(&self.value, Some(&self.raw))
+        f.identifier(&self.value, self.raw.as_ref().map(String::as_str))
     }
 }
 
@@ -620,7 +709,7 @@ impl HasOrphanIf for ThrowStatement {}
 
 
 // try {} catch(foo) {}
-node!(pub struct TryCatchStatement {
+node!(#[derive(Default)] pub struct TryCatchStatement {
     pub block: BlockStatement,
     pub handler: CatchClause,
 });
@@ -635,7 +724,7 @@ impl HasOrphanIf for TryCatchStatement {}
 
 
 // try {} catch(foo) {} finally {}
-node!(pub struct TryCatchFinallyStatement {
+node!(#[derive(Default)] pub struct TryCatchFinallyStatement {
     pub block: BlockStatement,
     pub handler: CatchClause,
     pub finalizer: BlockStatement,
@@ -655,7 +744,7 @@ impl HasOrphanIf for TryCatchFinallyStatement {}
 
 
 // try {} finally {}
-node!(pub struct TryFinallyStatement {
+node!(#[derive(Default)] pub struct TryFinallyStatement {
     pub block: BlockStatement,
     pub finalizer: BlockStatement,
 });
@@ -671,7 +760,7 @@ impl NodeDisplay for TryFinallyStatement {
 impl HasOrphanIf for TryFinallyStatement {}
 
 
-node!(pub struct CatchClause {
+node!(#[derive(Default)] pub struct CatchClause {
     // Missing param is experimental
     pub param: Option<Pattern>,
     pub body: BlockStatement,
@@ -691,7 +780,7 @@ impl NodeDisplay for CatchClause {
 
 // continue;
 // continue foo;
-node!(pub struct ContinueStatement {
+node!(#[derive(Default)] pub struct ContinueStatement {
     pub label: Option<LabelIdentifier>,
 });
 impl NodeDisplay for ContinueStatement {
@@ -708,7 +797,7 @@ impl HasOrphanIf for ContinueStatement {}
 
 // break;
 // break foo;
-node!(pub struct BreakStatement {
+node!(#[derive(Default)] pub struct BreakStatement {
     pub label: Option<LabelIdentifier>,
 });
 impl NodeDisplay for BreakStatement {
@@ -725,7 +814,7 @@ impl HasOrphanIf for BreakStatement {}
 
 // return;
 // return foo;
-node!(pub struct ReturnStatement {
+node!(#[derive(Default)] pub struct ReturnStatement {
     pub argument: Option<Box<alias::Expression>>,
 });
 impl NodeDisplay for ReturnStatement {
@@ -742,7 +831,7 @@ impl HasOrphanIf for ReturnStatement {}
 
 
 // debugger;
-node!(pub struct DebuggerStatement {});
+node!(#[derive(Default)] pub struct DebuggerStatement {});
 impl NodeDisplay for DebuggerStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Debugger);
@@ -753,7 +842,7 @@ impl NodeDisplay for DebuggerStatement {
 impl HasOrphanIf for DebuggerStatement {}
 
 // ;
-node!(pub struct EmptyStatement {});
+node!(#[derive(Default)] pub struct EmptyStatement {});
 impl NodeDisplay for EmptyStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::Semicolon);

@@ -14,13 +14,25 @@ use ast::general::BindingIdentifier;
 // identifiers used as names of imports and exports
 node!(pub struct ModuleIdentifier {
     // Identifier with "default"
-    pub id: string::String,
+    pub value: string::String,
+    pub raw: Option<string::String>,
 });
+
 impl NodeDisplay for ModuleIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.identifier(&self.id, None)
+        f.identifier(&self.value, self.raw.as_ref().map(string::String::as_str))
     }
 }
+impl ModuleIdentifier {
+    pub fn new<T: Into<string::String>>(s: T) -> ModuleIdentifier {
+        ModuleIdentifier {
+            value: s.into(),
+            raw: None,
+            position: None,
+        }
+    }
+}
+
 
 node!(pub struct ImportSpecifier {
     pub local: BindingIdentifier,
@@ -221,7 +233,7 @@ impl NodeDisplay for ExportConstDeclaration {
 
 // export {foo};
 // export {foo as bar};
-node!(pub struct ExportLocalBindings {
+node!(#[derive(Default)] pub struct ExportLocalBindings {
     pub specifiers: Vec<LocalExportSpecifier>,
 });
 impl NodeDisplay for ExportLocalBindings {

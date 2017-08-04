@@ -10,6 +10,16 @@ node!(pub struct BindingIdentifier {
     pub value: string::String,
     pub raw: Option<string::String>,
 });
+impl BindingIdentifier {
+    pub fn new<T: Into<String>>(s: T) -> BindingIdentifier {
+        BindingIdentifier {
+            value: s.into(),
+            raw: None,
+            position: None,
+        }
+    }
+}
+
 impl NodeDisplay for BindingIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.identifier(&self.value, self.raw.as_ref().map(string::String::as_str))
@@ -27,11 +37,20 @@ impl FirstSpecialToken for BindingIdentifier {}
 // identifiers used as properties
 node!(pub struct PropertyIdentifier {
     pub value: string::String,
-    pub raw: string::String,
+    pub raw: Option<string::String>,
 });
+impl PropertyIdentifier {
+    pub fn new<T: Into<String>>(s: T) -> PropertyIdentifier {
+        PropertyIdentifier {
+            value: s.into(),
+            raw: None,
+            position: None,
+        }
+    }
+}
 impl NodeDisplay for PropertyIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.identifier(&self.value, Some(&self.raw))
+        f.identifier(&self.value, self.raw.as_ref().map(String::as_str))
     }
 }
 

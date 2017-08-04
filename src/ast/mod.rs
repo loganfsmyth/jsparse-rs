@@ -1,6 +1,7 @@
 
 macro_rules! node_kind {
     (pub enum $name:ident { $($key:ident ,)* }) => {
+        #[derive(Debug)]
         pub enum $name {
             $($key ,)*
         }
@@ -9,6 +10,7 @@ macro_rules! node_kind {
 
 macro_rules! node_enum_impl {
     ( ( $(@$label:tt)* ) pub enum $id:ident $body:tt ) => {
+        #[derive(Debug)]
         pub enum $id $body
 
         node_enum_impl!(@from $id $body);
@@ -92,15 +94,8 @@ macro_rules! node_enum {
 }
 
 macro_rules! assert_serialize {
-    ($id:ident, { $($key:ident: $val:expr),* $(,)* }, $s:expr) => {
-        {
-            let o = $id {
-                position: None,
-                $($key: $val),*
-            };
-
-            assert_eq!(format!("{}", o), $crate::std::string::String::from($s));
-        }
+    ($item:expr, $s:expr) => {
+        assert_eq!(format!("{}", $item), $crate::std::string::String::from($s));
     };
 }
 
@@ -119,12 +114,24 @@ macro_rules! node_display {
 }
 
 macro_rules! node {
+    (@ensure_debug [ derive( $($t:ident),* )] $item:item) => {
+        #[derive(Debug, $($t),*  )] $item
+    };
     (pub struct $id:ident { $(pub $field_id:ident: $field_type:ty ,)* }) => {
+        #[derive(Debug)]
         pub struct $id {
             // TODO: This 'pub' should be in the declarations themselves.
             $(pub $field_id: $field_type,)*
             pub position: Option<Box<$crate::ast::NodePosition>>,
         }
+        node_display!($id);
+    };
+    (#$meta:tt pub struct $id:ident { $(pub $field_id:ident: $field_type:ty ,)* }) => {
+        node!(@ensure_debug $meta pub struct $id {
+            // TODO: This 'pub' should be in the declarations themselves.
+            $(pub $field_id: $field_type,)*
+            pub position: Option<Box<$crate::ast::NodePosition>>,
+        });
         node_display!($id);
     };
 }
@@ -271,12 +278,14 @@ pub mod patterns;
 pub mod root;
 pub mod statement;
 
-
+#[derive(Debug)]
 pub struct NodePosition {
     pub start: usize,
     pub end: usize,
     pub range: PositionRange,
 }
+
+#[derive(Debug)]
 pub struct PositionRange {
     pub start: (usize, usize),
     pub end: (usize, usize),
