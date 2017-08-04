@@ -1,7 +1,7 @@
 use std::string;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   HasInOperator, FirstSpecialToken, SpecialToken};
+                   FirstSpecialToken, SpecialToken};
 
 // use super::misc;
 use ast::alias;
@@ -25,7 +25,6 @@ impl FirstSpecialToken for ThisExpression {
         SpecialToken::None
     }
 }
-impl HasInOperator for ThisExpression {}
 
 
 node!(pub struct ParenthesizedExpression {
@@ -37,7 +36,6 @@ impl NodeDisplay for ParenthesizedExpression {
     }
 }
 impl FirstSpecialToken for ParenthesizedExpression {}
-impl HasInOperator for ParenthesizedExpression {}
 
 
 // fn`content`
@@ -56,7 +54,6 @@ impl FirstSpecialToken for TaggedTemplateLiteral {
         self.tag.first_special_token()
     }
 }
-impl HasInOperator for TaggedTemplateLiteral {}
 
 
 // `content`
@@ -70,7 +67,6 @@ impl NodeDisplay for TemplateLiteral {
     }
 }
 impl FirstSpecialToken for TemplateLiteral {}
-impl HasInOperator for TemplateLiteral {}
 
 
 // TODO: Enum fix?
@@ -152,7 +148,6 @@ impl FirstSpecialToken for CallExpression {
         self.callee.first_special_token()
     }
 }
-impl HasInOperator for CallExpression {}
 
 
 // new foo()
@@ -168,7 +163,6 @@ impl NodeDisplay for NewExpression {
     }
 }
 impl FirstSpecialToken for NewExpression {}
-impl HasInOperator for NewExpression {}
 
 
 // experimental
@@ -188,7 +182,6 @@ impl NodeDisplay for ImportCallExpression {
     }
 }
 impl FirstSpecialToken for ImportCallExpression {}
-impl HasInOperator for ImportCallExpression {}
 
 
 node!(pub struct SuperCallExpression {
@@ -201,7 +194,7 @@ impl NodeDisplay for SuperCallExpression {
     }
 }
 impl FirstSpecialToken for SuperCallExpression {}
-impl HasInOperator for SuperCallExpression {}
+
 
 // foo.bar
 // foo?.bar
@@ -228,7 +221,6 @@ impl FirstSpecialToken for MemberExpression {
         self.object.first_special_token()
     }
 }
-impl HasInOperator for MemberExpression {}
 
 
 node_enum!(@node_display pub enum PropertyAccess {
@@ -324,7 +316,6 @@ impl FirstSpecialToken for UpdateExpression {
         }
     }
 }
-impl HasInOperator for UpdateExpression {}
 
 
 // void foo
@@ -370,7 +361,6 @@ impl NodeDisplay for UnaryExpression {
     }
 }
 impl FirstSpecialToken for UnaryExpression {}
-impl HasInOperator for UnaryExpression {}
 
 
 // foo OP bar
@@ -558,10 +548,17 @@ impl NodeDisplay for BinaryExpression {
                 f.require_precedence(Precedence::Shift).node(&self.right)?;
             }
             BinaryOperator::In => {
-                let mut f = f.precedence(Precedence::Relational);
-                f.node(&self.left)?;
-                f.keyword(Keyword::In);
-                f.require_precedence(Precedence::Shift).node(&self.right)?;
+                if f.in_allowed() {
+                    let mut f = f.precedence(Precedence::Relational);
+                    f.node(&self.left)?;
+                    f.keyword(Keyword::In);
+                    f.require_precedence(Precedence::Shift).node(&self.right)?;
+                } else {
+                    let mut f = f.wrap_parens();
+                    f.node(&self.left)?;
+                    f.keyword(Keyword::In);
+                    f.require_precedence(Precedence::Shift).node(&self.right)?;
+                }
             }
             BinaryOperator::Instanceof => {
                 let mut f = f.precedence(Precedence::Relational);
@@ -601,43 +598,6 @@ impl FirstSpecialToken for BinaryExpression {
         self.left.first_special_token()
     }
 }
-impl HasInOperator for BinaryExpression {
-    fn has_in_operator(&self) -> bool {
-        match self.operator {
-            BinaryOperator::Add => false,
-            BinaryOperator::Subtract => false,
-            BinaryOperator::LeftShift => false,
-            BinaryOperator::RightShift => false,
-            BinaryOperator::RightShiftSigned => false,
-            BinaryOperator::Divide => false,
-            BinaryOperator::Multiply => false,
-            BinaryOperator::Modulus => false,
-            BinaryOperator::BitAnd => self.left.has_in_operator() || self.right.has_in_operator(),
-            BinaryOperator::BitOr => self.left.has_in_operator() || self.right.has_in_operator(),
-            BinaryOperator::BitXor => self.left.has_in_operator() || self.right.has_in_operator(),
-            BinaryOperator::Power => false,
-            BinaryOperator::Compare => self.left.has_in_operator() || self.right.has_in_operator(),
-            BinaryOperator::StrictCompare => {
-                self.left.has_in_operator() || self.right.has_in_operator()
-            }
-            BinaryOperator::NegateCompare => {
-                self.left.has_in_operator() || self.right.has_in_operator()
-            }
-            BinaryOperator::NegateStrictCompare => {
-                self.left.has_in_operator() || self.right.has_in_operator()
-            }
-            BinaryOperator::LessThan => self.left.has_in_operator(),
-            BinaryOperator::LessThanEq => self.left.has_in_operator(),
-            BinaryOperator::GreaterThan => self.left.has_in_operator(),
-            BinaryOperator::GreaterThanEq => self.left.has_in_operator(),
-            BinaryOperator::In => true,
-            BinaryOperator::Instanceof => self.left.has_in_operator(),
-            BinaryOperator::And => self.left.has_in_operator() || self.right.has_in_operator(),
-            BinaryOperator::Or => self.left.has_in_operator() || self.right.has_in_operator(),
-            BinaryOperator::Bind => false,
-        }
-    }
-}
 
 
 // foo ? bar : baz
@@ -671,11 +631,6 @@ impl FirstSpecialToken for ConditionalExpression {
         self.test.first_special_token()
     }
 }
-impl HasInOperator for ConditionalExpression {
-    fn has_in_operator(&self) -> bool {
-        self.test.has_in_operator()
-    }
-}
 
 
 // foo = bar
@@ -695,11 +650,6 @@ impl NodeDisplay for AssignmentExpression {
 impl FirstSpecialToken for AssignmentExpression {
     fn first_special_token(&self) -> SpecialToken {
         self.left.first_special_token()
-    }
-}
-impl HasInOperator for AssignmentExpression {
-    fn has_in_operator(&self) -> bool {
-        self.right.has_in_operator()
     }
 }
 
@@ -754,11 +704,6 @@ impl FirstSpecialToken for AssignmentUpdateExpression {
         self.left.first_special_token()
     }
 }
-impl HasInOperator for AssignmentUpdateExpression {
-    fn has_in_operator(&self) -> bool {
-        self.right.has_in_operator()
-    }
-}
 
 
 // foo, bar
@@ -787,11 +732,6 @@ impl FirstSpecialToken for SequenceExpression {
         self.left.first_special_token()
     }
 }
-impl HasInOperator for SequenceExpression {
-    fn has_in_operator(&self) -> bool {
-        self.left.has_in_operator() || self.right.has_in_operator()
-    }
-}
 
 // do { foo; }
 node!(#[derive(Default)] pub struct DoExpression {
@@ -808,7 +748,6 @@ impl FirstSpecialToken for DoExpression {
         SpecialToken::Declaration
     }
 }
-impl HasInOperator for DoExpression {}
 
 
 // new.target
@@ -850,7 +789,6 @@ impl NodeDisplay for MetaProperty {
     }
 }
 impl FirstSpecialToken for MetaProperty {}
-impl HasInOperator for MetaProperty {}
 
 
 // super.foo
@@ -865,7 +803,6 @@ impl NodeDisplay for SuperMemberExpression {
     }
 }
 impl FirstSpecialToken for SuperMemberExpression {}
-impl HasInOperator for SuperMemberExpression {}
 
 
 node_enum!(@node_display pub enum SuperMemberAccess {

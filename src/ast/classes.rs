@@ -1,5 +1,5 @@
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   HasInOperator, FirstSpecialToken, SpecialToken};
+                   FirstSpecialToken, SpecialToken};
 
 // TODO: Should we have a MethodBody?
 use ast::functions::{FunctionParams, FunctionBody};
@@ -104,8 +104,6 @@ impl FirstSpecialToken for ClassExpression {
         SpecialToken::Declaration
     }
 }
-impl HasInOperator for ClassExpression {}
-
 
 
 node!(#[derive(Default)] pub struct ClassBody {

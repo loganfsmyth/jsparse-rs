@@ -2,7 +2,7 @@ use std::string;
 use std::default;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   HasInOperator, FirstSpecialToken, SpecialToken};
+                   FirstSpecialToken, SpecialToken};
 
 use ast::general::BindingIdentifier;
 use ast::alias;
@@ -133,11 +133,6 @@ impl NodeDisplay for FunctionBody {
         Ok(())
     }
 }
-impl HasInOperator for FunctionBody {
-    fn has_in_operator(&self) -> bool {
-        false
-    }
-}
 
 node!(pub struct FunctionParamDecorator {
     pub value: DecoratorValue,
@@ -211,7 +206,6 @@ impl FirstSpecialToken for FunctionExpression {
         SpecialToken::Declaration
     }
 }
-impl HasInOperator for FunctionExpression {}
 
 
 // (foo) => bar
@@ -259,11 +253,6 @@ impl NodeDisplay for ArrowFunctionExpression {
     }
 }
 impl FirstSpecialToken for ArrowFunctionExpression {}
-impl HasInOperator for ArrowFunctionExpression {
-    fn has_in_operator(&self) -> bool {
-        self.body.has_in_operator()
-    }
-}
 
 
 node!(pub struct ArrowFunctionExpressionBody {
@@ -280,14 +269,9 @@ impl NodeDisplay for ArrowFunctionExpressionBody {
         }
     }
 }
-impl HasInOperator for ArrowFunctionExpressionBody {
-    fn has_in_operator(&self) -> bool {
-        self.expression.has_in_operator()
-    }
-}
 
 
-node_enum!(@node_display @has_in_operator pub enum ArrowFunctionBody {
+node_enum!(@node_display pub enum ArrowFunctionBody {
     Expression(ArrowFunctionExpressionBody),
     // TODO: Do we need an async arrow body for fn return val
     Block(FunctionBody),

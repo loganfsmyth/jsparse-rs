@@ -167,12 +167,6 @@ pub trait HasOrphanIf {
     }
 }
 
-pub trait HasInOperator {
-    fn has_in_operator(&self) -> bool {
-        false
-    }
-}
-
 pub enum SpecialToken {
     None,
     Declaration,
@@ -229,6 +223,10 @@ impl NodeFormatter {
         let mut lock = CacheIn::new(self);
         lock.in_operator = false;
         lock
+    }
+
+    pub fn in_allowed(&self) -> bool {
+        self.in_operator
     }
 
     pub fn wrap_parens(&mut self) -> WrapParens {

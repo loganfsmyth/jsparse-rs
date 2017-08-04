@@ -27,17 +27,6 @@ macro_rules! node_enum_impl {
             }
         )*
     };
-    (@has_in_operator $name:ident { $( $key:ident($type:ty) ,)* }) => {
-        impl $crate::ast::display::HasInOperator for $name {
-            fn has_in_operator(&self) -> bool {
-                match *self {
-                    $(
-                        $name::$key(ref n) => n.has_in_operator(),
-                    )*
-                }
-            }
-        }
-    };
     (@node_display $name:ident { $( $key:ident($type:ty) ,)* }) => {
         impl $crate::ast::display::NodeDisplay for $name {
             fn fmt(&self, f: &mut $crate::ast::display::NodeFormatter)

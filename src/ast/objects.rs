@@ -1,7 +1,7 @@
 use std::default;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   HasInOperator, FirstSpecialToken, SpecialToken};
+                   FirstSpecialToken, SpecialToken};
 
 use ast::alias;
 
@@ -35,7 +35,6 @@ impl FirstSpecialToken for ObjectExpression {
         SpecialToken::Object
     }
 }
-impl HasInOperator for ObjectExpression {}
 
 
 node_enum!(@node_display pub enum ObjectItem {
@@ -144,4 +143,3 @@ impl NodeDisplay for ArrayExpression {
     }
 }
 impl FirstSpecialToken for ArrayExpression {}
-impl HasInOperator for ArrayExpression {}

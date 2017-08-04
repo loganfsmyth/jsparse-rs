@@ -1,7 +1,7 @@
 use std::string;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence,
-                   HasInOperator, FirstSpecialToken};
+                   FirstSpecialToken};
 
 use ast::alias;
 
@@ -46,11 +46,6 @@ impl NodeDisplay for Element {
         }
 
         Ok(())
-    }
-}
-impl HasInOperator for Element {
-    fn has_in_operator(&self) -> bool {
-        false
     }
 }
 impl FirstSpecialToken for Element {}

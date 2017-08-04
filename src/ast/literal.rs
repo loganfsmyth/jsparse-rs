@@ -1,6 +1,6 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, HasInOperator,
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword,
                    FirstSpecialToken};
 // use super::misc;
 
@@ -46,11 +46,6 @@ impl NodeDisplay for Null {
         Ok(())
     }
 }
-impl HasInOperator for Null {
-    fn has_in_operator(&self) -> bool {
-        false
-    }
-}
 impl FirstSpecialToken for Null {}
 
 
@@ -68,11 +63,6 @@ impl NodeDisplay for Boolean {
         Ok(())
     }
 }
-impl HasInOperator for Boolean {
-    fn has_in_operator(&self) -> bool {
-        false
-    }
-}
 impl FirstSpecialToken for Boolean {}
 
 
@@ -86,11 +76,6 @@ impl NodeDisplay for Numeric {
         f.number(&self.value, self.raw.as_ref().map(string::String::as_str))
     }
 }
-impl HasInOperator for Numeric {
-    fn has_in_operator(&self) -> bool {
-        false
-    }
-}
 impl FirstSpecialToken for Numeric {}
 
 
@@ -102,11 +87,6 @@ node!(pub struct String {
 impl NodeDisplay for String {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.string(&self.value, self.raw.as_ref().map(string::String::as_str))
-    }
-}
-impl HasInOperator for String {
-    fn has_in_operator(&self) -> bool {
-        false
     }
 }
 impl FirstSpecialToken for String {}
@@ -123,4 +103,3 @@ impl NodeDisplay for RegExp {
     }
 }
 impl FirstSpecialToken for RegExp {}
-impl HasInOperator for RegExp {}

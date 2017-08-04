@@ -170,7 +170,7 @@ node_enum!(@node_display @orphan_if pub enum Statement {
 });
 
 
-node_enum!(@node_display @has_in_operator @first_special_token pub enum Expression {
+node_enum!(@node_display @first_special_token pub enum Expression {
     Binding(general::BindingIdentifier),
     This(expression::ThisExpression),
     Array(objects::ArrayExpression),

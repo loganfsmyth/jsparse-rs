@@ -1,7 +1,7 @@
 use std::string;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence,
-                   HasInOperator, FirstSpecialToken};
+                   FirstSpecialToken};
 use ast::alias;
 use ast::literal;
 
@@ -24,11 +24,6 @@ impl BindingIdentifier {
 impl NodeDisplay for BindingIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.identifier(&self.value, self.raw.as_ref().map(string::String::as_str))
-    }
-}
-impl HasInOperator for BindingIdentifier {
-    fn has_in_operator(&self) -> bool {
-        false
     }
 }
 impl FirstSpecialToken for BindingIdentifier {}
