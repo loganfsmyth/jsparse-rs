@@ -1,16 +1,15 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, HasOrphanIf, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasOrphanIf, FirstSpecialToken, SpecialToken};
 
 use ast::patterns::{LeftHandComplexAssign, Pattern};
-use ast::general::{BindingIdentifier};
 
 use ast::alias;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::*;
+    use ast::general::BindingIdentifier;
 
     #[test]
     fn it_prints_block() {

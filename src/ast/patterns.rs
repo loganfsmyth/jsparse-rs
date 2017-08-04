@@ -1,4 +1,4 @@
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence, FirstSpecialToken, SpecialToken};
 
 use ast::alias;
 use ast::general::{BindingIdentifier, PropertyName};

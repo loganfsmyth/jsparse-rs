@@ -1,6 +1,6 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, FirstSpecialToken, SpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, FirstSpecialToken, SpecialToken};
 
 use ast::statement::{VariableStatement, LetDeclaration, ConstDeclaration};
 use ast::classes::{ClassDeclaration};

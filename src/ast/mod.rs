@@ -122,7 +122,7 @@ macro_rules! node {
     (pub struct $id:ident { $($field_id:ident: $field_type:ty ,)* }) => {
         pub struct $id {
             $($field_id: $field_type,)*
-            position: Option<Box<$crate::ast::NodePosition>>,
+            pub position: Option<Box<$crate::ast::NodePosition>>,
         }
         node_display!($id);
     };
