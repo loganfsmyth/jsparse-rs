@@ -1,25 +1,28 @@
-use super::statement;
-use super::declaration;
-use super::expression;
-use super::jsx;
-use super::misc;
-use super::literal;
-use super::modules;
+use ast::statement;
+use ast::expression;
+use ast::jsx;
+use ast::literal;
+use ast::modules;
+use ast::objects;
+use ast::classes;
+use ast::functions;
+use ast::general;
 
 
 node_enum!(@node_display pub enum Function {
-    DefaultDeclaration(modules::ExportDefaultFunctionDeclaration),
-    Declaration(declaration::FunctionDeclaration),
-    Expression(expression::FunctionExpression),
-    ClassMethod(misc::ClassMethod),
-    ObjectMethod(expression::ObjectMethod),
-    Arrow(expression::ArrowFunctionExpression),
+    // TODO: Should the method types be in here? What is the goal of this node type?
+    ClassMethod(classes::ClassMethod),
+    ObjectMethod(objects::ObjectMethod),
+    DefaultDeclaration(functions::ExportDefaultFunctionDeclaration),
+    Declaration(functions::FunctionDeclaration),
+    Expression(functions::FunctionExpression),
+    Arrow(functions::ArrowFunctionExpression),
 });
 
 
 node_enum!(@node_display pub enum Method {
-    ClassMethod(misc::ClassMethod),
-    ObjectMethod(expression::ObjectMethod),
+    ClassMethod(classes::ClassMethod),
+    ObjectMethod(objects::ObjectMethod),
 });
 
 
@@ -49,14 +52,14 @@ node_enum!(@node_display pub enum ModuleStatementItem {
     Debugger(statement::DebuggerStatement),
 
     // Declarations
-    Function(declaration::FunctionDeclaration),
-    Class(declaration::ClassDeclaration),
-    Let(declaration::LetDeclaration),
-    Const(declaration::ConstDeclaration),
+    Function(functions::FunctionDeclaration),
+    Class(classes::ClassDeclaration),
+    Let(statement::LetDeclaration),
+    Const(statement::ConstDeclaration),
 
     // ExportDeclaration
-    ExportDefaultClass(modules::ExportDefaultClassDeclaration),
-    ExportDefaultFunction(modules::ExportDefaultFunctionDeclaration),
+    ExportDefaultClass(classes::ExportDefaultClassDeclaration),
+    ExportDefaultFunction(functions::ExportDefaultFunctionDeclaration),
     ExportDefaultExpression(modules::ExportDefaultExpression),
     ExportClass(modules::ExportClassDeclaration),
     ExportFunction(modules::ExportFunctionDeclaration),
@@ -106,10 +109,10 @@ node_enum!(@node_display pub enum StatementItem {
     Debugger(statement::DebuggerStatement),
 
     // Declarations
-    Function(declaration::FunctionDeclaration),
-    Class(declaration::ClassDeclaration),
-    Let(declaration::LetDeclaration),
-    Const(declaration::ConstDeclaration),
+    Function(functions::FunctionDeclaration),
+    Class(classes::ClassDeclaration),
+    Let(statement::LetDeclaration),
+    Const(statement::ConstDeclaration),
 });
 impl From<Statement> for StatementItem {
     fn from(stmt: Statement) -> StatementItem {
@@ -168,16 +171,16 @@ node_enum!(@node_display @orphan_if pub enum Statement {
 
 
 node_enum!(@node_display @has_in_operator @first_special_token pub enum Expression {
-    Binding(misc::BindingIdentifier),
+    Binding(general::BindingIdentifier),
     This(expression::ThisExpression),
-    Array(expression::ArrayExpression),
-    Object(expression::ObjectExpression),
+    Array(objects::ArrayExpression),
+    Object(objects::ObjectExpression),
     Null(literal::Null),
     Boolean(literal::Boolean),
     Numeric(literal::Numeric),
     String(literal::String),
-    Function(expression::FunctionExpression),
-    Class(expression::ClassExpression),
+    Function(functions::FunctionExpression),
+    Class(classes::ClassExpression),
     Regex(literal::RegExp),
     Template(expression::TemplateLiteral),
     Member(expression::MemberExpression),
@@ -193,15 +196,15 @@ node_enum!(@node_display @has_in_operator @first_special_token pub enum Expressi
     Assign(expression::AssignmentExpression),
     AssignUpdate(expression::AssignmentUpdateExpression),
     Sequence(expression::SequenceExpression),
-    Arrow(expression::ArrowFunctionExpression),
+    Arrow(functions::ArrowFunctionExpression),
     Do(expression::DoExpression),
     JSX(jsx::Element),
 });
 
 
 node_enum!(@node_display pub enum ExportDeclaration {
-    DefaultClass(modules::ExportDefaultClassDeclaration),
-    DefaultFunction(modules::ExportDefaultFunctionDeclaration),
+    DefaultClass(classes::ExportDefaultClassDeclaration),
+    DefaultFunction(functions::ExportDefaultFunctionDeclaration),
     DefaultExpression(modules::ExportDefaultExpression),
     Class(modules::ExportClassDeclaration),
     Function(modules::ExportFunctionDeclaration),

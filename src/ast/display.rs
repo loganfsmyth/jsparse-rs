@@ -160,6 +160,32 @@ pub enum Precedence {
     Primary,
 }
 
+pub trait HasOrphanIf {
+    fn orphan_if(&self) -> bool {
+        false
+    }
+}
+
+pub trait HasInOperator {
+    fn has_in_operator(&self) -> bool {
+        false
+    }
+}
+
+pub enum SpecialToken {
+    None,
+    Declaration,
+    Object,
+
+    // TODO: Lookahead needed for :: operator
+    // New,
+}
+pub trait FirstSpecialToken {
+    fn first_special_token(&self) -> SpecialToken {
+        SpecialToken::None
+    }
+}
+
 pub type NodeDisplayResult = Result<(), NodeDisplayError>;
 
 pub struct NodeFormatter {

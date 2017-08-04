@@ -1,10 +1,11 @@
-use super::misc;
-use super::alias;
-use super::display;
+use std::string;
 
-use super::declaration::{LetDeclaration, ConstDeclaration};
-use super::misc::HasOrphanIf;
-use super::misc::FirstSpecialToken;
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, HasOrphanIf, FirstSpecialToken, SpecialToken};
+
+use ast::patterns::{LeftHandComplexAssign, Pattern};
+use ast::general::{BindingIdentifier};
+
+use ast::alias;
 
 #[cfg(test)]
 mod tests {
@@ -25,8 +26,8 @@ mod tests {
     #[test]
     fn it_prints_var() {
         assert_serialize!(VariableStatement, {
-            declarations: VariableDeclaratorList::Declarator(VariableDeclarator {
-                id: misc::BindingIdentifier {
+            declarations: DeclaratorList::Last(VariableDeclarator {
+                id: BindingIdentifier {
                     value: "myVar".into(),
                     raw: None,
                     position: None,
@@ -44,61 +45,91 @@ mod tests {
 node!(pub struct BlockStatement {
     body: Vec<alias::StatementItem>,
 });
-impl display::NodeDisplay for BlockStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for BlockStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
 
-        f.punctuator(display::Punctuator::CurlyL);
+        f.punctuator(Punctuator::CurlyL);
         for item in self.body.iter() {
             f.node(item)?;
         }
-        f.punctuator(display::Punctuator::CurlyR);
+        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
-impl misc::HasOrphanIf for BlockStatement {}
+impl HasOrphanIf for BlockStatement {}
 
 
 // var foo, bar;
 node!(pub struct VariableStatement {
     declarations: VariableDeclaratorList,
 });
-impl display::NodeDisplay for VariableStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for VariableStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.declarations)
     }
 }
-impl misc::HasOrphanIf for VariableStatement {}
+impl HasOrphanIf for VariableStatement {}
 
+type VariableDeclaratorList = DeclaratorList<VariableDeclarator>;
+node!(pub struct VariableDeclarator {
+    id: Pattern,
+    init: Option<alias::Expression>,
+});
+impl NodeDisplay for VariableDeclarator {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.node(&self.id)?;
+        if let Some(ref init) = self.init {
+            f.punctuator(Punctuator::Eq);
+            f.require_precedence(Precedence::Assignment).node(
+                init,
+            )?;
+        }
+        Ok(())
+    }
+}
 
 // TODO: Enum fix?
-pub enum VariableDeclaratorList {
-    Declarator(VariableDeclarator),
-    List(VariableDeclarator, Box<VariableDeclaratorList>),
+pub enum DeclaratorList<T: NodeDisplay> {
+    Last(T),
+    List(T, Box<DeclaratorList<T>>),
 }
-impl display::NodeDisplay for VariableDeclaratorList {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl<T: NodeDisplay> NodeDisplay for DeclaratorList<T> {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         match *self {
-            VariableDeclaratorList::Declarator(ref n) => f.node(n),
-            VariableDeclaratorList::List(ref n, ref list) => {
+            DeclaratorList::Last(ref n) => f.node(n),
+            DeclaratorList::List(ref n, ref list) => {
                 f.node(n)?;
+                f.punctuator(Punctuator::Comma);
                 f.node(list)
             }
         }
     }
 }
 
+// let foo, bar;
+node!(pub struct LetDeclaration {
+    declarators: LetDeclaratorList,
+});
+impl NodeDisplay for LetDeclaration {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Let);
+        f.node(&self.declarators)
+    }
+}
 
-node!(pub struct VariableDeclarator {
-    id: misc::Pattern,
+
+type LetDeclaratorList = DeclaratorList<LetDeclarator>;
+node!(pub struct LetDeclarator {
+    id: Pattern,
     init: Option<alias::Expression>,
 });
-impl display::NodeDisplay for VariableDeclarator {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for LetDeclarator {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.id)?;
         if let Some(ref init) = self.init {
-            f.punctuator(display::Punctuator::Eq);
-            f.require_precedence(display::Precedence::Assignment).node(
+            f.punctuator(Punctuator::Eq);
+            f.require_precedence(Precedence::Assignment).node(
                 init,
             )?;
         }
@@ -107,26 +138,53 @@ impl display::NodeDisplay for VariableDeclarator {
 }
 
 
+// const foo = 4, bar = 5;
+node!(pub struct ConstDeclaration {
+    declarators: ConstDeclaratorList,
+});
+impl NodeDisplay for ConstDeclaration {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Const);
+        f.node(&self.declarators)
+    }
+}
+
+
+type ConstDeclaratorList = DeclaratorList<ConstDeclarator>;
+node!(pub struct ConstDeclarator {
+    id: Pattern,
+    init: alias::Expression,
+});
+impl NodeDisplay for ConstDeclarator {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.node(&self.id)?;
+        f.punctuator(Punctuator::Eq);
+        f.require_precedence(Precedence::Assignment).node(
+            &self.init,
+        )
+    }
+}
+
 // foo;
 node!(pub struct ExpressionStatement {
     expression: alias::Expression,
 });
-impl display::NodeDisplay for ExpressionStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for ExpressionStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
 
-        if let misc::SpecialToken::None = self.expression.first_special_token() {
-            f.require_precedence(display::Precedence::Normal).node(
+        if let SpecialToken::None = self.expression.first_special_token() {
+            f.require_precedence(Precedence::Normal).node(
                 &self.expression,
             )?;
         } else {
             f.wrap_parens().node(&self.expression)?;
         }
-        f.punctuator(display::Punctuator::Semicolon);
+        f.punctuator(Punctuator::Semicolon);
         Ok(())
     }
 }
-impl misc::HasOrphanIf for ExpressionStatement {}
+impl HasOrphanIf for ExpressionStatement {}
 
 
 // if () {}
@@ -135,22 +193,22 @@ node!(pub struct IfStatement {
     consequent: Box<alias::Statement>,
     alternate: Option<Box<alias::Statement>>,
 });
-impl display::NodeDisplay for IfStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::If);
-        f.punctuator(display::Punctuator::ParenL);
+impl NodeDisplay for IfStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::If);
+        f.punctuator(Punctuator::ParenL);
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(
+            f.require_precedence(Precedence::Normal).node(
                 &self.test,
             )?;
         }
-        f.punctuator(display::Punctuator::ParenR);
+        f.punctuator(Punctuator::ParenR);
 
         if self.consequent.orphan_if() {
-            f.punctuator(display::Punctuator::CurlyL);
+            f.punctuator(Punctuator::CurlyL);
             f.node(&self.consequent)?;
-            f.punctuator(display::Punctuator::CurlyR);
+            f.punctuator(Punctuator::CurlyR);
         } else {
             f.node(&self.consequent)?;
         }
@@ -161,7 +219,7 @@ impl display::NodeDisplay for IfStatement {
         Ok(())
     }
 }
-impl misc::HasOrphanIf for IfStatement {
+impl HasOrphanIf for IfStatement {
     fn orphan_if(&self) -> bool {
         self.consequent.orphan_if()
     }
@@ -175,31 +233,31 @@ node!(pub struct ForStatement {
     update: Option<Box<alias::Expression>>,
     body: Box<alias::Statement>,
 });
-impl display::NodeDisplay for ForStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::For);
-        f.punctuator(display::Punctuator::ParenL);
+impl NodeDisplay for ForStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::For);
+        f.punctuator(Punctuator::ParenL);
         if let Some(ref init) = self.init {
             let mut f = f.disallow_in();
             f.node(init)?;
         }
-        f.punctuator(display::Punctuator::Semicolon);
+        f.punctuator(Punctuator::Semicolon);
         if let Some(ref test) = self.test {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(test)?;
+            f.require_precedence(Precedence::Normal).node(test)?;
         }
-        f.punctuator(display::Punctuator::Semicolon);
+        f.punctuator(Punctuator::Semicolon);
         if let Some(ref update) = self.update {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(
+            f.require_precedence(Precedence::Normal).node(
                 update,
             )?;
         }
-        f.punctuator(display::Punctuator::ParenR);
+        f.punctuator(Punctuator::ParenR);
         f.node(&self.body)
     }
 }
-impl misc::HasOrphanIf for ForStatement {
+impl HasOrphanIf for ForStatement {
     fn orphan_if(&self) -> bool {
         self.body.orphan_if()
     }
@@ -223,39 +281,39 @@ node!(pub struct ForInStatement {
     right: Box<alias::Expression>,
     body: Box<alias::Statement>,
 });
-impl display::NodeDisplay for ForInStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::For);
-        f.punctuator(display::Punctuator::ParenL);
+impl NodeDisplay for ForInStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::For);
+        f.punctuator(Punctuator::ParenL);
         f.node(&self.left)?;
-        f.keyword(display::Keyword::In);
+        f.keyword(Keyword::In);
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(
+            f.require_precedence(Precedence::Normal).node(
                 &self.right,
             )?;
         }
-        f.punctuator(display::Punctuator::ParenR);
+        f.punctuator(Punctuator::ParenR);
 
         f.node(&self.body)
     }
 }
-impl misc::HasOrphanIf for ForInStatement {
+impl HasOrphanIf for ForInStatement {
     fn orphan_if(&self) -> bool {
         self.body.orphan_if()
     }
 }
 
 node!(pub struct ForInVarPattern {
-    pattern: misc::Pattern,
+    pattern: Pattern,
     init: Option<alias::Expression>,
 });
-impl display::NodeDisplay for ForInVarPattern {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Var);
+impl NodeDisplay for ForInVarPattern {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Var);
         f.node(&self.pattern)?;
         if let Some(ref init) = self.init {
-            f.punctuator(display::Punctuator::Eq);
+            f.punctuator(Punctuator::Eq);
             f.node(init)?;
         }
         Ok(())
@@ -264,33 +322,33 @@ impl display::NodeDisplay for ForInVarPattern {
 
 
 node!(pub struct ForVarPattern {
-    pattern: misc::Pattern,
+    pattern: Pattern,
 });
-impl display::NodeDisplay for ForVarPattern {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Var);
+impl NodeDisplay for ForVarPattern {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Var);
         f.node(&self.pattern)
     }
 }
 
 
 node!(pub struct ForLetPattern {
-    pattern: misc::Pattern,
+    pattern: Pattern,
 });
-impl display::NodeDisplay for ForLetPattern {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Let);
+impl NodeDisplay for ForLetPattern {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Let);
         f.node(&self.pattern)
     }
 }
 
 
 node!(pub struct ForConstPattern {
-    pattern: misc::Pattern,
+    pattern: Pattern,
 });
-impl display::NodeDisplay for ForConstPattern {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Const);
+impl NodeDisplay for ForConstPattern {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Const);
         f.node(&self.pattern)
     }
 }
@@ -303,7 +361,7 @@ node_enum!(@node_display pub enum ForInInit {
 
     // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
     // so we need parens here for that too.
-    Complex(misc::LeftHandComplexAssign),
+    Complex(LeftHandComplexAssign),
 });
 
 
@@ -313,21 +371,21 @@ node!(pub struct ForOfStatement {
     right: Box<alias::Expression>,
     body: Box<alias::Statement>,
 });
-impl display::NodeDisplay for ForOfStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::For);
-        f.punctuator(display::Punctuator::ParenL);
+impl NodeDisplay for ForOfStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::For);
+        f.punctuator(Punctuator::ParenL);
         f.node(&self.left)?;
-        f.keyword(display::Keyword::Of);
-        f.require_precedence(display::Precedence::Normal).node(
+        f.keyword(Keyword::Of);
+        f.require_precedence(Precedence::Normal).node(
             &self.right,
         )?;
-        f.punctuator(display::Punctuator::ParenR);
+        f.punctuator(Punctuator::ParenR);
 
         f.node(&self.body)
     }
 }
-impl misc::HasOrphanIf for ForOfStatement {
+impl HasOrphanIf for ForOfStatement {
     fn orphan_if(&self) -> bool {
         self.body.orphan_if()
     }
@@ -340,25 +398,25 @@ node!(pub struct ForAwaitStatement {
     right: Box<alias::Expression>,
     body: Box<alias::Statement>,
 });
-impl display::NodeDisplay for ForAwaitStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::For);
-        f.keyword(display::Keyword::Await);
-        f.punctuator(display::Punctuator::ParenL);
+impl NodeDisplay for ForAwaitStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::For);
+        f.keyword(Keyword::Await);
+        f.punctuator(Punctuator::ParenL);
         f.node(&self.left)?;
-        f.keyword(display::Keyword::In);
+        f.keyword(Keyword::In);
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(
+            f.require_precedence(Precedence::Normal).node(
                 &self.right,
             )?;
         }
-        f.punctuator(display::Punctuator::ParenR);
+        f.punctuator(Punctuator::ParenR);
 
         f.node(&self.body)
     }
 }
-impl misc::HasOrphanIf for ForAwaitStatement {
+impl HasOrphanIf for ForAwaitStatement {
     fn orphan_if(&self) -> bool {
         self.body.orphan_if()
     }
@@ -371,7 +429,7 @@ node_enum!(@node_display pub enum ForOfInit {
 
     // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
     // so we need parens here for that too.
-    Complex(misc::LeftHandComplexAssign),
+    Complex(LeftHandComplexAssign),
 });
 
 
@@ -380,21 +438,21 @@ node!(pub struct WhileStatement {
     test: Box<alias::Expression>,
     body: Box<alias::Statement>,
 });
-impl display::NodeDisplay for WhileStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::While);
-        f.punctuator(display::Punctuator::ParenL);
+impl NodeDisplay for WhileStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::While);
+        f.punctuator(Punctuator::ParenL);
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(
+            f.require_precedence(Precedence::Normal).node(
                 &self.test,
             )?;
         }
-        f.punctuator(display::Punctuator::ParenR);
+        f.punctuator(Punctuator::ParenR);
         f.node(&self.body)
     }
 }
-impl misc::HasOrphanIf for WhileStatement {
+impl HasOrphanIf for WhileStatement {
     fn orphan_if(&self) -> bool {
         self.body.orphan_if()
     }
@@ -406,25 +464,25 @@ node!(pub struct DoWhileStatement {
     test: Box<alias::Expression>,
     body: Box<alias::Statement>,
 });
-impl display::NodeDisplay for DoWhileStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Do);
+impl NodeDisplay for DoWhileStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Do);
 
         f.node(&self.body)?;
-        f.keyword(display::Keyword::While);
-        f.punctuator(display::Punctuator::ParenL);
+        f.keyword(Keyword::While);
+        f.punctuator(Punctuator::ParenL);
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(
+            f.require_precedence(Precedence::Normal).node(
                 &self.test,
             )?;
         }
-        f.punctuator(display::Punctuator::ParenR);
-        f.punctuator(display::Punctuator::Semicolon);
+        f.punctuator(Punctuator::ParenR);
+        f.punctuator(Punctuator::Semicolon);
         Ok(())
     }
 }
-impl misc::HasOrphanIf for DoWhileStatement {}
+impl HasOrphanIf for DoWhileStatement {}
 
 
 // switch (...) { ...    }
@@ -432,26 +490,26 @@ node!(pub struct SwitchStatement {
     discriminant: Box<alias::Expression>,
     cases: Vec<SwitchCase>,
 });
-impl display::NodeDisplay for SwitchStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Switch);
-        f.punctuator(display::Punctuator::ParenL);
+impl NodeDisplay for SwitchStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Switch);
+        f.punctuator(Punctuator::ParenL);
         {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(
+            f.require_precedence(Precedence::Normal).node(
                 &self.discriminant,
             )?;
         }
-        f.punctuator(display::Punctuator::ParenR);
-        f.punctuator(display::Punctuator::CurlyL);
+        f.punctuator(Punctuator::ParenR);
+        f.punctuator(Punctuator::CurlyL);
         for c in self.cases.iter() {
             f.node(c)?;
         }
-        f.punctuator(display::Punctuator::CurlyR);
+        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
-impl misc::HasOrphanIf for SwitchStatement {}
+impl HasOrphanIf for SwitchStatement {}
 
 
 // case foo:
@@ -460,17 +518,17 @@ node!(pub struct SwitchCase {
     test: Option<Box<alias::Expression>>,
     consequent: Vec<alias::StatementItem>,
 });
-impl display::NodeDisplay for SwitchCase {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for SwitchCase {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
 
         if let Some(ref expr) = self.test {
-            f.keyword(display::Keyword::Case);
-            f.require_precedence(display::Precedence::Normal).node(expr)?;
+            f.keyword(Keyword::Case);
+            f.require_precedence(Precedence::Normal).node(expr)?;
         } else {
-            f.keyword(display::Keyword::Default);
+            f.keyword(Keyword::Default);
         }
-        f.punctuator(display::Punctuator::Colon);
+        f.punctuator(Punctuator::Colon);
 
         for stmt in self.consequent.iter() {
             f.node(stmt)?;
@@ -486,37 +544,49 @@ node!(pub struct WithStatement {
     object: Box<alias::Expression>,
     body: Box<alias::Statement>,
 });
-impl display::NodeDisplay for WithStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::With);
-        f.punctuator(display::Punctuator::ParenL);
-        f.require_precedence(display::Precedence::Normal).node(
+impl NodeDisplay for WithStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::With);
+        f.punctuator(Punctuator::ParenL);
+        f.require_precedence(Precedence::Normal).node(
             &self.object,
         )?;
-        f.punctuator(display::Punctuator::ParenR);
+        f.punctuator(Punctuator::ParenR);
         f.node(&self.body)
     }
 }
-impl misc::HasOrphanIf for WithStatement {
+impl HasOrphanIf for WithStatement {
     fn orphan_if(&self) -> bool {
         self.body.orphan_if()
     }
 }
 
 
+// identifiers used as labels
+node!(pub struct LabelIdentifier {
+    value: string::String,
+    raw: string::String,
+});
+impl NodeDisplay for LabelIdentifier {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.identifier(&self.value, Some(&self.raw))
+    }
+}
+
+
 // foo: while(false) ;
 node!(pub struct LabelledStatement {
-    label: misc::LabelIdentifier,
+    label: LabelIdentifier,
     body: Box<alias::Statement>,
 });
-impl display::NodeDisplay for LabelledStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for LabelledStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.label)?;
-        f.punctuator(display::Punctuator::Colon);
+        f.punctuator(Punctuator::Colon);
         f.node(&self.body)
     }
 }
-impl misc::HasOrphanIf for LabelledStatement {
+impl HasOrphanIf for LabelledStatement {
     fn orphan_if(&self) -> bool {
         self.body.orphan_if()
     }
@@ -527,18 +597,18 @@ impl misc::HasOrphanIf for LabelledStatement {
 node!(pub struct ThrowStatement {
     argument: Box<alias::Expression>,
 });
-impl display::NodeDisplay for ThrowStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for ThrowStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
-        f.keyword(display::Keyword::Throw);
-        f.require_precedence(display::Precedence::Normal).node(
+        f.keyword(Keyword::Throw);
+        f.require_precedence(Precedence::Normal).node(
             &self.argument,
         )?;
 
         Ok(())
     }
 }
-impl misc::HasOrphanIf for ThrowStatement {}
+impl HasOrphanIf for ThrowStatement {}
 
 
 // try {} catch(foo) {}
@@ -546,14 +616,14 @@ node!(pub struct TryCatchStatement {
     block: BlockStatement,
     handler: CatchClause,
 });
-impl display::NodeDisplay for TryCatchStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Try);
+impl NodeDisplay for TryCatchStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Try);
         f.node(&self.block)?;
         f.node(&self.handler)
     }
 }
-impl misc::HasOrphanIf for TryCatchStatement {}
+impl HasOrphanIf for TryCatchStatement {}
 
 
 // try {} catch(foo) {} finally {}
@@ -562,18 +632,18 @@ node!(pub struct TryCatchFinallyStatement {
     handler: CatchClause,
     finalizer: BlockStatement,
 });
-impl display::NodeDisplay for TryCatchFinallyStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Try);
+impl NodeDisplay for TryCatchFinallyStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Try);
         f.node(&self.block)?;
 
         f.node(&self.handler)?;
 
-        f.keyword(display::Keyword::Finally);
+        f.keyword(Keyword::Finally);
         f.node(&self.finalizer)
     }
 }
-impl misc::HasOrphanIf for TryCatchFinallyStatement {}
+impl HasOrphanIf for TryCatchFinallyStatement {}
 
 
 // try {} finally {}
@@ -581,30 +651,30 @@ node!(pub struct TryFinallyStatement {
     block: BlockStatement,
     finalizer: BlockStatement,
 });
-impl display::NodeDisplay for TryFinallyStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Try);
+impl NodeDisplay for TryFinallyStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Try);
         f.node(&self.block)?;
 
-        f.keyword(display::Keyword::Finally);
+        f.keyword(Keyword::Finally);
         f.node(&self.finalizer)
     }
 }
-impl misc::HasOrphanIf for TryFinallyStatement {}
+impl HasOrphanIf for TryFinallyStatement {}
 
 
 node!(pub struct CatchClause {
     // Missing param is experimental
-    param: Option<misc::Pattern>,
+    param: Option<Pattern>,
     body: BlockStatement,
 });
-impl display::NodeDisplay for CatchClause {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Catch);
+impl NodeDisplay for CatchClause {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Catch);
         if let Some(ref pat) = self.param {
-            f.punctuator(display::Punctuator::ParenL);
+            f.punctuator(Punctuator::ParenL);
             f.node(pat)?;
-            f.punctuator(display::Punctuator::ParenR);
+            f.punctuator(Punctuator::ParenR);
         }
         f.node(&self.body)
     }
@@ -614,35 +684,35 @@ impl display::NodeDisplay for CatchClause {
 // continue;
 // continue foo;
 node!(pub struct ContinueStatement {
-    label: Option<misc::LabelIdentifier>,
+    label: Option<LabelIdentifier>,
 });
-impl display::NodeDisplay for ContinueStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Continue);
+impl NodeDisplay for ContinueStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Continue);
         if let Some(ref label) = self.label {
             f.node(label)?;
         }
         Ok(())
     }
 }
-impl misc::HasOrphanIf for ContinueStatement {}
+impl HasOrphanIf for ContinueStatement {}
 
 
 // break;
 // break foo;
 node!(pub struct BreakStatement {
-    label: Option<misc::LabelIdentifier>,
+    label: Option<LabelIdentifier>,
 });
-impl display::NodeDisplay for BreakStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Break);
+impl NodeDisplay for BreakStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Break);
         if let Some(ref label) = self.label {
             f.node(label)?;
         }
         Ok(())
     }
 }
-impl misc::HasOrphanIf for BreakStatement {}
+impl HasOrphanIf for BreakStatement {}
 
 
 // return;
@@ -650,36 +720,36 @@ impl misc::HasOrphanIf for BreakStatement {}
 node!(pub struct ReturnStatement {
     argument: Option<Box<alias::Expression>>,
 });
-impl display::NodeDisplay for ReturnStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Return);
+impl NodeDisplay for ReturnStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Return);
         if let Some(ref expr) = self.argument {
             let mut f = f.allow_in();
-            f.require_precedence(display::Precedence::Normal).node(expr)?;
+            f.require_precedence(Precedence::Normal).node(expr)?;
         }
         Ok(())
     }
 }
-impl misc::HasOrphanIf for ReturnStatement {}
+impl HasOrphanIf for ReturnStatement {}
 
 
 // debugger;
 node!(pub struct DebuggerStatement {});
-impl display::NodeDisplay for DebuggerStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.keyword(display::Keyword::Debugger);
-        f.punctuator(display::Punctuator::Semicolon);
+impl NodeDisplay for DebuggerStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Debugger);
+        f.punctuator(Punctuator::Semicolon);
         Ok(())
     }
 }
-impl misc::HasOrphanIf for DebuggerStatement {}
+impl HasOrphanIf for DebuggerStatement {}
 
 // ;
 node!(pub struct EmptyStatement {});
-impl display::NodeDisplay for EmptyStatement {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::Semicolon);
+impl NodeDisplay for EmptyStatement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.punctuator(Punctuator::Semicolon);
         Ok(())
     }
 }
-impl misc::HasOrphanIf for EmptyStatement {}
+impl HasOrphanIf for EmptyStatement {}

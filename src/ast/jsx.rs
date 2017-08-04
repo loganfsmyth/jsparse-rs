@@ -1,8 +1,8 @@
 use std::string;
 
-use super::misc;
-use super::alias;
-use super::display;
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence, HasInOperator, FirstSpecialToken, SpecialToken};
+
+use ast::alias;
 
 node!(pub struct Element {
     opening: ElementName,
@@ -10,9 +10,9 @@ node!(pub struct Element {
     children: Vec<Child>,
     closing: Option<ElementName>,
 });
-impl display::NodeDisplay for Element {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::AngleL);
+impl NodeDisplay for Element {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.punctuator(Punctuator::AngleL);
         f.node(&self.opening)?;
 
         for attr in self.attributes.iter() {
@@ -20,39 +20,39 @@ impl display::NodeDisplay for Element {
         }
 
         if self.children.len() > 0 {
-            f.punctuator(display::Punctuator::AngleR);
+            f.punctuator(Punctuator::AngleR);
 
             for child in self.children.iter() {
                 f.node(child)?;
             }
 
-            f.punctuator(display::Punctuator::AngleSlash);
+            f.punctuator(Punctuator::AngleSlash);
             if let Some(ref close) = self.closing {
                 f.node(close)?;
             } else {
                 f.node(&self.opening)?;
             }
-            f.punctuator(display::Punctuator::AngleR);
+            f.punctuator(Punctuator::AngleR);
         } else {
             if let Some(ref close) = self.closing {
-                f.punctuator(display::Punctuator::AngleR);
-                f.punctuator(display::Punctuator::AngleSlash);
+                f.punctuator(Punctuator::AngleR);
+                f.punctuator(Punctuator::AngleSlash);
                 f.node(close)?;
-                f.punctuator(display::Punctuator::AngleR);
+                f.punctuator(Punctuator::AngleR);
             } else {
-                f.punctuator(display::Punctuator::SlashAngle);
+                f.punctuator(Punctuator::SlashAngle);
             }
         }
 
         Ok(())
     }
 }
-impl misc::HasInOperator for Element {
+impl HasInOperator for Element {
     fn has_in_operator(&self) -> bool {
         false
     }
 }
-impl misc::FirstSpecialToken for Element {}
+impl FirstSpecialToken for Element {}
 
 
 node!(pub struct Identifier {
@@ -60,8 +60,8 @@ node!(pub struct Identifier {
     raw: string::String,
     value: string::String,
 });
-impl display::NodeDisplay for Identifier {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for Identifier {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.jsx_identifier(&self.value, Some(&self.raw))
     }
 }
@@ -78,10 +78,10 @@ node!(pub struct MemberExpression {
     object: Box<MemberObject>,
     property: Identifier,
 });
-impl display::NodeDisplay for MemberExpression {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for MemberExpression {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.object)?;
-        f.punctuator(display::Punctuator::Period);
+        f.punctuator(Punctuator::Period);
         f.node(&self.property)
     }
 }
@@ -96,10 +96,10 @@ node!(pub struct NamespacedName {
     namespace: Identifier,
     name: Identifier,
 });
-impl display::NodeDisplay for NamespacedName {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for NamespacedName {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.namespace)?;
-        f.punctuator(display::Punctuator::Colon);
+        f.punctuator(Punctuator::Colon);
         f.node(&self.name)
     }
 }
@@ -120,14 +120,14 @@ node_enum!(@node_display pub enum AttributeName {
 node!(pub struct SpreadAttribute {
     argument: alias::Expression,
 });
-impl display::NodeDisplay for SpreadAttribute {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL);
-        f.punctuator(display::Punctuator::Ellipsis);
-        f.require_precedence(display::Precedence::Assignment).node(
+impl NodeDisplay for SpreadAttribute {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.punctuator(Punctuator::CurlyL);
+        f.punctuator(Punctuator::Ellipsis);
+        f.require_precedence(Precedence::Assignment).node(
             &self.argument,
         )?;
-        f.punctuator(display::Punctuator::CurlyR);
+        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
@@ -137,11 +137,11 @@ node!(pub struct PairAttribute {
     name: AttributeName,
     value: Option<AttributeValue>,
 });
-impl display::NodeDisplay for PairAttribute {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for PairAttribute {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.name)?;
         if let Some(ref value) = self.value {
-            f.punctuator(display::Punctuator::Eq);
+            f.punctuator(Punctuator::Eq);
             f.node(value)?;
         }
         Ok(())
@@ -161,8 +161,8 @@ node!(pub struct StringLiteral {
     raw: string::String,
     value: string::String,
 });
-impl display::NodeDisplay for StringLiteral {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for StringLiteral {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.jsx_string(&self.value, Some(&self.raw))
     }
 }
@@ -179,13 +179,13 @@ node_enum!(@node_display pub enum Child {
 node!(pub struct Expression {
     expression: Box<alias::Expression>,
 });
-impl display::NodeDisplay for Expression {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL);
-        f.require_precedence(display::Precedence::Assignment).node(
+impl NodeDisplay for Expression {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.punctuator(Punctuator::CurlyL);
+        f.require_precedence(Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(display::Punctuator::CurlyR);
+        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
@@ -194,23 +194,23 @@ impl display::NodeDisplay for Expression {
 node!(pub struct ExpressionSpread {
     expression: Box<alias::Expression>,
 });
-impl display::NodeDisplay for ExpressionSpread {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL);
-        f.punctuator(display::Punctuator::Ellipsis);
-        f.require_precedence(display::Precedence::Assignment).node(
+impl NodeDisplay for ExpressionSpread {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.punctuator(Punctuator::CurlyL);
+        f.punctuator(Punctuator::Ellipsis);
+        f.require_precedence(Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(display::Punctuator::CurlyR);
+        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
 
 node!(pub struct Empty {});
-impl display::NodeDisplay for Empty {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
-        f.punctuator(display::Punctuator::CurlyL);
-        f.punctuator(display::Punctuator::CurlyR);
+impl NodeDisplay for Empty {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.punctuator(Punctuator::CurlyL);
+        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
@@ -220,8 +220,8 @@ node!(pub struct Text {
     // allows all chars except {, }, <, and >
     value: string::String,
 });
-impl display::NodeDisplay for Text {
-    fn fmt(&self, f: &mut display::NodeFormatter) -> display::NodeDisplayResult {
+impl NodeDisplay for Text {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.jsx_text(&self.value, None)
     }
 }
