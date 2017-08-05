@@ -81,6 +81,11 @@ node_enum!(@node_display pub enum ModuleStatementItem {
     ImportNamedAndSpecifiers(modules::ImportNamedAndSpecifiersDeclaration),
     ImportSpecifiers(modules::ImportSpecifiersDeclaration),
 });
+impl<T: Into<Expression>> From<T> for ModuleStatementItem {
+    fn from(v: T) -> ModuleStatementItem {
+        ModuleStatementItem::Expression(statement::ExpressionStatement::from(v))
+    }
+}
 
 
 node_enum!(@node_display pub enum StatementItem {
@@ -142,6 +147,11 @@ impl From<Statement> for StatementItem {
         }
     }
 }
+impl<T: Into<Expression>> From<T> for StatementItem {
+    fn from(v: T) -> StatementItem {
+        StatementItem::Expression(statement::ExpressionStatement::from(v))
+    }
+}
 
 
 node_enum!(@node_display @orphan_if pub enum Statement {
@@ -168,6 +178,11 @@ node_enum!(@node_display @orphan_if pub enum Statement {
     TryFinally(statement::TryFinallyStatement),
     Debugger(statement::DebuggerStatement),
 });
+impl Default for Statement {
+    fn default() -> Statement {
+        statement::EmptyStatement::default().into()
+    }
+}
 
 
 node_enum!(@node_display @first_special_token pub enum Expression {
@@ -200,6 +215,27 @@ node_enum!(@node_display @first_special_token pub enum Expression {
     Do(expression::DoExpression),
     JSX(jsx::Element),
 });
+
+// impl<T: Into<general::BindingIdentifier>> From<T> for Expression {
+//     fn from(v: T) -> Expression {
+//         Expression::Binding(v.into())
+//     }
+// }
+// impl<T: Into<general::BindingIdentifier>> From<T> for Box<Expression> {
+//     fn from(v: T) -> Box<Expression> {
+//         Expression::Binding(v.into()).into()
+//     }
+// }
+// impl<T: Into<expression::ThisExpression>> From<T> for Expression {
+//     fn from(v: T) -> Expression {
+//         Expression::This(v.into())
+//     }
+// }
+// impl<T: Into<expression::ThisExpression>> From<T> for Box<Expression> {
+//     fn from(v: T) -> Box<Expression> {
+//         Expression::This(v.into()).into()
+//     }
+// }
 
 
 node_enum!(@node_display pub enum ExportDeclaration {

@@ -26,6 +26,21 @@ impl FirstSpecialToken for ThisExpression {
     }
 }
 
+#[cfg(test)]
+mod tests_this {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_default() {
+        assert_serialize!(
+            ThisExpression::default(),
+            "this"
+        );
+    }
+}
+
 
 node!(pub struct ParenthesizedExpression {
     pub expr: Box<alias::Expression>,
@@ -36,7 +51,29 @@ impl NodeDisplay for ParenthesizedExpression {
     }
 }
 impl FirstSpecialToken for ParenthesizedExpression {}
+impl<T: Into<alias::Expression>> From<T> for ParenthesizedExpression {
+    fn from(expr: T) -> ParenthesizedExpression {
+        ParenthesizedExpression {
+            expr: Box::new(expr.into()),
+            position: None,
+        }
+    }
+}
 
+#[cfg(test)]
+mod tests_paren_expr {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            ParenthesizedExpression::from(ThisExpression::default()),
+            "(this)"
+        );
+    }
+}
 
 // fn`content`
 node!(pub struct TaggedTemplateLiteral {
@@ -109,7 +146,7 @@ impl NodeDisplay for TemplatePart {
 
 
 node!(#[derive(Default)] pub struct CallArguments {
-    pub args: Vec<Box<alias::Expression>>,
+    pub args: Vec<alias::Expression>,
     pub spread: Option<Box<alias::Expression>>,
 });
 impl NodeDisplay for CallArguments {
@@ -125,6 +162,93 @@ impl NodeDisplay for CallArguments {
 
         Ok(())
     }
+}
+impl From<Vec<alias::Expression>> for CallArguments {
+    fn from(v: Vec<alias::Expression>) -> CallArguments {
+        CallArguments {
+            args: v,
+            spread: Default::default(),
+            position: None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_call_args {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_default() {
+        assert_serialize!(
+            CallArguments::default(),
+            "()"
+        );
+    }
+
+    #[test]
+    fn it_prints_args() {
+        assert_serialize!(
+            CallArguments::from(vec![
+                ThisExpression::default().into(),
+                BindingIdentifier::from("arg").into(),
+                literal::Boolean::from(true).into(),
+            ]),
+            "(this,arg,true)"
+        );
+    }
+
+    #[test]
+    fn it_prints_args_with_precedence() {
+        assert_serialize!(
+            CallArguments::from(vec![
+                BindingIdentifier::from("arg1").into(),
+                SequenceExpression {
+                    left: ThisExpression::default().into(),
+                    right: literal::Boolean::from(true).into(),
+                    position: None,
+                }.into(),
+                BindingIdentifier::from("arg3").into(),
+            ]),
+            "(arg1,(this,true),arg3)"
+        );
+    }
+
+    #[test]
+    fn it_prints_args_with_spread() {
+        assert_serialize!(
+            CallArguments {
+                args: vec![
+                    ThisExpression::default().into(),
+                    BindingIdentifier::from("arg").into(),
+                    literal::Boolean::from(true).into(),
+                ],
+                spread: literal::Numeric::from(3.6).into(),
+                position: None,
+            },
+            "(this,arg,true,...3.6)"
+        );
+    }
+
+    #[test]
+    fn it_prints_args_with_spread_and_precedence() {
+        assert_serialize!(
+            CallArguments {
+                args: vec![
+                    BindingIdentifier::from("arg").into(),
+                ],
+                spread: SequenceExpression {
+                    left: ThisExpression::default().into(),
+                    right: literal::Boolean::from(true).into(),
+                    position: None,
+                }.into(),
+                position: None,
+            },
+            "(arg,...(this,true))"
+        );
+    }
+
 }
 
 // foo()

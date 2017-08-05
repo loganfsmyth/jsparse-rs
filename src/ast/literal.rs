@@ -38,7 +38,7 @@ use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, First
 // }
 
 // null
-node!(pub struct Null {});
+node!(#[derive(Default)] pub struct Null {});
 impl NodeDisplay for Null {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Null);
@@ -63,6 +63,14 @@ impl NodeDisplay for Boolean {
     }
 }
 impl FirstSpecialToken for Boolean {}
+impl From<bool> for Boolean {
+    fn from(value: bool) -> Boolean {
+        Boolean {
+            value,
+            position: None,
+        }
+    }
+}
 
 
 // 12
@@ -76,6 +84,15 @@ impl NodeDisplay for Numeric {
     }
 }
 impl FirstSpecialToken for Numeric {}
+impl From<f64> for Numeric {
+    fn from(value: f64) -> Numeric {
+        Numeric {
+            value,
+            raw: None,
+            position: None,
+        }
+    }
+}
 
 
 // "foo"
@@ -89,6 +106,15 @@ impl NodeDisplay for String {
     }
 }
 impl FirstSpecialToken for String {}
+impl From<string::String> for String {
+    fn from(value: string::String) -> String {
+        String {
+            value,
+            raw: None,
+            position: None,
+        }
+    }
+}
 
 
 // /foo/g

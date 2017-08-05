@@ -19,13 +19,22 @@ impl BindingIdentifier {
         }
     }
 }
-
 impl NodeDisplay for BindingIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.identifier(&self.value, self.raw.as_ref().map(string::String::as_str))
     }
 }
 impl FirstSpecialToken for BindingIdentifier {}
+
+impl<T: Into<string::String>> From<T> for BindingIdentifier {
+    fn from(value: T) -> BindingIdentifier {
+        BindingIdentifier {
+            value: value.into(),
+            raw: None,
+            position: None,
+        }
+    }
+}
 
 
 
@@ -46,6 +55,15 @@ impl PropertyIdentifier {
 impl NodeDisplay for PropertyIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.identifier(&self.value, self.raw.as_ref().map(String::as_str))
+    }
+}
+impl From<string::String> for PropertyIdentifier {
+    fn from(value: string::String) -> PropertyIdentifier {
+        PropertyIdentifier {
+            value,
+            raw: None,
+            position: None,
+        }
     }
 }
 

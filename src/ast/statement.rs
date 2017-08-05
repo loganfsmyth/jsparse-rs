@@ -1,5 +1,4 @@
 use std::string;
-use std::default;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
                    HasOrphanIf, FirstSpecialToken, SpecialToken};
@@ -29,6 +28,15 @@ impl NodeDisplay for BlockStatement {
     }
 }
 impl HasOrphanIf for BlockStatement {}
+
+impl From<Vec<alias::StatementItem>> for BlockStatement {
+    fn from(body: Vec<alias::StatementItem>) -> BlockStatement {
+        BlockStatement {
+            body,
+            position: None,
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests_block {
@@ -104,11 +112,7 @@ mod tests_var {
         assert_serialize!(
             VariableStatement {
                 declarations: DeclaratorList::Last(VariableDeclarator {
-                    id: BindingIdentifier {
-                        value: "myVar".into(),
-                        raw: None,
-                        position: None,
-                    }.into(),
+                    id: BindingIdentifier::from("myVar").into(),
                     init: None,
                     position: None,
                 }),
@@ -123,18 +127,8 @@ mod tests_var {
         assert_serialize!(
             VariableStatement {
                 declarations: DeclaratorList::Last(VariableDeclarator {
-                    id: BindingIdentifier {
-                        value: "myVar".into(),
-                        raw: None,
-                        position: None,
-                    }.into(),
-                    init: Some(
-                        BindingIdentifier {
-                            value: "initialVal".into(),
-                            raw: None,
-                            position: None,
-                        }.into(),
-                    ),
+                    id: BindingIdentifier::from("myVar").into(),
+                    init: BindingIdentifier::from("initialVal").into(),
                     position: None,
                 }),
                 position: None,
@@ -267,6 +261,14 @@ impl NodeDisplay for ExpressionStatement {
     }
 }
 impl HasOrphanIf for ExpressionStatement {}
+impl<T: Into<alias::Expression>> From<T> for ExpressionStatement {
+    fn from(expr: T) -> ExpressionStatement {
+        ExpressionStatement {
+            expression: expr.into(),
+            position: None,
+        }
+    }
+}
 
 
 // if () {}
@@ -277,6 +279,7 @@ node!(pub struct IfStatement {
 });
 impl NodeDisplay for IfStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let mut f = f.wrap_orphan_if();
         f.keyword(Keyword::If);
         {
             let mut f = f.wrap_parens();
@@ -284,14 +287,12 @@ impl NodeDisplay for IfStatement {
             f.require_precedence(Precedence::Normal).node(&self.test)?;
         }
 
-        if self.consequent.orphan_if() {
-            f.wrap_curly().node(&self.consequent)?;
+        if let Some(ref stmt) = self.alternate {
+            f.disallow_orphan_if().node(&self.consequent)?;
+            f.keyword(Keyword::Else);
+            f.node(stmt)?;
         } else {
             f.node(&self.consequent)?;
-        }
-
-        if let Some(ref stmt) = self.alternate {
-            f.node(stmt)?;
         }
         Ok(())
     }
@@ -302,25 +303,85 @@ impl HasOrphanIf for IfStatement {
     }
 }
 
+#[cfg(test)]
+mod tests_if {
+    use super::*;
+    use ast::general::BindingIdentifier;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            IfStatement {
+                test: BindingIdentifier::from("myVar").into(),
+                consequent: EmptyStatement::default().into(),
+                alternate: None,
+                position: None,
+            },
+            "if(myVar);"
+        );
+    }
+
+    #[test]
+    fn it_prints_else() {
+        assert_serialize!(
+            IfStatement {
+                test: BindingIdentifier::from("myVar").into(),
+                consequent: EmptyStatement::default().into(),
+                alternate: EmptyStatement::default().into(),
+                position: None,
+            },
+            "if(myVar);else;"
+        );
+    }
+
+    #[test]
+    fn it_prints_wrapped_if() {
+        assert_serialize!(
+            IfStatement {
+                test: BindingIdentifier::from("myVar").into(),
+                consequent: IfStatement {
+                    test: BindingIdentifier::from("myVar2").into(),
+                    consequent: EmptyStatement::default().into(),
+                    alternate: None,
+                    position: None,
+                }.into(),
+                alternate: EmptyStatement::default().into(),
+                position: None,
+            },
+            "if(myVar){if(myVar2);}else;"
+        );
+    }
+    #[test]
+    fn it_prints_wrapped_if_deep() {
+        assert_serialize!(
+            IfStatement {
+                test: BindingIdentifier::from("myVar").into(),
+                consequent: WhileStatement {
+                    test: BindingIdentifier::from("myVar2").into(),
+                    body: IfStatement {
+                        test: BindingIdentifier::from("myVar3").into(),
+                        consequent: EmptyStatement::default().into(),
+                        alternate: None,
+                        position: None,
+                    }.into(),
+                    position: None,
+                }.into(),
+                alternate: EmptyStatement::default().into(),
+                position: None,
+            },
+            "if(myVar)while(myVar2){if(myVar3);}else;"
+        );
+    }
+}
+
 
 // for( ; ; ) {}
-node!(pub struct ForStatement {
+node!(#[derive(Default)] pub struct ForStatement {
     pub init: Option<ForInit>,
     pub test: Option<Box<alias::Expression>>,
     pub update: Option<Box<alias::Expression>>,
     pub body: Box<alias::Statement>,
 });
-impl default::Default for ForStatement {
-    fn default() -> ForStatement {
-        ForStatement {
-            init: None,
-            test: None,
-            update: None,
-            body: Box::new(BlockStatement::default().into()),
-            position: None,
-        }
-    }
-}
 impl NodeDisplay for ForStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::For);
@@ -349,8 +410,6 @@ impl HasOrphanIf for ForStatement {
         self.body.orphan_if()
     }
 }
-
-
 node_enum!(@node_display pub enum ForInit {
     Var(VariableStatement),
     Let(LetDeclaration),
@@ -360,6 +419,55 @@ node_enum!(@node_display pub enum ForInit {
     // so we need parens here for that too.
     Expression(alias::Expression),
 });
+
+#[cfg(test)]
+mod tests_for {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_default() {
+        assert_serialize!(
+            ForStatement::default(),
+            "for(;;);"
+        );
+    }
+
+    #[test]
+    fn it_prints_test() {
+        assert_serialize!(
+            ForStatement {
+                init: None,
+                test: BindingIdentifier::from("myVar").into(),
+                update: None,
+                body: EmptyStatement::default().into(),
+                position: None,
+            },
+            "for(;myVar;);"
+        );
+    }
+
+    #[test]
+    fn it_prints_complex() {
+        assert_serialize!(
+            ForStatement {
+                init: alias::Expression::from(BindingIdentifier::from("init")).into(),
+                test: BindingIdentifier::from("test").into(),
+                update: BindingIdentifier::from("update").into(),
+                body: BlockStatement {
+                    body: vec![
+                        literal::Boolean::from(true).into(),
+                        literal::Numeric::from(4.5).into(),
+                    ],
+                    position: None,
+                }.into(),
+                position: None,
+            },
+            "for(init;test;update){true;4.5;}"
+        );
+    }
+}
 
 
 // for ... in
@@ -587,6 +695,59 @@ impl NodeDisplay for SwitchStatement {
 }
 impl HasOrphanIf for SwitchStatement {}
 
+#[cfg(test)]
+mod tests_switch {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_empty() {
+        assert_serialize!(
+            SwitchStatement {
+                discriminant: BindingIdentifier::from("myVar").into(),
+                cases: vec![],
+                position: None,
+            },
+            "switch(myVar){}"
+        );
+    }
+
+    #[test]
+    fn it_prints_cases() {
+        assert_serialize!(
+            SwitchStatement {
+                discriminant: BindingIdentifier::from("myVar").into(),
+                cases: vec![
+                    SwitchCase {
+                        test: literal::Numeric::from(6.2).into(),
+                        consequent: vec![
+                            literal::Boolean::from(false).into(),
+                        ],
+                        position: None,
+                    },
+                    SwitchCase {
+                        test: None,
+                        consequent: vec![
+                            literal::Boolean::from(true).into(),
+                        ],
+                        position: None,
+                    },
+                    SwitchCase {
+                        test: literal::Numeric::from(1.32).into(),
+                        consequent: vec![
+                            literal::Boolean::from(true).into(),
+                        ],
+                        position: None,
+                    },
+                ],
+                position: None,
+            },
+            "switch(myVar){case 6.2:false;default:true;case 1.32:true;}"
+        );
+    }
+}
+
 
 // case foo:
 // default:
@@ -709,6 +870,41 @@ impl NodeDisplay for TryCatchStatement {
 }
 impl HasOrphanIf for TryCatchStatement {}
 
+#[cfg(test)]
+mod tests_try_catch {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_default() {
+        assert_serialize!(
+            TryCatchStatement::default(),
+            "try{}catch{}"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_binding() {
+        assert_serialize!(
+            TryCatchStatement {
+                block: vec![
+                    literal::Boolean::from(false).into()
+                ].into(),
+                handler: CatchClause {
+                    param: BindingIdentifier::from("err").into(),
+                    body: vec![
+                        literal::Boolean::from(true).into()
+                    ].into(),
+                    position: None,
+                },
+                position: None,
+            },
+            "try{false;}catch(err){true;}"
+        );
+    }
+}
+
 
 // try {} catch(foo) {} finally {}
 node!(#[derive(Default)] pub struct TryCatchFinallyStatement {
@@ -729,6 +925,57 @@ impl NodeDisplay for TryCatchFinallyStatement {
 }
 impl HasOrphanIf for TryCatchFinallyStatement {}
 
+impl From<TryCatchStatement> for TryCatchFinallyStatement {
+    fn from(stmt: TryCatchStatement) -> TryCatchFinallyStatement {
+        TryCatchFinallyStatement {
+            block: stmt.block,
+            handler: stmt.handler,
+            finalizer: Default::default(),
+            position: stmt.position,
+        }
+    }
+}
+impl From<TryFinallyStatement> for TryCatchFinallyStatement {
+    fn from(stmt: TryFinallyStatement) -> TryCatchFinallyStatement {
+        TryCatchFinallyStatement {
+            block: stmt.block,
+            handler: Default::default(),
+            finalizer: stmt.finalizer,
+            position: stmt.position,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_try_catch_finally {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_default() {
+        assert_serialize!(
+            TryCatchFinallyStatement::default(),
+            "try{}catch{}finally{}"
+        );
+    }
+
+    #[test]
+    fn it_prints_default_from_catch() {
+        assert_serialize!(
+            TryCatchFinallyStatement::from(TryCatchStatement::default()),
+            "try{}catch{}finally{}"
+        );
+    }
+
+    #[test]
+    fn it_prints_default_from_finally() {
+        assert_serialize!(
+            TryCatchFinallyStatement::from(TryFinallyStatement::default()),
+            "try{}catch{}finally{}"
+        );
+    }
+}
 
 // try {} finally {}
 node!(#[derive(Default)] pub struct TryFinallyStatement {

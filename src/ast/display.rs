@@ -123,6 +123,7 @@ pub enum Keyword {
     Try,
     Of,
     If,
+    Else,
     Continue,
     Break,
     Async,
@@ -186,6 +187,7 @@ pub type NodeDisplayResult = Result<(), NodeDisplayError>;
 pub struct NodeFormatter {
     prec: Precedence,
     in_operator: bool,
+    wrap_standalone_if: bool,
 
     ends_with_integer: bool,
     ends_with_keyword: bool,
@@ -197,51 +199,124 @@ impl NodeFormatter {
         NodeFormatter {
             prec: Precedence::Normal,
             in_operator: true,
+            wrap_standalone_if: false,
+
             ends_with_integer: false,
             ends_with_keyword: false,
             output: String::with_capacity(512 * 1024),
         }
     }
 
-    pub fn precedence(&mut self, p: Precedence) -> WrapParens {
-        let skip = (p as u32) <= (self.prec as u32);
-        WrapParens::new(self, skip)
+    pub fn precedence<'a>(&'a mut self, p: Precedence) -> FormatterLock<'a> {
+        let skip = (p as u32) > (self.prec as u32);
+
+        // println!("Prec: {:?} vs {:?} = {}", p, self.prec, skip);
+
+        if !skip {
+            self.punctuator(Punctuator::ParenL);
+        }
+
+        FormatterLock::new(self, Box::new(move |fmt| {
+            if !skip {
+                fmt.punctuator(Punctuator::ParenR);
+            }
+        }))
     }
 
-    pub fn require_precedence(&mut self, p: Precedence) -> CachePrecedence {
-        let mut lock = CachePrecedence::new(self);
-        lock.prec = p;
-        lock
+    pub fn require_precedence<'a>(&'a mut self, p: Precedence) -> FormatterLock<'a> {
+        let prec = self.prec;
+        self.prec = p;
+
+        FormatterLock::new(self, Box::new(move |fmt| {
+            fmt.prec = prec;
+        }))
     }
 
-    pub fn allow_in(&mut self) -> CacheIn {
-        let mut lock = CacheIn::new(self);
-        lock.in_operator = true;
-        lock
+    pub fn allow_in<'a>(&'a mut self) -> FormatterLock<'a> {
+        let in_operator = self.in_operator;
+        self.in_operator = true;
+
+        FormatterLock::new(self, Box::new(move |fmt| {
+            fmt.in_operator = in_operator;
+        }))
     }
-    pub fn disallow_in(&mut self) -> CacheIn {
-        let mut lock = CacheIn::new(self);
-        lock.in_operator = false;
-        lock
+    pub fn disallow_in<'a>(&'a mut self) -> FormatterLock<'a> {
+        let in_operator = self.in_operator;
+        self.in_operator = false;
+
+        FormatterLock::new(self, Box::new(move |fmt| {
+            fmt.in_operator = in_operator;
+        }))
     }
 
     pub fn in_allowed(&self) -> bool {
         self.in_operator
     }
 
-    pub fn wrap_parens(&mut self) -> WrapParens {
-        let mut lock = WrapParens::new(self, false);
-        lock.prec = Precedence::Normal;
-        lock.in_operator = true;
-        lock
+    pub fn wrap_parens<'a>(&'a mut self) -> FormatterLock<'a> {
+        let prec = self.prec;
+        let in_operator = self.in_operator;
+        let wrap_standalone_if = self.wrap_standalone_if;
+
+        self.prec = Precedence::Normal;
+        self.in_operator = true;
+        self.wrap_standalone_if = false;
+        self.punctuator(Punctuator::ParenL);
+
+        FormatterLock::new(self, Box::new(move |fmt| {
+            fmt.prec = prec;
+            fmt.in_operator = in_operator;
+            fmt.wrap_standalone_if = wrap_standalone_if;
+            fmt.punctuator(Punctuator::ParenR);
+        }))
     }
 
-    pub fn wrap_curly(&mut self) -> WrapCurly {
-        WrapCurly::new(self)
+    pub fn wrap_curly<'a>(&'a mut self) -> FormatterLock<'a> {
+        let wrap_standalone_if = self.wrap_standalone_if;
+
+        self.wrap_standalone_if = false;
+        self.punctuator(Punctuator::CurlyL);
+
+        FormatterLock::new(self, Box::new(move |fmt| {
+            fmt.wrap_standalone_if = wrap_standalone_if;
+            fmt.punctuator(Punctuator::CurlyR);
+        }))
     }
 
-    pub fn wrap_square(&mut self) -> WrapSquare {
-        WrapSquare::new(self)
+    pub fn wrap_square<'a>(&'a mut self) -> FormatterLock<'a> {
+        let wrap_standalone_if = self.wrap_standalone_if;
+
+        self.wrap_standalone_if = false;
+        self.punctuator(Punctuator::SquareL);
+
+        FormatterLock::new(self, Box::new(move |fmt| {
+            fmt.wrap_standalone_if = wrap_standalone_if;
+            fmt.punctuator(Punctuator::SquareR);
+        }))
+    }
+
+    pub fn disallow_orphan_if<'a>(&'a mut self) -> FormatterLock<'a> {
+        let wrap_standalone_if = self.wrap_standalone_if;
+
+        self.wrap_standalone_if = true;
+        FormatterLock::new(self, Box::new(move |fmt| {
+            fmt.wrap_standalone_if = wrap_standalone_if;
+        }))
+    }
+    pub fn wrap_orphan_if<'a>(&'a mut self) -> FormatterLock<'a> {
+        let wrap_standalone_if = self.wrap_standalone_if;
+
+        self.wrap_standalone_if = false;
+        if wrap_standalone_if {
+            self.punctuator(Punctuator::CurlyL);
+        }
+
+        FormatterLock::new(self, Box::new(move |fmt| {
+            fmt.wrap_standalone_if = wrap_standalone_if;
+            if wrap_standalone_if {
+                fmt.punctuator(Punctuator::CurlyR);
+            }
+        }))
     }
 
     pub fn comma_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
@@ -304,7 +379,8 @@ impl NodeFormatter {
             Keyword::Throw => write!(self, "throw"),
             Keyword::Try => write!(self, "try"),
             Keyword::Of => write!(self, "of"),
-            Keyword::If => write!(self, "in"),
+            Keyword::If => write!(self, "if"),
+            Keyword::Else => write!(self, "else"),
             Keyword::Continue => write!(self, "continue"),
             Keyword::Break => write!(self, "break"),
             Keyword::Async => write!(self, "async"),
@@ -415,16 +491,17 @@ impl NodeFormatter {
         Ok(())
     }
     pub fn number(&mut self, value: &f64, _raw: Option<&str>) -> NodeDisplayResult {
-        // if let Some(ref _raw) = raw {
-        // Write raw value as-is, possibly setting flag
-        // self.ends_with_integer = true;
-        // } else {
+        if self.ends_with_keyword {
+            write!(self, " ").unwrap();
+            self.ends_with_integer = false;
+        }
+
         let s = format!("{}", value);
         write!(self, "{}", s)?;
 
         // Serialize number
-        self.ends_with_integer = !s.chars().any(|c| c == '.');;
-        // }
+        self.ends_with_integer = !s.chars().any(|c| c == '.');
+        self.ends_with_keyword = false;
 
         Ok(())
     }
@@ -481,113 +558,60 @@ impl fmt::Write for NodeFormatter {
     }
 }
 
-pub struct CachePrecedence<'a> {
-    prec: Precedence,
+
+pub struct FormatterLock<'a> {
     fmt: &'a mut NodeFormatter,
+    drop: Box<Fn(&mut NodeFormatter) + 'static>,
 }
-impl<'a> CachePrecedence<'a> {
-    fn new(fmt: &mut NodeFormatter) -> CachePrecedence {
-        CachePrecedence {
-            prec: fmt.prec,
+impl<'a> FormatterLock<'a> {
+    fn new(fmt: &'a mut NodeFormatter, drop: Box<Fn(&mut NodeFormatter) + 'static>) -> FormatterLock<'a> {
+        FormatterLock {
             fmt,
+            drop,
         }
     }
 }
-impl<'a> ::std::ops::Drop for CachePrecedence<'a> {
+impl<'a> ::std::ops::Drop for FormatterLock<'a> {
     fn drop(&mut self) {
-        self.fmt.prec = self.prec;
+        (self.drop)(self.fmt);
     }
 }
-pub struct CacheIn<'a> {
-    in_operator: bool,
-    fmt: &'a mut NodeFormatter,
+impl<'a> ::std::ops::Deref for FormatterLock<'a> {
+  type Target = NodeFormatter;
+
+  fn deref(&self) -> &NodeFormatter {
+    self.fmt
+  }
 }
-impl<'a> CacheIn<'a> {
-    fn new(fmt: &mut NodeFormatter) -> CacheIn {
-        CacheIn {
-            in_operator: fmt.in_operator,
-            fmt,
-        }
-    }
-}
-impl<'a> ::std::ops::Drop for CacheIn<'a> {
-    fn drop(&mut self) {
-        self.fmt.in_operator = self.in_operator;
-    }
+impl<'a> ::std::ops::DerefMut for FormatterLock<'a> {
+  fn deref_mut(&mut self) -> &mut NodeFormatter {
+    self.fmt
+  }
 }
 
-pub struct WrapParens<'a> {
-    skip: bool,
-    fmt: &'a mut NodeFormatter,
-}
-impl<'a> WrapParens<'a> {
-    fn new(fmt: &mut NodeFormatter, skip: bool) -> WrapParens {
-        fmt.punctuator(Punctuator::ParenL);
 
-        WrapParens { skip, fmt }
-    }
-}
-impl<'a> ::std::ops::Drop for WrapParens<'a> {
-    fn drop(&mut self) {
-        if !self.skip {
-            self.fmt.punctuator(Punctuator::ParenR);
-        }
-    }
-}
 
-pub struct WrapSquare<'a> {
-    fmt: &'a mut NodeFormatter,
-}
-impl<'a> WrapSquare<'a> {
-    fn new(fmt: &mut NodeFormatter) -> WrapSquare {
-        fmt.punctuator(Punctuator::SquareL);
+// macro_rules! impl_deref {
+//     ($id:ident) => {
+//         impl<'a> ::std::ops::Deref for $id<'a> {
+//           type Target = NodeFormatter;
 
-        WrapSquare { fmt }
-    }
-}
-impl<'a> ::std::ops::Drop for WrapSquare<'a> {
-    fn drop(&mut self) {
-        self.fmt.punctuator(Punctuator::SquareR);
-    }
-}
-
-pub struct WrapCurly<'a> {
-    fmt: &'a mut NodeFormatter,
-}
-impl<'a> WrapCurly<'a> {
-    fn new(fmt: &mut NodeFormatter) -> WrapCurly {
-        fmt.punctuator(Punctuator::CurlyL);
-
-        WrapCurly { fmt }
-    }
-}
-impl<'a> ::std::ops::Drop for WrapCurly<'a> {
-    fn drop(&mut self) {
-        self.fmt.punctuator(Punctuator::CurlyR);
-    }
-}
-
-macro_rules! impl_deref {
-    ($id:ident) => {
-        impl<'a> ::std::ops::Deref for $id<'a> {
-          type Target = NodeFormatter;
-
-          fn deref(&self) -> &NodeFormatter {
-            self.fmt
-          }
-        }
-        impl<'a> ::std::ops::DerefMut for $id<'a> {
-          fn deref_mut(&mut self) -> &mut NodeFormatter {
-            self.fmt
-          }
-        }
-    };
-    ($id:ident, $($ids:ident),+) => {
-        impl_deref!($id);
-        impl_deref!($($ids),+);
-    };
-}
-impl_deref!(CachePrecedence, CacheIn, WrapParens, WrapSquare, WrapCurly);
+//           fn deref(&self) -> &NodeFormatter {
+//             self.fmt
+//           }
+//         }
+//         impl<'a> ::std::ops::DerefMut for $id<'a> {
+//           fn deref_mut(&mut self) -> &mut NodeFormatter {
+//             self.fmt
+//           }
+//         }
+//     };
+//     ($id:ident, $($ids:ident),+) => {
+//         impl_deref!($id);
+//         impl_deref!($($ids),+);
+//     };
+// }
+// impl_deref!(CachePrecedence, CacheIn, WrapParens, WrapSquare, WrapCurly);
 
 
 #[derive(Debug)]

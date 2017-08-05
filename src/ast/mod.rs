@@ -25,6 +25,21 @@ macro_rules! node_enum_impl {
                     $name::$key(val)
                 }
             }
+            impl From<$type> for Box<$name> {
+                fn from(val: $type) -> Box<$name> {
+                    Box::new($name::$key(val))
+                }
+            }
+            impl From<$type> for Option<$name> {
+                fn from(val: $type) -> Option<$name> {
+                    Some($name::$key(val))
+                }
+            }
+            impl From<$type> for Option<Box<$name>> {
+                fn from(val: $type) -> Option<Box<$name>> {
+                    Some(Box::new($name::$key(val)))
+                }
+            }
         )*
     };
     (@node_display $name:ident { $( $key:ident($type:ty) ,)* }) => {
