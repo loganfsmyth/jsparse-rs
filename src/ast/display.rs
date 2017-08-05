@@ -236,13 +236,13 @@ impl NodeFormatter {
         lock
     }
 
-    // pub fn wrap_block(&mut self) -> WrapBlock {
-    //     WrapBlock::new(self)
-    // }
+    pub fn wrap_curly(&mut self) -> WrapCurly {
+        WrapCurly::new(self)
+    }
 
-    // pub fn wrap_square(&mut self) -> WrapSquare {
-    //     WrapSquare::new(self)
-    // }
+    pub fn wrap_square(&mut self) -> WrapSquare {
+        WrapSquare::new(self)
+    }
 
     pub fn comma_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
         for (i, item) in list.iter().enumerate() {
@@ -535,6 +535,38 @@ impl<'a> ::std::ops::Drop for WrapParens<'a> {
     }
 }
 
+pub struct WrapSquare<'a> {
+    fmt: &'a mut NodeFormatter,
+}
+impl<'a> WrapSquare<'a> {
+    fn new(fmt: &mut NodeFormatter) -> WrapSquare {
+        fmt.punctuator(Punctuator::SquareL);
+
+        WrapSquare { fmt }
+    }
+}
+impl<'a> ::std::ops::Drop for WrapSquare<'a> {
+    fn drop(&mut self) {
+        self.fmt.punctuator(Punctuator::SquareR);
+    }
+}
+
+pub struct WrapCurly<'a> {
+    fmt: &'a mut NodeFormatter,
+}
+impl<'a> WrapCurly<'a> {
+    fn new(fmt: &mut NodeFormatter) -> WrapCurly {
+        fmt.punctuator(Punctuator::CurlyL);
+
+        WrapCurly { fmt }
+    }
+}
+impl<'a> ::std::ops::Drop for WrapCurly<'a> {
+    fn drop(&mut self) {
+        self.fmt.punctuator(Punctuator::CurlyR);
+    }
+}
+
 macro_rules! impl_deref {
     ($id:ident) => {
         impl<'a> ::std::ops::Deref for $id<'a> {
@@ -555,7 +587,7 @@ macro_rules! impl_deref {
         impl_deref!($($ids),+);
     };
 }
-impl_deref!(CachePrecedence, CacheIn, WrapParens);
+impl_deref!(CachePrecedence, CacheIn, WrapParens, WrapSquare, WrapCurly);
 
 
 #[derive(Debug)]

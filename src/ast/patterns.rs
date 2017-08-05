@@ -47,7 +47,7 @@ node!(#[derive(Default)] pub struct ObjectPattern {
 
 impl NodeDisplay for ObjectPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::CurlyL);
+        let mut f = f.wrap_curly();
 
         f.comma_list(&self.properties)?;
 
@@ -61,7 +61,6 @@ impl NodeDisplay for ObjectPattern {
             f.node(p)?;
         }
 
-        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
@@ -125,7 +124,7 @@ node!(#[derive(Default)] pub struct ArrayPattern {
 });
 impl NodeDisplay for ArrayPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::SquareL);
+        let mut f = f.wrap_square();
 
         for (i, prop) in self.items.iter().enumerate() {
             if i != 0 {
@@ -147,7 +146,6 @@ impl NodeDisplay for ArrayPattern {
             f.node(p)?;
         }
 
-        f.punctuator(Punctuator::SquareR);
         Ok(())
     }
 }

@@ -114,7 +114,7 @@ node!(#[derive(Default)] pub struct CallArguments {
 });
 impl NodeDisplay for CallArguments {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::ParenL);
+        let mut f = f.wrap_parens();
 
         f.comma_list(&self.args)?;
 
@@ -123,7 +123,6 @@ impl NodeDisplay for CallArguments {
             f.require_precedence(Precedence::Assignment).node(spread)?;
         }
 
-        f.punctuator(Punctuator::ParenR);
         Ok(())
     }
 }
@@ -173,11 +172,12 @@ node!(pub struct ImportCallExpression {
 impl NodeDisplay for ImportCallExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Import);
-        f.punctuator(Punctuator::ParenL);
+
+        let mut f = f.wrap_parens();
         f.require_precedence(Precedence::Assignment).node(
             &self.argument,
         )?;
-        f.punctuator(Punctuator::ParenR);
+
         Ok(())
     }
 }
@@ -235,11 +235,10 @@ node!(pub struct ComputedPropertyAccess {
 });
 impl NodeDisplay for ComputedPropertyAccess {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::SquareL);
+        let mut f = f.wrap_square();
         f.require_precedence(Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(Punctuator::SquareR);
         Ok(())
     }
 }

@@ -118,12 +118,12 @@ node!(pub struct SpreadAttribute {
 });
 impl NodeDisplay for SpreadAttribute {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::CurlyL);
+        let mut f = f.wrap_curly();
+
         f.punctuator(Punctuator::Ellipsis);
         f.require_precedence(Precedence::Assignment).node(
             &self.argument,
         )?;
-        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
@@ -177,11 +177,11 @@ node!(pub struct Expression {
 });
 impl NodeDisplay for Expression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::CurlyL);
+        let mut f = f.wrap_curly();
+
         f.require_precedence(Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
@@ -192,12 +192,12 @@ node!(pub struct ExpressionSpread {
 });
 impl NodeDisplay for ExpressionSpread {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::CurlyL);
+        let mut f = f.wrap_curly();
         f.punctuator(Punctuator::Ellipsis);
         f.require_precedence(Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(Punctuator::CurlyR);
+
         Ok(())
     }
 }
@@ -205,8 +205,7 @@ impl NodeDisplay for ExpressionSpread {
 node!(pub struct Empty {});
 impl NodeDisplay for Empty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::CurlyL);
-        f.punctuator(Punctuator::CurlyR);
+        f.wrap_curly();
         Ok(())
     }
 }

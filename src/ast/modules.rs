@@ -115,9 +115,7 @@ impl NodeDisplay for ImportNamedAndSpecifiersDeclaration {
         f.keyword(Keyword::Import);
         f.node(&self.default)?;
         f.punctuator(Punctuator::Comma);
-        f.punctuator(Punctuator::CurlyL);
-        f.comma_list(&self.specifiers)?;
-        f.punctuator(Punctuator::CurlyR);
+        f.wrap_curly().comma_list(&self.specifiers)?;
         f.keyword(Keyword::From);
         f.node(&self.source)
     }
@@ -133,9 +131,7 @@ node!(pub struct ImportSpecifiersDeclaration {
 impl NodeDisplay for ImportSpecifiersDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Import);
-        f.punctuator(Punctuator::CurlyL);
-        f.comma_list(&self.specifiers)?;
-        f.punctuator(Punctuator::CurlyR);
+        f.wrap_curly().comma_list(&self.specifiers)?;
         f.keyword(Keyword::From);
         f.node(&self.source)
     }
@@ -240,9 +236,7 @@ node!(#[derive(Default)] pub struct ExportLocalBindings {
 impl NodeDisplay for ExportLocalBindings {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Export);
-        f.punctuator(Punctuator::CurlyL);
-        f.comma_list(&self.specifiers)?;
-        f.punctuator(Punctuator::CurlyR);
+        f.wrap_curly().comma_list(&self.specifiers)?;
         Ok(())
     }
 }
@@ -275,9 +269,7 @@ impl NodeDisplay for ExportSourceSpecifiers {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Export);
 
-        f.punctuator(Punctuator::CurlyL);
-        f.comma_list(&self.specifiers)?;
-        f.punctuator(Punctuator::CurlyR);
+        f.wrap_curly().comma_list(&self.specifiers)?;
 
         f.keyword(Keyword::From);
         f.node(&self.source)
@@ -380,11 +372,7 @@ impl NodeDisplay for ExportNamedAndSpecifiers {
         f.keyword(Keyword::Export);
         f.node(&self.default)?;
         f.punctuator(Punctuator::Comma);
-
-        f.punctuator(Punctuator::CurlyL);
-        f.comma_list(&self.specifiers)?;
-        f.punctuator(Punctuator::CurlyR);
-
+        f.wrap_curly().comma_list(&self.specifiers)?;
         f.keyword(Keyword::From);
         f.node(&self.source)
     }

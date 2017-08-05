@@ -1,7 +1,6 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence,
-                   FirstSpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Precedence, FirstSpecialToken};
 use ast::alias;
 use ast::literal;
 
@@ -63,13 +62,13 @@ node!(pub struct ComputedPropertyName {
 });
 impl NodeDisplay for ComputedPropertyName {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let mut f = f.wrap_square();
         let mut f = f.allow_in();
 
-        f.punctuator(Punctuator::SquareL);
         f.require_precedence(Precedence::Assignment).node(
             &self.expression,
         )?;
-        f.punctuator(Punctuator::SquareR);
+
         Ok(())
     }
 }

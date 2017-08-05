@@ -15,7 +15,7 @@ node!(#[derive(Default)] pub struct ObjectExpression {
 });
 impl NodeDisplay for ObjectExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::SquareL);
+        let mut f = f.wrap_curly();
 
         f.comma_list(&self.properties)?;
 
@@ -120,9 +120,8 @@ node!(#[derive(Default)] pub struct ArrayExpression {
 impl NodeDisplay for ArrayExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.precedence(Precedence::Primary);
+        let mut f = f.wrap_square();
         let mut f = f.allow_in();
-
-        f.punctuator(Punctuator::SquareL);
 
         for (i, el) in self.elements.iter().enumerate() {
             if i != 0 {
@@ -130,7 +129,6 @@ impl NodeDisplay for ArrayExpression {
             }
 
             if let Some(ref expr) = *el {
-                let mut f = f.allow_in();
                 f.require_precedence(Precedence::Assignment).node(expr)?;
             }
         }

@@ -112,13 +112,12 @@ node!(#[derive(Default)] pub struct ClassBody {
 // display_dsl!(ClassBody: { @[items] });
 impl NodeDisplay for ClassBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.punctuator(Punctuator::CurlyL);
+        let mut f = f.wrap_curly();
 
         for item in self.items.iter() {
             f.node(item)?;
         }
 
-        f.punctuator(Punctuator::CurlyR);
         Ok(())
     }
 }
