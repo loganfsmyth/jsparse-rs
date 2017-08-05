@@ -1,7 +1,7 @@
 use std::string;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   HasOrphanIf, FirstSpecialToken, SpecialToken};
+                   FirstSpecialToken, SpecialToken};
 
 use ast::patterns::{LeftHandComplexAssign, Pattern};
 
@@ -27,7 +27,6 @@ impl NodeDisplay for BlockStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for BlockStatement {}
 
 impl From<Vec<alias::StatementItem>> for BlockStatement {
     fn from(body: Vec<alias::StatementItem>) -> BlockStatement {
@@ -82,7 +81,6 @@ impl NodeDisplay for VariableStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for VariableStatement {}
 
 type VariableDeclaratorList = DeclaratorList<VariableDeclarator>;
 node!(pub struct VariableDeclarator {
@@ -260,7 +258,6 @@ impl NodeDisplay for ExpressionStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for ExpressionStatement {}
 impl<T: Into<alias::Expression>> From<T> for ExpressionStatement {
     fn from(expr: T) -> ExpressionStatement {
         ExpressionStatement {
@@ -295,11 +292,6 @@ impl NodeDisplay for IfStatement {
             f.node(&self.consequent)?;
         }
         Ok(())
-    }
-}
-impl HasOrphanIf for IfStatement {
-    fn orphan_if(&self) -> bool {
-        self.consequent.orphan_if()
     }
 }
 
@@ -405,11 +397,6 @@ impl NodeDisplay for ForStatement {
         f.node(&self.body)
     }
 }
-impl HasOrphanIf for ForStatement {
-    fn orphan_if(&self) -> bool {
-        self.body.orphan_if()
-    }
-}
 node_enum!(@node_display pub enum ForInit {
     Var(VariableStatement),
     Let(LetDeclaration),
@@ -491,11 +478,7 @@ impl NodeDisplay for ForInStatement {
         f.node(&self.body)
     }
 }
-impl HasOrphanIf for ForInStatement {
-    fn orphan_if(&self) -> bool {
-        self.body.orphan_if()
-    }
-}
+
 
 node!(pub struct ForInVarPattern {
     pub pattern: Pattern,
@@ -577,11 +560,6 @@ impl NodeDisplay for ForOfStatement {
         f.node(&self.body)
     }
 }
-impl HasOrphanIf for ForOfStatement {
-    fn orphan_if(&self) -> bool {
-        self.body.orphan_if()
-    }
-}
 
 
 // for await .. of
@@ -604,11 +582,6 @@ impl NodeDisplay for ForAwaitStatement {
         }
 
         f.node(&self.body)
-    }
-}
-impl HasOrphanIf for ForAwaitStatement {
-    fn orphan_if(&self) -> bool {
-        self.body.orphan_if()
     }
 }
 
@@ -639,11 +612,6 @@ impl NodeDisplay for WhileStatement {
         f.node(&self.body)
     }
 }
-impl HasOrphanIf for WhileStatement {
-    fn orphan_if(&self) -> bool {
-        self.body.orphan_if()
-    }
-}
 
 
 // do ; while(...) ;
@@ -666,7 +634,6 @@ impl NodeDisplay for DoWhileStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for DoWhileStatement {}
 
 
 // switch (...) { ...    }
@@ -693,7 +660,6 @@ impl NodeDisplay for SwitchStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for SwitchStatement {}
 
 #[cfg(test)]
 mod tests_switch {
@@ -791,11 +757,6 @@ impl NodeDisplay for WithStatement {
         f.node(&self.body)
     }
 }
-impl HasOrphanIf for WithStatement {
-    fn orphan_if(&self) -> bool {
-        self.body.orphan_if()
-    }
-}
 
 
 // identifiers used as labels
@@ -831,11 +792,6 @@ impl NodeDisplay for LabelledStatement {
         f.node(&self.body)
     }
 }
-impl HasOrphanIf for LabelledStatement {
-    fn orphan_if(&self) -> bool {
-        self.body.orphan_if()
-    }
-}
 
 
 // throw foo;
@@ -853,7 +809,6 @@ impl NodeDisplay for ThrowStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for ThrowStatement {}
 
 
 // try {} catch(foo) {}
@@ -868,7 +823,6 @@ impl NodeDisplay for TryCatchStatement {
         f.node(&self.handler)
     }
 }
-impl HasOrphanIf for TryCatchStatement {}
 
 #[cfg(test)]
 mod tests_try_catch {
@@ -923,7 +877,6 @@ impl NodeDisplay for TryCatchFinallyStatement {
         f.node(&self.finalizer)
     }
 }
-impl HasOrphanIf for TryCatchFinallyStatement {}
 
 impl From<TryCatchStatement> for TryCatchFinallyStatement {
     fn from(stmt: TryCatchStatement) -> TryCatchFinallyStatement {
@@ -991,7 +944,6 @@ impl NodeDisplay for TryFinallyStatement {
         f.node(&self.finalizer)
     }
 }
-impl HasOrphanIf for TryFinallyStatement {}
 
 
 node!(#[derive(Default)] pub struct CatchClause {
@@ -1024,7 +976,6 @@ impl NodeDisplay for ContinueStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for ContinueStatement {}
 
 
 // break;
@@ -1041,7 +992,6 @@ impl NodeDisplay for BreakStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for BreakStatement {}
 
 
 // return;
@@ -1059,7 +1009,6 @@ impl NodeDisplay for ReturnStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for ReturnStatement {}
 
 
 // debugger;
@@ -1071,7 +1020,6 @@ impl NodeDisplay for DebuggerStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for DebuggerStatement {}
 
 // ;
 node!(#[derive(Default)] pub struct EmptyStatement {});
@@ -1081,4 +1029,3 @@ impl NodeDisplay for EmptyStatement {
         Ok(())
     }
 }
-impl HasOrphanIf for EmptyStatement {}

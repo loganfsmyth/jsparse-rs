@@ -66,17 +66,6 @@ macro_rules! node_enum_impl {
             }
         }
     };
-    (@orphan_if $name:ident { $( $key:ident($type:ty) ,)* }) => {
-        impl $crate::ast::display::HasOrphanIf for $name {
-            fn orphan_if(&self) -> bool {
-                match *self {
-                    $(
-                        $name::$key(ref n) => n.orphan_if(),
-                    )*
-                }
-            }
-        }
-    };
 }
 
 macro_rules! node_enum {

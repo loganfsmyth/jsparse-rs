@@ -162,12 +162,6 @@ pub enum Precedence {
     Primary,
 }
 
-pub trait HasOrphanIf {
-    fn orphan_if(&self) -> bool {
-        false
-    }
-}
-
 pub enum SpecialToken {
     None,
     Declaration,

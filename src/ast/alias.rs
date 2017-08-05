@@ -154,7 +154,7 @@ impl<T: Into<Expression>> From<T> for StatementItem {
 }
 
 
-node_enum!(@node_display @orphan_if pub enum Statement {
+node_enum!(@node_display pub enum Statement {
     Block(statement::BlockStatement),
     Variable(statement::VariableStatement),
     Empty(statement::EmptyStatement),
