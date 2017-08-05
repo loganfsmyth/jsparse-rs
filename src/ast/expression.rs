@@ -156,7 +156,11 @@ impl NodeDisplay for CallArguments {
         f.comma_list(&self.args)?;
 
         if let Some(ref spread) = self.spread {
-            f.punctuator(Punctuator::Comma);
+            if !self.args.is_empty() {
+                f.punctuator(Punctuator::Comma);
+            }
+
+            f.punctuator(Punctuator::Ellipsis);
             f.require_precedence(Precedence::Assignment).node(spread)?;
         }
 

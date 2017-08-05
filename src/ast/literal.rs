@@ -106,10 +106,10 @@ impl NodeDisplay for String {
     }
 }
 impl FirstSpecialToken for String {}
-impl From<string::String> for String {
-    fn from(value: string::String) -> String {
+impl<T: Into<string::String>> From<T> for String {
+    fn from(value: T) -> String {
         String {
-            value,
+            value: value.into(),
             raw: None,
             position: None,
         }

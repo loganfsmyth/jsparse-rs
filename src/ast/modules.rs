@@ -33,6 +33,15 @@ impl ModuleIdentifier {
         }
     }
 }
+impl<T: Into<string::String>> From<T> for ModuleIdentifier {
+    fn from(value: T) -> ModuleIdentifier {
+        ModuleIdentifier {
+            value: value.into(),
+            raw: None,
+            position: None,
+        }
+    }
+}
 
 
 node!(pub struct ImportSpecifier {
@@ -50,6 +59,15 @@ impl NodeDisplay for ImportSpecifier {
         Ok(())
     }
 }
+impl From<BindingIdentifier> for ImportSpecifier {
+    fn from(b: BindingIdentifier) -> ImportSpecifier {
+        ImportSpecifier {
+            local: b,
+            imported: None,
+            position: None,
+        }
+    }
+}
 
 // import foo from "";
 node!(pub struct ImportNamedDeclaration {
@@ -61,7 +79,28 @@ impl NodeDisplay for ImportNamedDeclaration {
         f.keyword(Keyword::Import);
         f.node(&self.default)?;
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests_import_named {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            ImportNamedDeclaration {
+                default: "foo".into(),
+                source: "file.js".into(),
+                position: None,
+            },
+            "import foo from'file.js';"
+        );
     }
 }
 
@@ -81,7 +120,29 @@ impl NodeDisplay for ImportNamedAndNamespaceDeclaration {
         f.keyword(Keyword::As);
         f.node(&self.namespace)?;
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests_import_named_and_namespace {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            ImportNamedAndNamespaceDeclaration {
+                default: "foo".into(),
+                namespace: "namespaceObj".into(),
+                source: "file.js".into(),
+                position: None,
+            },
+            "import foo,*as namespaceObj from'file.js';"
+        );
     }
 }
 
@@ -98,7 +159,28 @@ impl NodeDisplay for ImportNamespaceDeclaration {
         f.keyword(Keyword::As);
         f.node(&self.namespace)?;
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests_import_namespace {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            ImportNamespaceDeclaration {
+                namespace: "namespaceObj".into(),
+                source: "file.js".into(),
+                position: None,
+            },
+            "import*as namespaceObj from'file.js';"
+        );
     }
 }
 
@@ -117,10 +199,52 @@ impl NodeDisplay for ImportNamedAndSpecifiersDeclaration {
         f.punctuator(Punctuator::Comma);
         f.wrap_curly().comma_list(&self.specifiers)?;
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
     }
 }
 
+#[cfg(test)]
+mod tests_import_named_and_specifiers {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            ImportNamedAndSpecifiersDeclaration {
+                default: "foo".into(),
+                specifiers: vec![],
+                source: "file.js".into(),
+                position: None,
+            },
+            "import foo,{}from'file.js';"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_specifiers() {
+        assert_serialize!(
+            ImportNamedAndSpecifiersDeclaration {
+                default: "foo".into(),
+                specifiers: vec![
+                    BindingIdentifier::from("spec1").into(),
+                    BindingIdentifier::from("spec2").into(),
+                    ImportSpecifier {
+                        local: BindingIdentifier::from("spec3"),
+                        imported: ModuleIdentifier::from("fooImport").into(),
+                        position: None,
+                    },
+                ],
+                source: "file.js".into(),
+                position: None,
+            },
+            "import foo,{spec1,spec2,spec3 as fooImport}from'file.js';"
+        );
+    }
+}
 
 // import {bar} from "";
 // import {bar as bar} from "";
@@ -133,10 +257,50 @@ impl NodeDisplay for ImportSpecifiersDeclaration {
         f.keyword(Keyword::Import);
         f.wrap_curly().comma_list(&self.specifiers)?;
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
     }
 }
 
+#[cfg(test)]
+mod tests_import_specifiers {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            ImportSpecifiersDeclaration {
+                specifiers: vec![],
+                source: "file.js".into(),
+                position: None,
+            },
+            "import{}from'file.js';"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_specifiers() {
+        assert_serialize!(
+            ImportSpecifiersDeclaration {
+                specifiers: vec![
+                    BindingIdentifier::from("spec1").into(),
+                    BindingIdentifier::from("spec2").into(),
+                    ImportSpecifier {
+                        local: BindingIdentifier::from("spec3"),
+                        imported: ModuleIdentifier::from("fooImport").into(),
+                        position: None,
+                    },
+                ],
+                source: "file.js".into(),
+                position: None,
+            },
+            "import{spec1,spec2,spec3 as fooImport}from'file.js';"
+        );
+    }
+}
 
 
 
@@ -161,6 +325,30 @@ impl NodeDisplay for ExportDefaultExpression {
         Ok(())
     }
 }
+impl<T: Into<alias::Expression>> From<T> for ExportDefaultExpression {
+    fn from(val: T) -> ExportDefaultExpression {
+        ExportDefaultExpression {
+            expression: val.into(),
+            position: None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_export_default_expr {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_with_specifiers() {
+        assert_serialize!(
+            ExportDefaultExpression::from(literal::Numeric::from(65.0)),
+            "export default 65;"
+        );
+    }
+}
+
 
 
 // export class foo {}
@@ -237,7 +425,39 @@ impl NodeDisplay for ExportLocalBindings {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Export);
         f.wrap_curly().comma_list(&self.specifiers)?;
+        f.punctuator(Punctuator::Semicolon);
         Ok(())
+    }
+}
+impl From<Vec<LocalExportSpecifier>> for ExportLocalBindings {
+    fn from(v: Vec<LocalExportSpecifier>) -> ExportLocalBindings {
+        ExportLocalBindings {
+            specifiers: v,
+            position: None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests_export_specifiers {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_with_specifiers() {
+        assert_serialize!(
+            ExportLocalBindings::from(vec![
+                BindingIdentifier::from("someName").into(),
+                BindingIdentifier::from("someOtherName").into(),
+                LocalExportSpecifier {
+                    local: "local".into(),
+                    exported: Some("exp".into()),
+                    position: None,
+                },
+            ]),
+            "export{someName,someOtherName,local as exp};"
+        );
     }
 }
 
@@ -257,6 +477,15 @@ impl NodeDisplay for LocalExportSpecifier {
         Ok(())
     }
 }
+impl From<BindingIdentifier> for LocalExportSpecifier {
+    fn from(b: BindingIdentifier) -> LocalExportSpecifier {
+        LocalExportSpecifier {
+            local: b,
+            exported: None,
+            position: None,
+        }
+    }
+}
 
 
 // export {foo} from "";
@@ -272,7 +501,35 @@ impl NodeDisplay for ExportSourceSpecifiers {
         f.wrap_curly().comma_list(&self.specifiers)?;
 
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
+    }
+}
+#[cfg(test)]
+mod tests_export_source_specifiers {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_with_specifiers() {
+        assert_serialize!(
+            ExportSourceSpecifiers {
+                specifiers: vec![
+                    ModuleIdentifier::from("someName").into(),
+                    ModuleIdentifier::from("someOtherName").into(),
+                    SourceExportSpecifier {
+                        imported: "local".into(),
+                        exported: Some("exp".into()),
+                        position: None,
+                    },
+                ],
+                source: "file.js".into(),
+                position: None,
+            },
+            "export{someName,someOtherName,local as exp}from'file.js';"
+        );
     }
 }
 
@@ -292,6 +549,15 @@ impl NodeDisplay for SourceExportSpecifier {
         Ok(())
     }
 }
+impl From<ModuleIdentifier> for SourceExportSpecifier {
+    fn from(b: ModuleIdentifier) -> SourceExportSpecifier {
+        SourceExportSpecifier {
+            imported: b,
+            exported: None,
+            position: None,
+        }
+    }
+}
 
 
 // export * from "";
@@ -303,7 +569,26 @@ impl NodeDisplay for ExportAllSpecifiers {
         f.keyword(Keyword::Export);
         f.punctuator(Punctuator::Star);
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
+    }
+}
+#[cfg(test)]
+mod tests_export_source_all {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_with_specifiers() {
+        assert_serialize!(
+            ExportAllSpecifiers {
+                source: "file.js".into(),
+                position: None,
+            },
+            "export*from'file.js';"
+        );
     }
 }
 
@@ -318,7 +603,27 @@ impl NodeDisplay for ExportNamedSpecifier {
         f.keyword(Keyword::Export);
         f.node(&self.default)?;
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
+    }
+}
+#[cfg(test)]
+mod tests_export_named_default {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_with_specifiers() {
+        assert_serialize!(
+            ExportNamedSpecifier {
+                default: "fooExp".into(),
+                source: "file.js".into(),
+                position: None,
+            },
+            "export fooExp from'file.js';"
+        );
     }
 }
 
@@ -338,7 +643,9 @@ impl NodeDisplay for ExportNamedAndNamespace {
         f.keyword(Keyword::As);
         f.node(&self.namespace)?;
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
     }
 }
 
@@ -355,7 +662,9 @@ impl NodeDisplay for ExportNamespace {
         f.keyword(Keyword::As);
         f.node(&self.namespace)?;
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
     }
 }
 
@@ -374,6 +683,8 @@ impl NodeDisplay for ExportNamedAndSpecifiers {
         f.punctuator(Punctuator::Comma);
         f.wrap_curly().comma_list(&self.specifiers)?;
         f.keyword(Keyword::From);
-        f.node(&self.source)
+        f.node(&self.source)?;
+        f.punctuator(Punctuator::Semicolon);
+        Ok(())
     }
 }
