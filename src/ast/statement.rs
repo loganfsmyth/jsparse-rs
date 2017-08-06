@@ -13,7 +13,6 @@ use ast::alias;
 node!(#[derive(Default)] pub struct BlockStatement {
     pub body: Vec<alias::StatementItem>,
 });
-
 impl NodeDisplay for BlockStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.wrap_curly();
@@ -24,7 +23,6 @@ impl NodeDisplay for BlockStatement {
         Ok(())
     }
 }
-
 impl From<Vec<alias::StatementItem>> for BlockStatement {
     fn from(body: Vec<alias::StatementItem>) -> BlockStatement {
         BlockStatement {
@@ -33,7 +31,6 @@ impl From<Vec<alias::StatementItem>> for BlockStatement {
         }
     }
 }
-
 #[cfg(test)]
 mod tests_block {
     use super::*;
@@ -49,6 +46,7 @@ mod tests_block {
             "{}"
         );
     }
+
     #[test]
     fn it_prints_with_items() {
         assert_serialize!(
@@ -259,6 +257,97 @@ impl<T: Into<alias::Expression>> From<T> for ExpressionStatement {
             expression: expr.into(),
             position: None,
         }
+    }
+}
+#[cfg(test)]
+mod tests_expression_statement {
+    use super::*;
+    use ast::literal;
+    use ast::general::BindingIdentifier;
+    use ast::functions;
+    use ast::classes;
+    use ast::objects;
+    use ast::patterns;
+    use ast::expression;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            ExpressionStatement {
+                expression: BindingIdentifier::from("foo").into(),
+                position: None,
+            },
+            "foo;"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_function_parens() {
+        assert_serialize!(
+            ExpressionStatement {
+                expression: functions::FunctionExpression::default().into(),
+                position: None,
+            },
+            "(function(){});"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_class_parens() {
+        assert_serialize!(
+            ExpressionStatement {
+                expression: classes::ClassExpression::default().into(),
+                position: None,
+            },
+            "(class{});"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_object_expression_parens() {
+        assert_serialize!(
+            ExpressionStatement {
+                expression: objects::ObjectExpression::default().into(),
+                position: None,
+            },
+            "({});"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_object_pattern_parens() {
+        assert_serialize!(
+            ExpressionStatement {
+                expression: expression::AssignmentExpression {
+                    left: patterns::ObjectPattern::default().into(),
+                    right: BindingIdentifier::from("foo").into(),
+                    position: None,
+                }.into(),
+                position: None,
+            },
+            "({}=foo);"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_letsquare_parens() {
+        assert_serialize!(
+            ExpressionStatement {
+                expression: expression::MemberExpression {
+                    object: BindingIdentifier::from("let").into(),
+                    property: expression::PropertyAccess::Computed(
+                        expression::ComputedPropertyAccess {
+                            optional: false,
+                            expression: literal::Boolean::from(false).into(),
+                            position: None,
+                        }
+                    ),
+                    position: None,
+                }.into(),
+                position: None,
+            },
+            "(let[false]);"
+        );
     }
 }
 
@@ -527,9 +616,6 @@ node_enum!(@node_display pub enum ForInInit {
     Var(ForInVarPattern),
     Let(ForLetPattern),
     Const(ForConstPattern),
-
-    // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
-    // so we need parens here for that too.
     Complex(LeftHandComplexAssign),
 });
 
@@ -586,9 +672,6 @@ node_enum!(@node_display pub enum ForOfInit {
     Var(ForVarPattern),
     Let(ForLetPattern),
     Const(ForConstPattern),
-
-    // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
-    // so we need parens here for that too.
     Complex(LeftHandComplexAssign),
 });
 

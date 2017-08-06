@@ -325,17 +325,34 @@ impl<T: Into<alias::Expression>> From<T> for ExportDefaultExpression {
         }
     }
 }
-
 #[cfg(test)]
-mod tests_export_default_expr {
+mod tests_export_default_expression {
     use super::*;
     use ast::literal;
+    use ast::functions;
+    use ast::classes;
 
     #[test]
-    fn it_prints_with_specifiers() {
+    fn it_prints() {
         assert_serialize!(
             ExportDefaultExpression::from(literal::Numeric::from(65.0)),
             "export default 65;"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_class_parens() {
+        assert_serialize!(
+            ExportDefaultExpression::from(classes::ClassExpression::default()),
+            "export default(class{});"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_functino_parens() {
+        assert_serialize!(
+            ExportDefaultExpression::from(functions::FunctionExpression::default()),
+            "export default(function(){});"
         );
     }
 }

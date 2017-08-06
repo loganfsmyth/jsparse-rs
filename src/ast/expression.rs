@@ -20,7 +20,6 @@ impl NodeDisplay for ThisExpression {
         Ok(())
     }
 }
-
 #[cfg(test)]
 mod tests_this {
     use super::*;
@@ -48,7 +47,6 @@ impl<T: Into<alias::Expression>> From<T> for ParenthesizedExpression {
         }
     }
 }
-
 #[cfg(test)]
 mod tests_paren_expr {
     use super::*;
@@ -300,16 +298,12 @@ impl NodeDisplay for SuperCallExpression {
 node!(pub struct MemberExpression {
     pub object: Box<alias::Expression>,
     pub property: PropertyAccess,
-    pub optional: bool,
 });
 impl NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.lookahead_wrap_parens(get_sequence(self));
         f.require_precedence(Precedence::Member).node(&self.object)?;
-        if self.optional {
-            f.punctuator(Punctuator::Question);
-        }
-        f.punctuator(Punctuator::Period);
+
         f.node(&self.property)?;
         Ok(())
     }
@@ -320,11 +314,12 @@ fn get_sequence(expr: &MemberExpression) -> LookaheadSequence {
     use ast::alias::Expression::Binding;
 
     match *expr.object {
-        Binding(BindingIdentifier { ref value, .. }) if value == "let" && !expr.optional => {
-            if let PropertyAccess::Computed(_) = expr.property {
-                LookaheadSequence::LetSquare
-            } else {
-                LookaheadSequence::Let
+        Binding(BindingIdentifier { ref value, .. }) if value == "let" => {
+            match expr.property {
+                PropertyAccess::Computed(ComputedPropertyAccess { optional, .. }) if !optional => {
+                    LookaheadSequence::LetSquare
+                },
+                _ => LookaheadSequence::Let,
             }
         }
         _ => LookaheadSequence::None,
@@ -341,9 +336,14 @@ node_enum!(@node_display pub enum PropertyAccess {
 
 node!(pub struct ComputedPropertyAccess {
     pub expression: Box<alias::Expression>,
+    pub optional: bool,
 });
 impl NodeDisplay for ComputedPropertyAccess {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        if self.optional {
+            f.punctuator(Punctuator::Question);
+        }
+
         let mut f = f.wrap_square();
         f.require_precedence(Precedence::Assignment).node(
             &self.expression,
@@ -355,10 +355,14 @@ impl NodeDisplay for ComputedPropertyAccess {
 // .foo
 node!(pub struct IdentifierPropertyAccess {
     pub id: PropertyIdentifier,
+    pub optional: bool,
 });
 impl NodeDisplay for IdentifierPropertyAccess {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::Period);
+        if self.optional {
+            f.punctuator(Punctuator::Question);
+        }
         f.node(&self.id)
     }
 }
@@ -716,11 +720,19 @@ node!(pub struct AssignmentExpression {
 });
 impl NodeDisplay for AssignmentExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let sequence = if let LeftHandComplexAssign::Object(_) = *self.left {
+            LookaheadSequence::Curly
+        } else {
+            LookaheadSequence::None
+        };
+
+        let mut f = f.lookahead_wrap_parens(sequence);
         f.require_precedence(Precedence::LeftHand).node(&self.left)?;
         f.punctuator(Punctuator::Eq);
         f.require_precedence(Precedence::Assignment).node(
             &self.right,
-        )
+        )?;
+        Ok(())
     }
 }
 

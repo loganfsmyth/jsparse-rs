@@ -1,5 +1,4 @@
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence,
-                   LookaheadSequence};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence};
 
 use ast::alias;
 use ast::general::{BindingIdentifier, PropertyName};
@@ -37,7 +36,6 @@ node!(#[derive(Default)] pub struct ObjectPattern {
 });
 impl NodeDisplay for ObjectPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        let mut f = f.lookahead_wrap_parens(LookaheadSequence::Curly);
         let mut f = f.wrap_curly();
 
         f.comma_list(&self.properties)?;
