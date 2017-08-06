@@ -122,15 +122,7 @@ impl NodeDisplay for ArrayPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.wrap_square();
 
-        for (i, prop) in self.items.iter().enumerate() {
-            if i != 0 {
-                f.punctuator(Punctuator::Comma);
-            }
-
-            if let Some(ref prop) = *prop {
-                f.node(prop)?;
-            }
-        }
+        f.comma_list(&self.items)?;
 
         if let Some(ref p) = self.rest {
             if !self.items.is_empty() {

@@ -95,6 +95,7 @@ impl NodeDisplay for FunctionParam {
         f.node(&self.id)?;
 
         if let Some(ref init) = self.init {
+            f.punctuator(Punctuator::Eq);
             f.node(init)?;
         }
         Ok(())
@@ -157,10 +158,7 @@ impl NodeDisplay for ExportDefaultFunctionDeclaration {
         f.keyword(Keyword::Export);
         f.keyword(Keyword::Default);
         f.node(&self.kind)?;
-
-        if let Some(ref id) = self.id {
-            f.node(id)?;
-        }
+        f.node(&self.id)?;
         f.node(&self.params)?;
         f.node(&self.body)
     }
@@ -176,7 +174,6 @@ node!(pub struct FunctionDeclaration {
 impl NodeDisplay for FunctionDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.kind)?;
-        f.keyword(Keyword::Function);
         f.node(&self.id)?;
         f.node(&self.params)?;
         f.node(&self.body)

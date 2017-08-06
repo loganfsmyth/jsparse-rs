@@ -29,9 +29,9 @@ impl NodeDisplay for ExportDefaultClassDeclaration {
             f.node(dec)?;
         }
         f.keyword(Keyword::Class);
-        if let Some(ref id) = self.id {
-            f.node(id)?;
-        }
+
+        f.node(&self.id)?;
+
         if let Some(ref extends) = self.extends {
             f.keyword(Keyword::Extends);
             f.require_precedence(Precedence::LeftHand).node(extends)?;
@@ -90,9 +90,8 @@ impl NodeDisplay for ClassExpression {
 
         f.keyword(Keyword::Class);
 
-        if let Some(ref id) = self.id {
-            f.node(id)?;
-        }
+        f.node(&self.id)?;
+
         if let Some(ref expr) = self.extends {
             f.keyword(Keyword::Extends);
             f.require_precedence(Precedence::LeftHand).node(expr)?;
@@ -207,6 +206,11 @@ impl NodeDisplay for FieldPosition {
             f.keyword(Keyword::Static);
         }
         Ok(())
+    }
+}
+impl Default for FieldPosition {
+    fn default() -> FieldPosition {
+        FieldPosition::Instance
     }
 }
 

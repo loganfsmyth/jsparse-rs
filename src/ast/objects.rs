@@ -25,6 +25,7 @@ impl NodeDisplay for ObjectExpression {
                 f.punctuator(Punctuator::Comma);
             }
 
+            f.punctuator(Punctuator::Ellipsis);
             f.require_precedence(Precedence::Assignment).node(expr)?;
         }
 
@@ -119,18 +120,16 @@ impl NodeDisplay for ArrayExpression {
         let mut f = f.wrap_square();
         let mut f = f.allow_in();
 
-        for (i, el) in self.elements.iter().enumerate() {
-            if i != 0 {
+        let mut f = f.require_precedence(Precedence::Assignment);
+        f.comma_list(&self.elements)?;
+
+        if let Some(ref expr) = self.spread {
+            if !self.elements.is_empty() {
                 f.punctuator(Punctuator::Comma);
             }
 
-            if let Some(ref expr) = *el {
-                f.require_precedence(Precedence::Assignment).node(expr)?;
-            }
-        }
-
-        if let Some(ref expr) = self.spread {
-            f.require_precedence(Precedence::Assignment).node(expr)?;
+            f.punctuator(Punctuator::Ellipsis);
+            f.node(expr)?;
         }
 
         Ok(())

@@ -232,6 +232,7 @@ mod tests_call_args {
 }
 
 // foo()
+// foo?()
 node!(pub struct CallExpression {
     pub callee: Box<alias::Expression>,
     pub arguments: CallArguments,
@@ -350,7 +351,7 @@ impl NodeDisplay for ComputedPropertyAccess {
     }
 }
 
-
+// .foo
 node!(pub struct IdentifierPropertyAccess {
     pub id: PropertyIdentifier,
 });
@@ -361,12 +362,13 @@ impl NodeDisplay for IdentifierPropertyAccess {
     }
 }
 
-
+// .#foo
 node!(pub struct PrivatePropertyAccess {
     pub property: PropertyIdentifier,
 });
 impl NodeDisplay for PrivatePropertyAccess {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.punctuator(Punctuator::Period);
         f.punctuator(Punctuator::Hash);
         f.node(&self.property)
     }
@@ -495,7 +497,6 @@ node_kind!(pub enum BinaryOperator {
 });
 impl NodeDisplay for BinaryExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-
         match self.operator {
             BinaryOperator::Add => {
                 let mut f = f.precedence(Precedence::Additive);
@@ -694,17 +695,13 @@ impl NodeDisplay for ConditionalExpression {
         let mut f = f.precedence(Precedence::Conditional);
 
         f.require_precedence(Precedence::LogicalOr).node(&self.test)?;
+
         f.punctuator(Punctuator::Question);
-        {
-            let mut f = f.allow_in();
-            f.require_precedence(Precedence::Assignment).node(
-                &self.consequent,
-            )?;
-        }
+
+        let mut f = f.require_precedence(Precedence::Assignment);
+        f.allow_in().node(&self.consequent)?;
         f.punctuator(Punctuator::Colon);
-        f.require_precedence(Precedence::Assignment).node(
-            &self.alternate,
-        )?;
+        f.node(&self.alternate)?;
 
         Ok(())
     }
