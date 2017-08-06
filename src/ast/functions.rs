@@ -88,9 +88,7 @@ node!(pub struct FunctionParam {
 });
 impl NodeDisplay for FunctionParam {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        for dec in self.decorators.iter() {
-            f.node(dec)?;
-        }
+        f.node_list(&self.decorators)?;
 
         f.node(&self.id)?;
 
@@ -123,13 +121,8 @@ impl NodeDisplay for FunctionBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
 
-        for d in self.directives.iter() {
-            f.node(d)?;
-        }
-
-        for item in self.body.iter() {
-            f.node(item)?;
-        }
+        f.node_list(&self.directives)?;
+        f.node_list(&self.body)?;
 
         Ok(())
     }

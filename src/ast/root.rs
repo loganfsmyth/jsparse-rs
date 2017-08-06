@@ -16,12 +16,8 @@ node!(#[derive(Default)] pub struct Script {
 impl NodeDisplay for Script {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
-        for d in self.directives.iter() {
-            f.node(d)?;
-        }
-        for item in self.body.iter() {
-            f.node(item)?;
-        }
+        f.node_list(&self.directives)?;
+        f.node_list(&self.body)?;
 
         Ok(())
     }
@@ -35,12 +31,8 @@ node!(#[derive(Default)] pub struct Module {
 impl NodeDisplay for Module {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
-        for d in self.directives.iter() {
-            f.node(d)?;
-        }
-        for item in self.body.iter() {
-            f.node(item)?;
-        }
+        f.node_list(&self.directives)?;
+        f.node_list(&self.body)?;
 
         Ok(())
     }

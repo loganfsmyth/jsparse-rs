@@ -15,16 +15,12 @@ impl NodeDisplay for Element {
         f.punctuator(Punctuator::AngleL);
         f.node(&self.opening)?;
 
-        for attr in self.attributes.iter() {
-            f.node(attr)?;
-        }
+        f.node_list(&self.attributes)?;
 
         if self.children.len() > 0 {
             f.punctuator(Punctuator::AngleR);
 
-            for child in self.children.iter() {
-                f.node(child)?;
-            }
+            f.node_list(&self.children)?;
 
             f.punctuator(Punctuator::AngleSlash);
             if let Some(ref close) = self.closing {

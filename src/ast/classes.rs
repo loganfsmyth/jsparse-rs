@@ -25,9 +25,7 @@ impl NodeDisplay for ExportDefaultClassDeclaration {
         f.keyword(Keyword::Export);
         f.keyword(Keyword::Default);
 
-        for dec in self.decorators.iter() {
-            f.node(dec)?;
-        }
+        f.node_list(&self.decorators)?;
         f.keyword(Keyword::Class);
 
         f.node(&self.id)?;
@@ -53,9 +51,7 @@ node!(pub struct ClassDeclaration {
 
 impl NodeDisplay for ClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        for dec in self.decorators.iter() {
-            f.node(dec)?;
-        }
+        f.node_list(&self.decorators)?;
 
         f.keyword(Keyword::Class);
 
@@ -84,9 +80,7 @@ impl NodeDisplay for ClassExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.lookahead_wrap_parens(LookaheadSequence::Declaration);
 
-        for dec in self.decorators.iter() {
-            f.node(dec)?;
-        }
+        f.node_list(&self.decorators)?;
 
         f.keyword(Keyword::Class);
 
@@ -110,9 +104,7 @@ impl NodeDisplay for ClassBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.wrap_curly();
 
-        for item in self.items.iter() {
-            f.node(item)?;
-        }
+        f.node_list(&self.items)?;
 
         Ok(())
     }
@@ -153,9 +145,7 @@ node!(pub struct ClassField {
 
 impl NodeDisplay for ClassField {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        for dec in self.decorators.iter() {
-            f.node(dec)?;
-        }
+        f.node_list(&self.decorators)?;
 
         f.node(&self.pos)?;
 
@@ -182,9 +172,7 @@ node!(pub struct ClassMethod {
 
 impl NodeDisplay for ClassMethod {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        for dec in self.decorators.iter() {
-            f.node(dec)?;
-        }
+        f.node_list(&self.decorators)?;
 
         f.node(&self.pos)?;
         f.node(&self.kind)?;

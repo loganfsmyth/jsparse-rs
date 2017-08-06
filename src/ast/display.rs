@@ -405,6 +405,14 @@ impl NodeFormatter {
         Ok(())
     }
 
+    pub fn node_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
+        for item in list.iter() {
+            self.node(item)?;
+        }
+
+        Ok(())
+    }
+
     /// Prints a given node.
     pub fn node<T: NodeDisplay>(&mut self, s: &T) -> NodeDisplayResult {
         s.fmt(self)

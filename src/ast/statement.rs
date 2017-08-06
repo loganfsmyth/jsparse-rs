@@ -20,9 +20,7 @@ impl NodeDisplay for BlockStatement {
         let mut f = f.wrap_curly();
         let mut f = f.allow_in();
 
-        for item in self.body.iter() {
-            f.node(item)?;
-        }
+        f.node_list(&self.body)?;
 
         Ok(())
     }
@@ -654,10 +652,7 @@ impl NodeDisplay for SwitchStatement {
             )?;
         }
 
-        let mut f = f.wrap_curly();
-        for c in self.cases.iter() {
-            f.node(c)?;
-        }
+        f.wrap_curly().node_list(&self.cases)?;
 
         Ok(())
     }
@@ -729,9 +724,7 @@ impl NodeDisplay for SwitchCase {
         }
         f.punctuator(Punctuator::Colon);
 
-        for stmt in self.consequent.iter() {
-            f.node(stmt)?;
-        }
+        f.node_list(&self.consequent)?;
 
         Ok(())
     }
