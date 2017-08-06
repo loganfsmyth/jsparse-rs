@@ -276,7 +276,7 @@ node!(pub struct IfStatement {
 });
 impl NodeDisplay for IfStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        let mut f = f.wrap_orphan_if();
+        let mut f = f.wrap_orphan_if(self.alternate.is_none());
         f.keyword(Keyword::If);
         {
             let mut f = f.wrap_parens();

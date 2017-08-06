@@ -40,7 +40,6 @@ pub enum Punctuator {
     Star,
     StarStar,
 
-    // Add,
     Plus,
     PlusPlus,
 
@@ -52,7 +51,6 @@ pub enum Punctuator {
     ArrowStar,
 
     Caret,
-    // BitwiseXor,
     LAngle,
     LAngleEq,
     LAngleAngle,
@@ -60,7 +58,6 @@ pub enum Punctuator {
     RAngle,
     RAngleEq,
     RAngleAngle,
-    // RAngleAngleEq,
     RAngleAngleAngle,
 
     Mod,
@@ -215,6 +212,7 @@ impl NodeFormatter {
         }
     }
 
+    /// Set the active precedence
     pub fn precedence<'a>(&'a mut self, p: Precedence) -> FormatterLock<'a> {
         let wrap = (p as u32) < (self.prec as u32);
 
@@ -228,6 +226,9 @@ impl NodeFormatter {
         FormatterLock::new(self, Box::new(move |fmt| { fmt.prec = prec; }))
     }
 
+    /// Creates a formatter lock that will wrap the next expression in parentheses
+    /// if the expression begins with a sequence of tokens disallowed by the
+    /// given lookahead restriction.
     pub fn restrict_lookahead<'a>(
         &'a mut self,
         lookahead: LookaheadRestriction,
@@ -247,25 +248,8 @@ impl NodeFormatter {
         )
     }
 
-    pub fn allow_in<'a>(&'a mut self) -> FormatterLock<'a> {
-        let in_operator = self.in_operator;
-        self.in_operator = true;
-
-        FormatterLock::new(
-            self,
-            Box::new(move |fmt| { fmt.in_operator = in_operator; }),
-        )
-    }
-    pub fn disallow_in<'a>(&'a mut self) -> FormatterLock<'a> {
-        let in_operator = self.in_operator;
-        self.in_operator = false;
-
-        FormatterLock::new(
-            self,
-            Box::new(move |fmt| { fmt.in_operator = in_operator; }),
-        )
-    }
-
+    /// Creates a formatter lock that wraps the output in parens if the given sequence
+    /// matches a previously assigned lookahead restriction.
     pub fn lookahead_wrap_parens<'a>(
         &'a mut self,
         sequence: LookaheadSequence,
@@ -292,13 +276,33 @@ impl NodeFormatter {
         })
     }
 
+    /// Creates a formatter lock that allows unparenthesized usage of the "in" operator.
+    pub fn allow_in<'a>(&'a mut self) -> FormatterLock<'a> {
+        let in_operator = self.in_operator;
+        self.in_operator = true;
+
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| { fmt.in_operator = in_operator; }),
+        )
+    }
+
+    /// Creates a formatter lock that disallows unparenthesized usage of the "in" operator.
+    pub fn disallow_in<'a>(&'a mut self) -> FormatterLock<'a> {
+        let in_operator = self.in_operator;
+        self.in_operator = false;
+
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| { fmt.in_operator = in_operator; }),
+        )
+    }
+
+    /// Creates a formatter lock that will wrap the next items in parens if the in operator
+    /// is currently disallowed.
     pub fn in_wrap_parens<'a>(&'a mut self) -> FormatterLock<'a> {
         let in_operator = self.in_operator;
         self.wrap_parens_inner(in_operator)
-    }
-
-    pub fn wrap_parens<'a>(&'a mut self) -> FormatterLock<'a> {
-        self.wrap_parens_inner(true)
     }
 
     fn wrap_parens_inner<'a>(&'a mut self, wrap: bool) -> FormatterLock<'a> {
@@ -326,6 +330,12 @@ impl NodeFormatter {
         )
     }
 
+    /// Creates a formatter lock that wraps the output in parens.
+    pub fn wrap_parens<'a>(&'a mut self) -> FormatterLock<'a> {
+        self.wrap_parens_inner(true)
+    }
+
+    /// Creates a formatter lock that wraps the output in curly brackets.
     pub fn wrap_curly<'a>(&'a mut self) -> FormatterLock<'a> {
         let wrap_standalone_if = self.wrap_standalone_if;
 
@@ -341,6 +351,7 @@ impl NodeFormatter {
         )
     }
 
+    /// Creates a formatter lock that wraps the output in square brackets.
     pub fn wrap_square<'a>(&'a mut self) -> FormatterLock<'a> {
         let wrap_standalone_if = self.wrap_standalone_if;
 
@@ -356,6 +367,8 @@ impl NodeFormatter {
         )
     }
 
+    /// Creates a formatter lock that disallows orphan "if" blocks
+    /// (without else blocks) in the current scope.
     pub fn disallow_orphan_if<'a>(&'a mut self) -> FormatterLock<'a> {
         let wrap_standalone_if = self.wrap_standalone_if;
 
@@ -365,25 +378,22 @@ impl NodeFormatter {
             Box::new(move |fmt| { fmt.wrap_standalone_if = wrap_standalone_if; }),
         )
     }
-    pub fn wrap_orphan_if<'a>(&'a mut self) -> FormatterLock<'a> {
-        let wrap_standalone_if = self.wrap_standalone_if;
 
-        self.wrap_standalone_if = false;
-        if wrap_standalone_if {
-            self.punctuator(Punctuator::CurlyL);
+    /// Creates a formatter lock that will wrap the output in curly brackets
+    /// if orphan if blocks are currently disallowed.
+    pub fn wrap_orphan_if<'a>(&'a mut self, is_orphan: bool) -> FormatterLock<'a> {
+        if !is_orphan || !self.wrap_standalone_if {
+            return FormatterLock::new(
+                self,
+                Box::new(move |_fmt| {
+                })
+            );
         }
 
-        FormatterLock::new(
-            self,
-            Box::new(move |fmt| {
-                fmt.wrap_standalone_if = wrap_standalone_if;
-                if wrap_standalone_if {
-                    fmt.punctuator(Punctuator::CurlyR);
-                }
-            }),
-        )
+        self.wrap_curly()
     }
 
+    /// Prints a list of items with commas between them.
     pub fn comma_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
         for (i, item) in list.iter().enumerate() {
             if i != 0 {
@@ -395,10 +405,12 @@ impl NodeFormatter {
         Ok(())
     }
 
+    /// Prints a given node.
     pub fn node<T: NodeDisplay>(&mut self, s: &T) -> NodeDisplayResult {
         s.fmt(self)
     }
 
+    /// Prints a given keyword.
     pub fn keyword(&mut self, t: Keyword) {
         // println!("{:?}", t);
 
@@ -462,6 +474,7 @@ impl NodeFormatter {
         }.unwrap()
     }
 
+    /// Prints a given punctuator.
     pub fn punctuator(&mut self, p: Punctuator) {
         self.ends_with_keyword = false;
         self.ends_with_integer = false;
@@ -493,7 +506,6 @@ impl NodeFormatter {
             Punctuator::Slash => write!(self, "/"),
             Punctuator::Star => write!(self, "*"),
             Punctuator::StarStar => write!(self, "**"),
-            // Punctuator::Add => write!(self, "+"),
             Punctuator::Plus => write!(self, "+"),
             Punctuator::PlusPlus => write!(self, "++"),
             Punctuator::Subtract => write!(self, "-"),
@@ -502,14 +514,12 @@ impl NodeFormatter {
             Punctuator::Arrow => write!(self, "=>"),
             Punctuator::ArrowStar => write!(self, "=*>"),
             Punctuator::Caret => write!(self, "^"),
-            // Punctuator::BitwiseXor => write!(self, "^"),
             Punctuator::LAngle => write!(self, "<"),
             Punctuator::LAngleEq => write!(self, "<="),
             Punctuator::LAngleAngle => write!(self, "<<"),
             Punctuator::RAngle => write!(self, ">"),
             Punctuator::RAngleEq => write!(self, ">="),
             Punctuator::RAngleAngle => write!(self, ">>"),
-            // Punctuator::RAngleAngleEq => write!(self, ">>="),
             Punctuator::RAngleAngleAngle => write!(self, ">>>"),
             Punctuator::Mod => write!(self, "%"),
             Punctuator::Amp => write!(self, "&"),
@@ -528,6 +538,7 @@ impl NodeFormatter {
         }.unwrap()
     }
 
+    /// Prints a given identifier.
     pub fn identifier(&mut self, name: &str, raw: Option<&str>) -> NodeDisplayResult {
         if self.ends_with_keyword {
             write!(self, " ").unwrap();
@@ -536,21 +547,22 @@ impl NodeFormatter {
         self.ends_with_integer = false;
         self.lookahead_restriction = None;
 
-        if let Some(_raw) = raw {
+        if let Some(raw) = raw {
             // Write raw value as-is
+            write!(self, "{}", raw)?;
         } else {
             // Serialize "name"
+            write!(self, "{}", name)?;
         }
-        write!(self, "{}", name)?;
         Ok(())
     }
     pub fn string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
         self.lookahead_restriction = None;
 
         self.punctuator(Punctuator::SQuote);
-        if let Some(ref _raw) = raw {
+        if let Some(ref raw) = raw {
             // Ensure that single-quotes are escaped
-            write!(self, "{}", value)?;
+            write!(self, "{}", raw)?;
         } else {
             write!(self, "{}", value)?;
             // Serialize "value", escaping anything that _must_ be escaped,
@@ -577,12 +589,14 @@ impl NodeFormatter {
         Ok(())
     }
 
-    pub fn template_part(&mut self, _value: &str, _raw: Option<&str>) -> NodeDisplayResult {
-        // if let Some(ref _raw) = raw {
-        //     // Write raw value as-is
-        // } else {
-        //     // Serialize "value"
-        // }
+    pub fn template_part(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+        if let Some(ref raw) = raw {
+            // Write raw value as-is
+            write!(self, "{}", raw)?;
+        } else {
+            // Serialize "value"
+            write!(self, "{}", value)?;
+        }
         Ok(())
     }
 
@@ -596,28 +610,36 @@ impl NodeFormatter {
         Ok(())
     }
 
-    pub fn jsx_identifier(&mut self, _value: &str, _raw: Option<&str>) -> NodeDisplayResult {
-        // if let Some(ref _raw) = raw {
-        //     // Write raw value as-is
-        // } else {
-        //     // Serialize "name"
-        // }
+    pub fn jsx_identifier(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+        if let Some(ref raw) = raw {
+            // Write raw value as-is
+            write!(self, "{}", raw)?;
+        } else {
+            // Serialize "value"
+            write!(self, "{}", value)?;
+        }
         Ok(())
     }
-    pub fn jsx_string(&mut self, _value: &str, _raw: Option<&str>) -> NodeDisplayResult {
-        // if let Some(ref _raw) = raw {
-        //     // Write raw value as-is
-        // } else {
-        //     // Serialize "value", encoding all entities like {}<>
-        // }
+    pub fn jsx_string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+        self.punctuator(Punctuator::SQuote);
+        if let Some(ref raw) = raw {
+            // Write raw value as-is
+            write!(self, "{}", raw)?;
+        } else {
+            // Serialize "value", encoding all entities like {}<>
+            write!(self, "{}", value)?;
+        }
+        self.punctuator(Punctuator::SQuote);
         Ok(())
     }
-    pub fn jsx_text(&mut self, _value: &str, _raw: Option<&str>) -> NodeDisplayResult {
-        // if let Some(ref _raw) = raw {
-        //     // Write raw value as-is
-        // } else {
-        //     // Serialize "value", encoding all entities like {}<>
-        // }
+    pub fn jsx_text(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+        if let Some(ref raw) = raw {
+            // Write raw value as-is
+            write!(self, "{}", raw)?;
+        } else {
+            // Serialize "value", encoding all entities like {}<>
+            write!(self, "{}", value)?;
+        }
         Ok(())
     }
 }
