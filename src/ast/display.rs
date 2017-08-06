@@ -225,42 +225,51 @@ impl NodeFormatter {
         let prec = self.prec;
         self.prec = p;
 
-        FormatterLock::new(self, Box::new(move |fmt| {
-            fmt.prec = prec;
-        }))
+        FormatterLock::new(self, Box::new(move |fmt| { fmt.prec = prec; }))
     }
 
-    pub fn restrict_lookahead<'a>(&'a mut self, lookahead: LookaheadRestriction) -> FormatterLock<'a> {
+    pub fn restrict_lookahead<'a>(
+        &'a mut self,
+        lookahead: LookaheadRestriction,
+    ) -> FormatterLock<'a> {
         let lookahead_restriction = self.lookahead_restriction;
         self.lookahead_restriction = Some(lookahead);
 
-        FormatterLock::new(self, Box::new(move |fmt| {
-            if let Some(_) = fmt.lookahead_restriction {
-                // If the previous lookahead got cleared, we don't want to restore
-                // any existing lookahead restrictions either.
-                fmt.lookahead_restriction = lookahead_restriction;
-            }
-        }))
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| {
+                if let Some(_) = fmt.lookahead_restriction {
+                    // If the previous lookahead got cleared, we don't want to restore
+                    // any existing lookahead restrictions either.
+                    fmt.lookahead_restriction = lookahead_restriction;
+                }
+            }),
+        )
     }
 
     pub fn allow_in<'a>(&'a mut self) -> FormatterLock<'a> {
         let in_operator = self.in_operator;
         self.in_operator = true;
 
-        FormatterLock::new(self, Box::new(move |fmt| {
-            fmt.in_operator = in_operator;
-        }))
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| { fmt.in_operator = in_operator; }),
+        )
     }
     pub fn disallow_in<'a>(&'a mut self) -> FormatterLock<'a> {
         let in_operator = self.in_operator;
         self.in_operator = false;
 
-        FormatterLock::new(self, Box::new(move |fmt| {
-            fmt.in_operator = in_operator;
-        }))
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| { fmt.in_operator = in_operator; }),
+        )
     }
 
-    pub fn lookahead_wrap_parens<'a>(&'a mut self, sequence: LookaheadSequence) -> FormatterLock<'a> {
+    pub fn lookahead_wrap_parens<'a>(
+        &'a mut self,
+        sequence: LookaheadSequence,
+    ) -> FormatterLock<'a> {
         self.wrap_parens_inner(match self.lookahead_restriction {
             // No function/class declarations allowed
             Some(LookaheadRestriction::ExportDefault) => sequence == LookaheadSequence::Declaration,
@@ -272,7 +281,9 @@ impl NodeFormatter {
             Some(LookaheadRestriction::ForInit) => sequence == LookaheadSequence::LetSquare,
 
             // No let[ allowed
-            Some(LookaheadRestriction::ForOfInit) => sequence == LookaheadSequence::Let || sequence == LookaheadSequence::LetSquare,
+            Some(LookaheadRestriction::ForOfInit) => {
+                sequence == LookaheadSequence::Let || sequence == LookaheadSequence::LetSquare
+            }
 
             // No { allowed
             Some(LookaheadRestriction::ConciseBody) => sequence == LookaheadSequence::Curly,
@@ -304,12 +315,15 @@ impl NodeFormatter {
         self.wrap_standalone_if = false;
         self.punctuator(Punctuator::ParenL);
 
-        FormatterLock::new(self, Box::new(move |fmt| {
-            fmt.prec = prec;
-            fmt.in_operator = in_operator;
-            fmt.wrap_standalone_if = wrap_standalone_if;
-            fmt.punctuator(Punctuator::ParenR);
-        }))
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| {
+                fmt.prec = prec;
+                fmt.in_operator = in_operator;
+                fmt.wrap_standalone_if = wrap_standalone_if;
+                fmt.punctuator(Punctuator::ParenR);
+            }),
+        )
     }
 
     pub fn wrap_curly<'a>(&'a mut self) -> FormatterLock<'a> {
@@ -318,10 +332,13 @@ impl NodeFormatter {
         self.wrap_standalone_if = false;
         self.punctuator(Punctuator::CurlyL);
 
-        FormatterLock::new(self, Box::new(move |fmt| {
-            fmt.wrap_standalone_if = wrap_standalone_if;
-            fmt.punctuator(Punctuator::CurlyR);
-        }))
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| {
+                fmt.wrap_standalone_if = wrap_standalone_if;
+                fmt.punctuator(Punctuator::CurlyR);
+            }),
+        )
     }
 
     pub fn wrap_square<'a>(&'a mut self) -> FormatterLock<'a> {
@@ -330,19 +347,23 @@ impl NodeFormatter {
         self.wrap_standalone_if = false;
         self.punctuator(Punctuator::SquareL);
 
-        FormatterLock::new(self, Box::new(move |fmt| {
-            fmt.wrap_standalone_if = wrap_standalone_if;
-            fmt.punctuator(Punctuator::SquareR);
-        }))
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| {
+                fmt.wrap_standalone_if = wrap_standalone_if;
+                fmt.punctuator(Punctuator::SquareR);
+            }),
+        )
     }
 
     pub fn disallow_orphan_if<'a>(&'a mut self) -> FormatterLock<'a> {
         let wrap_standalone_if = self.wrap_standalone_if;
 
         self.wrap_standalone_if = true;
-        FormatterLock::new(self, Box::new(move |fmt| {
-            fmt.wrap_standalone_if = wrap_standalone_if;
-        }))
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| { fmt.wrap_standalone_if = wrap_standalone_if; }),
+        )
     }
     pub fn wrap_orphan_if<'a>(&'a mut self) -> FormatterLock<'a> {
         let wrap_standalone_if = self.wrap_standalone_if;
@@ -352,12 +373,15 @@ impl NodeFormatter {
             self.punctuator(Punctuator::CurlyL);
         }
 
-        FormatterLock::new(self, Box::new(move |fmt| {
-            fmt.wrap_standalone_if = wrap_standalone_if;
-            if wrap_standalone_if {
-                fmt.punctuator(Punctuator::CurlyR);
-            }
-        }))
+        FormatterLock::new(
+            self,
+            Box::new(move |fmt| {
+                fmt.wrap_standalone_if = wrap_standalone_if;
+                if wrap_standalone_if {
+                    fmt.punctuator(Punctuator::CurlyR);
+                }
+            }),
+        )
     }
 
     pub fn comma_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
@@ -611,11 +635,11 @@ pub struct FormatterLock<'a> {
     drop: Box<Fn(&mut NodeFormatter) + 'static>,
 }
 impl<'a> FormatterLock<'a> {
-    fn new(fmt: &'a mut NodeFormatter, drop: Box<Fn(&mut NodeFormatter) + 'static>) -> FormatterLock<'a> {
-        FormatterLock {
-            fmt,
-            drop,
-        }
+    fn new(
+        fmt: &'a mut NodeFormatter,
+        drop: Box<Fn(&mut NodeFormatter) + 'static>,
+    ) -> FormatterLock<'a> {
+        FormatterLock { fmt, drop }
     }
 }
 impl<'a> ::std::ops::Drop for FormatterLock<'a> {
@@ -624,16 +648,16 @@ impl<'a> ::std::ops::Drop for FormatterLock<'a> {
     }
 }
 impl<'a> ::std::ops::Deref for FormatterLock<'a> {
-  type Target = NodeFormatter;
+    type Target = NodeFormatter;
 
-  fn deref(&self) -> &NodeFormatter {
-    self.fmt
-  }
+    fn deref(&self) -> &NodeFormatter {
+        self.fmt
+    }
 }
 impl<'a> ::std::ops::DerefMut for FormatterLock<'a> {
-  fn deref_mut(&mut self) -> &mut NodeFormatter {
-    self.fmt
-  }
+    fn deref_mut(&mut self) -> &mut NodeFormatter {
+        self.fmt
+    }
 }
 
 

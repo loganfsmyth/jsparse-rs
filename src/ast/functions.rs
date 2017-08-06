@@ -254,7 +254,9 @@ node!(pub struct ArrowFunctionExpressionBody {
 impl NodeDisplay for ArrowFunctionExpressionBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.restrict_lookahead(LookaheadRestriction::ConciseBody);
-        f.require_precedence(Precedence::Assignment).node(&self.expression)?;
+        f.require_precedence(Precedence::Assignment).node(
+            &self.expression,
+        )?;
         Ok(())
     }
 }

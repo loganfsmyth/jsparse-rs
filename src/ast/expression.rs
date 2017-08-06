@@ -27,10 +27,7 @@ mod tests_this {
 
     #[test]
     fn it_prints_default() {
-        assert_serialize!(
-            ThisExpression::default(),
-            "this"
-        );
+        assert_serialize!(ThisExpression::default(), "this");
     }
 }
 
@@ -169,10 +166,7 @@ mod tests_call_args {
 
     #[test]
     fn it_prints_default() {
-        assert_serialize!(
-            CallArguments::default(),
-            "()"
-        );
+        assert_serialize!(CallArguments::default(), "()");
     }
 
     #[test]
@@ -223,9 +217,7 @@ mod tests_call_args {
     fn it_prints_args_with_spread_and_precedence() {
         assert_serialize!(
             CallArguments {
-                args: vec![
-                    BindingIdentifier::from("arg").into(),
-                ],
+                args: vec![BindingIdentifier::from("arg").into()],
                 spread: SequenceExpression {
                     left: ThisExpression::default().into(),
                     right: literal::Boolean::from(true).into(),
@@ -311,19 +303,20 @@ node!(pub struct MemberExpression {
 });
 impl NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        let sequence = if let alias::Expression::Binding(BindingIdentifier { ref value, .. }) = *self.object {
-            if value == "let" && !self.optional {
-                if let PropertyAccess::Computed(_) = self.property {
-                    LookaheadSequence::LetSquare
+        let sequence =
+            if let alias::Expression::Binding(BindingIdentifier { ref value, .. }) = *self.object {
+                if value == "let" && !self.optional {
+                    if let PropertyAccess::Computed(_) = self.property {
+                        LookaheadSequence::LetSquare
+                    } else {
+                        LookaheadSequence::Let
+                    }
                 } else {
-                    LookaheadSequence::Let
+                    LookaheadSequence::None
                 }
             } else {
                 LookaheadSequence::None
-            }
-        } else {
-            LookaheadSequence::None
-        };
+            };
 
         let mut f = f.lookahead_wrap_parens(sequence);
         f.require_precedence(Precedence::Member).node(&self.object)?;

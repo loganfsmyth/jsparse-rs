@@ -381,7 +381,9 @@ impl NodeDisplay for ForStatement {
             let mut f = f.wrap_parens();
             if let Some(ref init) = self.init {
                 let mut f = f.disallow_in();
-                f.restrict_lookahead(LookaheadRestriction::ForInit).node(init)?;
+                f.restrict_lookahead(LookaheadRestriction::ForInit).node(
+                    init,
+                )?;
             }
             f.punctuator(Punctuator::Semicolon);
             if let Some(ref test) = self.test {
@@ -412,10 +414,7 @@ mod tests_for {
 
     #[test]
     fn it_prints_default() {
-        assert_serialize!(
-            ForStatement::default(),
-            "for(;;);"
-        );
+        assert_serialize!(ForStatement::default(), "for(;;);");
     }
 
     #[test]
@@ -465,7 +464,9 @@ impl NodeDisplay for ForInStatement {
         f.keyword(Keyword::For);
         {
             let mut f = f.wrap_parens();
-            f.restrict_lookahead(LookaheadRestriction::ForInit).node(&self.left)?;
+            f.restrict_lookahead(LookaheadRestriction::ForInit).node(
+                &self.left,
+            )?;
             f.keyword(Keyword::In);
 
             let mut f = f.allow_in();
@@ -549,7 +550,9 @@ impl NodeDisplay for ForOfStatement {
         f.keyword(Keyword::For);
         {
             let mut f = f.wrap_parens();
-            f.restrict_lookahead(LookaheadRestriction::ForOfInit).node(&self.left)?;
+            f.restrict_lookahead(LookaheadRestriction::ForOfInit).node(
+                &self.left,
+            )?;
             f.keyword(Keyword::Of);
             f.require_precedence(Precedence::Normal).node(&self.right)?;
         }
@@ -571,7 +574,9 @@ impl NodeDisplay for ForAwaitStatement {
         f.keyword(Keyword::Await);
         {
             let mut f = f.wrap_parens();
-            f.restrict_lookahead(LookaheadRestriction::ForOfInit).node(&self.left)?;
+            f.restrict_lookahead(LookaheadRestriction::ForOfInit).node(
+                &self.left,
+            )?;
             f.keyword(Keyword::In);
 
             let mut f = f.allow_in();
@@ -684,23 +689,17 @@ mod tests_switch {
                 cases: vec![
                     SwitchCase {
                         test: literal::Numeric::from(6.2).into(),
-                        consequent: vec![
-                            literal::Boolean::from(false).into(),
-                        ],
+                        consequent: vec![literal::Boolean::from(false).into()],
                         position: None,
                     },
                     SwitchCase {
                         test: None,
-                        consequent: vec![
-                            literal::Boolean::from(true).into(),
-                        ],
+                        consequent: vec![literal::Boolean::from(true).into()],
                         position: None,
                     },
                     SwitchCase {
                         test: literal::Numeric::from(1.32).into(),
-                        consequent: vec![
-                            literal::Boolean::from(true).into(),
-                        ],
+                        consequent: vec![literal::Boolean::from(true).into()],
                         position: None,
                     },
                 ],
@@ -829,24 +828,17 @@ mod tests_try_catch {
 
     #[test]
     fn it_prints_default() {
-        assert_serialize!(
-            TryCatchStatement::default(),
-            "try{}catch{}"
-        );
+        assert_serialize!(TryCatchStatement::default(), "try{}catch{}");
     }
 
     #[test]
     fn it_prints_with_binding() {
         assert_serialize!(
             TryCatchStatement {
-                block: vec![
-                    literal::Boolean::from(false).into()
-                ].into(),
+                block: vec![literal::Boolean::from(false).into()].into(),
                 handler: CatchClause {
                     param: BindingIdentifier::from("err").into(),
-                    body: vec![
-                        literal::Boolean::from(true).into()
-                    ].into(),
+                    body: vec![literal::Boolean::from(true).into()].into(),
                     position: None,
                 },
                 position: None,
@@ -902,10 +894,7 @@ mod tests_try_catch_finally {
 
     #[test]
     fn it_prints_default() {
-        assert_serialize!(
-            TryCatchFinallyStatement::default(),
-            "try{}catch{}finally{}"
-        );
+        assert_serialize!(TryCatchFinallyStatement::default(), "try{}catch{}finally{}");
     }
 
     #[test]
