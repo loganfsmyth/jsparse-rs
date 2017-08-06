@@ -75,6 +75,7 @@ macro_rules! node_enum {
     };
 }
 
+#[allow(unused_macros)]
 macro_rules! assert_serialize {
     ($item:expr, $s:expr) => {
         assert_eq!(format!("{}", $item), $crate::std::string::String::from($s));
@@ -118,6 +119,7 @@ macro_rules! node {
     };
 }
 
+#[allow(unused_macros)]
 macro_rules! display_dsl {
     (@opt_body $self:ident $f:ident $id:tt @ $($t:tt)*) => {
         $f.node($id)?;

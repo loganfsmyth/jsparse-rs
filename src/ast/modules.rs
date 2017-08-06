@@ -88,8 +88,6 @@ impl NodeDisplay for ImportNamedDeclaration {
 #[cfg(test)]
 mod tests_import_named {
     use super::*;
-    use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints() {
@@ -129,8 +127,6 @@ impl NodeDisplay for ImportNamedAndNamespaceDeclaration {
 #[cfg(test)]
 mod tests_import_named_and_namespace {
     use super::*;
-    use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints() {
@@ -168,8 +164,6 @@ impl NodeDisplay for ImportNamespaceDeclaration {
 #[cfg(test)]
 mod tests_import_namespace {
     use super::*;
-    use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints() {
@@ -209,7 +203,6 @@ impl NodeDisplay for ImportNamedAndSpecifiersDeclaration {
 mod tests_import_named_and_specifiers {
     use super::*;
     use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints() {
@@ -267,7 +260,6 @@ impl NodeDisplay for ImportSpecifiersDeclaration {
 mod tests_import_specifiers {
     use super::*;
     use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints() {
@@ -337,7 +329,6 @@ impl<T: Into<alias::Expression>> From<T> for ExportDefaultExpression {
 #[cfg(test)]
 mod tests_export_default_expr {
     use super::*;
-    use ast::general::BindingIdentifier;
     use ast::literal;
 
     #[test]
@@ -442,7 +433,6 @@ impl From<Vec<LocalExportSpecifier>> for ExportLocalBindings {
 mod tests_export_specifiers {
     use super::*;
     use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints_with_specifiers() {
@@ -509,8 +499,6 @@ impl NodeDisplay for ExportSourceSpecifiers {
 #[cfg(test)]
 mod tests_export_source_specifiers {
     use super::*;
-    use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints_with_specifiers() {
@@ -577,8 +565,6 @@ impl NodeDisplay for ExportAllSpecifiers {
 #[cfg(test)]
 mod tests_export_source_all {
     use super::*;
-    use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints_with_specifiers() {
@@ -611,8 +597,6 @@ impl NodeDisplay for ExportNamedSpecifier {
 #[cfg(test)]
 mod tests_export_named_default {
     use super::*;
-    use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints_with_specifiers() {

@@ -236,7 +236,7 @@ node!(pub struct ExpressionStatement {
     pub expression: alias::Expression,
 });
 impl ExpressionStatement {
-    fn new<T: Into<alias::Expression>>(expr: T) -> ExpressionStatement {
+    pub fn new<T: Into<alias::Expression>>(expr: T) -> ExpressionStatement {
         ExpressionStatement {
             expression: expr.into(),
             position: None,
@@ -899,8 +899,6 @@ impl From<TryFinallyStatement> for TryCatchFinallyStatement {
 #[cfg(test)]
 mod tests_try_catch_finally {
     use super::*;
-    use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints_default() {

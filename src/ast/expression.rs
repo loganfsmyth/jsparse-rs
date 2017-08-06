@@ -24,8 +24,6 @@ impl NodeDisplay for ThisExpression {
 #[cfg(test)]
 mod tests_this {
     use super::*;
-    use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints_default() {
@@ -57,8 +55,6 @@ impl<T: Into<alias::Expression>> From<T> for ParenthesizedExpression {
 #[cfg(test)]
 mod tests_paren_expr {
     use super::*;
-    use ast::general::BindingIdentifier;
-    use ast::literal;
 
     #[test]
     fn it_prints() {

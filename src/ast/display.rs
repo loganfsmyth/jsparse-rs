@@ -235,7 +235,7 @@ impl NodeFormatter {
         self.lookahead_restriction = Some(lookahead);
 
         FormatterLock::new(self, Box::new(move |fmt| {
-            if let Some(current) = fmt.lookahead_restriction {
+            if let Some(_) = fmt.lookahead_restriction {
                 // If the previous lookahead got cleared, we don't want to restore
                 // any existing lookahead restrictions either.
                 fmt.lookahead_restriction = lookahead_restriction;
@@ -281,6 +281,7 @@ impl NodeFormatter {
         })
     }
 
+    // TODO: Make wrap function instead?
     pub fn in_allowed(&self) -> bool {
         self.in_operator
     }
@@ -291,7 +292,7 @@ impl NodeFormatter {
 
     fn wrap_parens_inner<'a>(&'a mut self, wrap: bool) -> FormatterLock<'a> {
         if !wrap {
-            return FormatterLock::new(self, Box::new(move |fmt| {}));
+            return FormatterLock::new(self, Box::new(move |_fmt| {}));
         }
 
         let prec = self.prec;
