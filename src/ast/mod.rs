@@ -55,17 +55,6 @@ macro_rules! node_enum_impl {
             }
         }
     };
-    (@first_special_token $name:ident { $( $key:ident($type:ty) ,)* }) => {
-        impl $crate::ast::display::FirstSpecialToken for $name {
-            fn first_special_token(&self) -> $crate::ast::display::SpecialToken {
-                match *self {
-                    $(
-                        $name::$key(ref n) => n.first_special_token(),
-                    )*
-                }
-            }
-        }
-    };
 }
 
 macro_rules! node_enum {

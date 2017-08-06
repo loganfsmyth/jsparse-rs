@@ -1,7 +1,7 @@
 use std::string;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   FirstSpecialToken, SpecialToken};
+                   LookaheadSequence};
 
 // use super::misc;
 use ast::alias;
@@ -9,7 +9,7 @@ use ast::alias;
 
 use ast::patterns::{LeftHandSimpleAssign, LeftHandComplexAssign};
 use ast::statement::BlockStatement;
-use ast::general::PropertyIdentifier;
+use ast::general::{BindingIdentifier, PropertyIdentifier};
 
 
 // this
@@ -18,11 +18,6 @@ impl NodeDisplay for ThisExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::This);
         Ok(())
-    }
-}
-impl FirstSpecialToken for ThisExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        SpecialToken::None
     }
 }
 
@@ -50,7 +45,6 @@ impl NodeDisplay for ParenthesizedExpression {
         f.wrap_parens().node(&self.expr)
     }
 }
-impl FirstSpecialToken for ParenthesizedExpression {}
 impl<T: Into<alias::Expression>> From<T> for ParenthesizedExpression {
     fn from(expr: T) -> ParenthesizedExpression {
         ParenthesizedExpression {
@@ -86,11 +80,6 @@ impl NodeDisplay for TaggedTemplateLiteral {
         f.node(&self.template)
     }
 }
-impl FirstSpecialToken for TaggedTemplateLiteral {
-    fn first_special_token(&self) -> SpecialToken {
-        self.tag.first_special_token()
-    }
-}
 
 
 // `content`
@@ -103,7 +92,6 @@ impl NodeDisplay for TemplateLiteral {
         f.node(&self.piece)
     }
 }
-impl FirstSpecialToken for TemplateLiteral {}
 
 
 // TODO: Enum fix?
@@ -270,11 +258,6 @@ impl NodeDisplay for CallExpression {
         f.node(&self.arguments)
     }
 }
-impl FirstSpecialToken for CallExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        self.callee.first_special_token()
-    }
-}
 
 
 // new foo()
@@ -289,7 +272,6 @@ impl NodeDisplay for NewExpression {
         f.node(&self.arguments)
     }
 }
-impl FirstSpecialToken for NewExpression {}
 
 
 // experimental
@@ -309,7 +291,6 @@ impl NodeDisplay for ImportCallExpression {
         Ok(())
     }
 }
-impl FirstSpecialToken for ImportCallExpression {}
 
 
 node!(pub struct SuperCallExpression {
@@ -321,7 +302,6 @@ impl NodeDisplay for SuperCallExpression {
         f.node(&self.arguments)
     }
 }
-impl FirstSpecialToken for SuperCallExpression {}
 
 
 // foo.bar
@@ -335,6 +315,21 @@ node!(pub struct MemberExpression {
 });
 impl NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let sequence = if let alias::Expression::Binding(BindingIdentifier { ref value, .. }) = *self.object {
+            if value == "let" && !self.optional {
+                if let PropertyAccess::Computed(_) = self.property {
+                    LookaheadSequence::LetSquare
+                } else {
+                    LookaheadSequence::Let
+                }
+            } else {
+                LookaheadSequence::None
+            }
+        } else {
+            LookaheadSequence::None
+        };
+
+        let mut f = f.lookahead_wrap_parens(sequence);
         f.require_precedence(Precedence::Member).node(&self.object)?;
         if self.optional {
             f.punctuator(Punctuator::Question);
@@ -342,11 +337,6 @@ impl NodeDisplay for MemberExpression {
         f.punctuator(Punctuator::Period);
         f.node(&self.property)?;
         Ok(())
-    }
-}
-impl FirstSpecialToken for MemberExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        self.object.first_special_token()
     }
 }
 
@@ -433,17 +423,6 @@ impl NodeDisplay for UpdateExpression {
         }
     }
 }
-impl FirstSpecialToken for UpdateExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        match self.operator {
-            UpdateOperator::PreIncrement => SpecialToken::None,
-            UpdateOperator::PreDecrement => SpecialToken::None,
-            UpdateOperator::PostIncrement => self.value.first_special_token(),
-            UpdateOperator::PostDecrement => self.value.first_special_token(),
-        }
-    }
-}
-
 
 // void foo
 node!(pub struct UnaryExpression {
@@ -487,7 +466,6 @@ impl NodeDisplay for UnaryExpression {
         f.require_precedence(Precedence::Unary).node(&self.value)
     }
 }
-impl FirstSpecialToken for UnaryExpression {}
 
 
 // foo OP bar
@@ -720,11 +698,6 @@ impl NodeDisplay for BinaryExpression {
         Ok(())
     }
 }
-impl FirstSpecialToken for BinaryExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        self.left.first_special_token()
-    }
-}
 
 
 // foo ? bar : baz
@@ -753,11 +726,6 @@ impl NodeDisplay for ConditionalExpression {
         Ok(())
     }
 }
-impl FirstSpecialToken for ConditionalExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        self.test.first_special_token()
-    }
-}
 
 
 // foo = bar
@@ -772,11 +740,6 @@ impl NodeDisplay for AssignmentExpression {
         f.require_precedence(Precedence::Assignment).node(
             &self.right,
         )
-    }
-}
-impl FirstSpecialToken for AssignmentExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        self.left.first_special_token()
     }
 }
 
@@ -826,11 +789,6 @@ impl NodeDisplay for AssignmentUpdateExpression {
         )
     }
 }
-impl FirstSpecialToken for AssignmentUpdateExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        self.left.first_special_token()
-    }
-}
 
 
 // foo, bar
@@ -854,11 +812,7 @@ impl NodeDisplay for SequenceExpression {
         Ok(())
     }
 }
-impl FirstSpecialToken for SequenceExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        self.left.first_special_token()
-    }
-}
+
 
 // do { foo; }
 node!(#[derive(Default)] pub struct DoExpression {
@@ -868,11 +822,6 @@ impl NodeDisplay for DoExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Do);
         f.node(&self.body)
-    }
-}
-impl FirstSpecialToken for DoExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        SpecialToken::Declaration
     }
 }
 
@@ -915,7 +864,6 @@ impl NodeDisplay for MetaProperty {
         Ok(())
     }
 }
-impl FirstSpecialToken for MetaProperty {}
 
 
 // super.foo
@@ -929,7 +877,6 @@ impl NodeDisplay for SuperMemberExpression {
         f.node(&self.property)
     }
 }
-impl FirstSpecialToken for SuperMemberExpression {}
 
 
 node_enum!(@node_display pub enum SuperMemberAccess {

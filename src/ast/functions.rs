@@ -2,7 +2,7 @@ use std::string;
 use std::default;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   FirstSpecialToken, SpecialToken};
+                   LookaheadRestriction, LookaheadSequence};
 
 use ast::general::BindingIdentifier;
 use ast::alias;
@@ -192,18 +192,12 @@ node!(#[derive(Default)] pub struct FunctionExpression {
 });
 impl NodeDisplay for FunctionExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.node(&self.kind)?;
+        let mut f = f.lookahead_wrap_parens(LookaheadSequence::Declaration);
 
-        if let Some(ref id) = self.id {
-            f.node(id)?;
-        }
+        f.node(&self.kind)?;
+        f.node(&self.id)?;
         f.node(&self.params)?;
         f.node(&self.body)
-    }
-}
-impl FirstSpecialToken for FunctionExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        SpecialToken::Declaration
     }
 }
 
@@ -252,7 +246,6 @@ impl NodeDisplay for ArrowFunctionExpression {
         f.node(&self.body)
     }
 }
-impl FirstSpecialToken for ArrowFunctionExpression {}
 
 
 node!(pub struct ArrowFunctionExpressionBody {
@@ -260,13 +253,9 @@ node!(pub struct ArrowFunctionExpressionBody {
 });
 impl NodeDisplay for ArrowFunctionExpressionBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        if let SpecialToken::Object = self.expression.first_special_token() {
-            f.wrap_parens().node(&self.expression)
-        } else {
-            f.require_precedence(Precedence::Assignment).node(
-                &self.expression,
-            )
-        }
+        let mut f = f.restrict_lookahead(LookaheadRestriction::ConciseBody);
+        f.require_precedence(Precedence::Assignment).node(&self.expression)?;
+        Ok(())
     }
 }
 

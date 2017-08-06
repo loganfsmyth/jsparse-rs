@@ -185,7 +185,7 @@ impl Default for Statement {
 }
 
 
-node_enum!(@node_display @first_special_token pub enum Expression {
+node_enum!(@node_display pub enum Expression {
     Binding(general::BindingIdentifier),
     This(expression::ThisExpression),
     Array(objects::ArrayExpression),

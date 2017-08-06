@@ -1,7 +1,7 @@
 use std::string;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   FirstSpecialToken, SpecialToken};
+                   LookaheadRestriction};
 
 use ast::statement::{VariableStatement, LetDeclaration, ConstDeclaration};
 use ast::classes::ClassDeclaration;
@@ -314,13 +314,13 @@ impl NodeDisplay for ExportDefaultExpression {
         f.keyword(Keyword::Export);
         f.keyword(Keyword::Default);
 
-        if let SpecialToken::Declaration = self.expression.first_special_token() {
-            f.wrap_parens().node(&self.expression)?;
-        } else {
+        {
+            let mut f = f.restrict_lookahead(LookaheadRestriction::ExportDefault);
             f.require_precedence(Precedence::Assignment).node(
                 &self.expression,
             )?;
         }
+
         f.punctuator(Punctuator::Semicolon);
         Ok(())
     }

@@ -1,6 +1,6 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Precedence, FirstSpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Precedence};
 use ast::alias;
 use ast::literal;
 
@@ -24,7 +24,6 @@ impl NodeDisplay for BindingIdentifier {
         f.identifier(&self.value, self.raw.as_ref().map(string::String::as_str))
     }
 }
-impl FirstSpecialToken for BindingIdentifier {}
 
 impl<T: Into<string::String>> From<T> for BindingIdentifier {
     fn from(value: T) -> BindingIdentifier {

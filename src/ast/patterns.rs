@@ -1,5 +1,5 @@
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence,
-                   FirstSpecialToken, SpecialToken};
+                   LookaheadSequence};
 
 use ast::alias;
 use ast::general::{BindingIdentifier, PropertyName};
@@ -7,14 +7,14 @@ use ast::general::{BindingIdentifier, PropertyName};
 // TODO: Should we split member expression into an member access and member assign?
 use ast::expression::MemberExpression;
 
-node_enum!(@node_display @first_special_token pub enum LeftHandSimpleAssign {
+node_enum!(@node_display pub enum LeftHandSimpleAssign {
     // TODO: Parenthesized ident and member?
     Identifier(BindingIdentifier),
     Member(MemberExpression),
 });
 
 
-node_enum!(@node_display @first_special_token pub enum LeftHandComplexAssign {
+node_enum!(@node_display pub enum LeftHandComplexAssign {
     // TODO: Parenthesized ident and member?
     Identifier(BindingIdentifier),
     Member(MemberExpression),
@@ -47,6 +47,7 @@ node!(#[derive(Default)] pub struct ObjectPattern {
 
 impl NodeDisplay for ObjectPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let mut f = f.lookahead_wrap_parens(LookaheadSequence::Curly);
         let mut f = f.wrap_curly();
 
         f.comma_list(&self.properties)?;
@@ -62,11 +63,6 @@ impl NodeDisplay for ObjectPattern {
         }
 
         Ok(())
-    }
-}
-impl FirstSpecialToken for ObjectPattern {
-    fn first_special_token(&self) -> SpecialToken {
-        SpecialToken::Object
     }
 }
 
@@ -149,7 +145,6 @@ impl NodeDisplay for ArrayPattern {
         Ok(())
     }
 }
-impl FirstSpecialToken for ArrayPattern {}
 
 
 node!(pub struct ArrayPatternElement {

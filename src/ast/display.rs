@@ -162,18 +162,30 @@ pub enum Precedence {
     Primary,
 }
 
-pub enum SpecialToken {
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum LookaheadRestriction {
+    // No function/class declarations
+    ExportDefault,
+    // No function/class declarations, opencurlies, or let[
+    ExpressionStatement,
+
+    // No let[
+    ForInit,
+
+    // No let
+    ForOfInit,
+
+    // No {
+    ConciseBody,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum LookaheadSequence {
     None,
     Declaration,
-    Object,
-
-    // TODO: Lookahead needed for :: operator
-    // New,
-}
-pub trait FirstSpecialToken {
-    fn first_special_token(&self) -> SpecialToken {
-        SpecialToken::None
-    }
+    Curly,
+    LetSquare,
+    Let,
 }
 
 pub type NodeDisplayResult = Result<(), NodeDisplayError>;
@@ -183,6 +195,7 @@ pub struct NodeFormatter {
     in_operator: bool,
     wrap_standalone_if: bool,
 
+    lookahead_restriction: Option<LookaheadRestriction>,
     ends_with_integer: bool,
     ends_with_keyword: bool,
 
@@ -195,6 +208,7 @@ impl NodeFormatter {
             in_operator: true,
             wrap_standalone_if: false,
 
+            lookahead_restriction: None,
             ends_with_integer: false,
             ends_with_keyword: false,
             output: String::with_capacity(512 * 1024),
@@ -202,19 +216,9 @@ impl NodeFormatter {
     }
 
     pub fn precedence<'a>(&'a mut self, p: Precedence) -> FormatterLock<'a> {
-        let skip = (p as u32) > (self.prec as u32);
+        let wrap = (p as u32) < (self.prec as u32);
 
-        // println!("Prec: {:?} vs {:?} = {}", p, self.prec, skip);
-
-        if !skip {
-            self.punctuator(Punctuator::ParenL);
-        }
-
-        FormatterLock::new(self, Box::new(move |fmt| {
-            if !skip {
-                fmt.punctuator(Punctuator::ParenR);
-            }
-        }))
+        self.wrap_parens_inner(wrap)
     }
 
     pub fn require_precedence<'a>(&'a mut self, p: Precedence) -> FormatterLock<'a> {
@@ -223,6 +227,19 @@ impl NodeFormatter {
 
         FormatterLock::new(self, Box::new(move |fmt| {
             fmt.prec = prec;
+        }))
+    }
+
+    pub fn restrict_lookahead<'a>(&'a mut self, lookahead: LookaheadRestriction) -> FormatterLock<'a> {
+        let lookahead_restriction = self.lookahead_restriction;
+        self.lookahead_restriction = Some(lookahead);
+
+        FormatterLock::new(self, Box::new(move |fmt| {
+            if let Some(current) = fmt.lookahead_restriction {
+                // If the previous lookahead got cleared, we don't want to restore
+                // any existing lookahead restrictions either.
+                fmt.lookahead_restriction = lookahead_restriction;
+            }
         }))
     }
 
@@ -243,11 +260,40 @@ impl NodeFormatter {
         }))
     }
 
+    pub fn lookahead_wrap_parens<'a>(&'a mut self, sequence: LookaheadSequence) -> FormatterLock<'a> {
+        self.wrap_parens_inner(match self.lookahead_restriction {
+            // No function/class declarations allowed
+            Some(LookaheadRestriction::ExportDefault) => sequence == LookaheadSequence::Declaration,
+
+            // No function/class declarations, opencurlies, or let[ allowed
+            Some(LookaheadRestriction::ExpressionStatement) => sequence != LookaheadSequence::None,
+
+            // No let[ allowed
+            Some(LookaheadRestriction::ForInit) => sequence == LookaheadSequence::LetSquare,
+
+            // No let[ allowed
+            Some(LookaheadRestriction::ForOfInit) => sequence == LookaheadSequence::Let || sequence == LookaheadSequence::LetSquare,
+
+            // No { allowed
+            Some(LookaheadRestriction::ConciseBody) => sequence == LookaheadSequence::Curly,
+
+            None => false,
+        })
+    }
+
     pub fn in_allowed(&self) -> bool {
         self.in_operator
     }
 
     pub fn wrap_parens<'a>(&'a mut self) -> FormatterLock<'a> {
+        self.wrap_parens_inner(true)
+    }
+
+    fn wrap_parens_inner<'a>(&'a mut self, wrap: bool) -> FormatterLock<'a> {
+        if !wrap {
+            return FormatterLock::new(self, Box::new(move |fmt| {}));
+        }
+
         let prec = self.prec;
         let in_operator = self.in_operator;
         let wrap_standalone_if = self.wrap_standalone_if;
@@ -336,6 +382,7 @@ impl NodeFormatter {
         }
         self.ends_with_keyword = true;
         self.ends_with_integer = false;
+        self.lookahead_restriction = None;
 
         match t {
             Keyword::Export => write!(self, "export"),
@@ -393,6 +440,7 @@ impl NodeFormatter {
     pub fn punctuator(&mut self, p: Punctuator) {
         self.ends_with_keyword = false;
         self.ends_with_integer = false;
+        self.lookahead_restriction = None;
 
         match p {
             Punctuator::Eq => write!(self, "="),
@@ -461,6 +509,7 @@ impl NodeFormatter {
         }
         self.ends_with_keyword = true;
         self.ends_with_integer = false;
+        self.lookahead_restriction = None;
 
         if let Some(_raw) = raw {
             // Write raw value as-is
@@ -471,6 +520,8 @@ impl NodeFormatter {
         Ok(())
     }
     pub fn string(&mut self, value: &str, raw: Option<&str>) -> NodeDisplayResult {
+        self.lookahead_restriction = None;
+
         self.punctuator(Punctuator::SQuote);
         if let Some(ref _raw) = raw {
             // Ensure that single-quotes are escaped
@@ -489,6 +540,7 @@ impl NodeFormatter {
             write!(self, " ").unwrap();
             self.ends_with_integer = false;
         }
+        self.lookahead_restriction = None;
 
         let s = format!("{}", value);
         write!(self, "{}", s)?;
@@ -584,30 +636,6 @@ impl<'a> ::std::ops::DerefMut for FormatterLock<'a> {
 }
 
 
-
-// macro_rules! impl_deref {
-//     ($id:ident) => {
-//         impl<'a> ::std::ops::Deref for $id<'a> {
-//           type Target = NodeFormatter;
-
-//           fn deref(&self) -> &NodeFormatter {
-//             self.fmt
-//           }
-//         }
-//         impl<'a> ::std::ops::DerefMut for $id<'a> {
-//           fn deref_mut(&mut self) -> &mut NodeFormatter {
-//             self.fmt
-//           }
-//         }
-//     };
-//     ($id:ident, $($ids:ident),+) => {
-//         impl_deref!($id);
-//         impl_deref!($($ids),+);
-//     };
-// }
-// impl_deref!(CachePrecedence, CacheIn, WrapParens, WrapSquare, WrapCurly);
-
-
 #[derive(Debug)]
 pub enum NodeDisplayError {
     Fmt(fmt::Error),
@@ -626,6 +654,16 @@ pub trait NodeDisplay {
 
 impl<T: NodeDisplay> NodeDisplay for Box<T> {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        NodeDisplay::fmt(&**self, f)
+        let ref n = **self;
+        n.fmt(f)
+    }
+}
+
+impl<T: NodeDisplay> NodeDisplay for Option<T> {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        if let Some(ref n) = *self {
+            n.fmt(f)?;
+        }
+        Ok(())
     }
 }

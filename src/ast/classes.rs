@@ -1,5 +1,5 @@
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   FirstSpecialToken, SpecialToken};
+                   LookaheadSequence};
 
 // TODO: Should we have a MethodBody?
 use ast::functions::{FunctionParams, FunctionBody};
@@ -82,6 +82,8 @@ node!(#[derive(Default)] pub struct ClassExpression {
 
 impl NodeDisplay for ClassExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let mut f = f.lookahead_wrap_parens(LookaheadSequence::Declaration);
+
         for dec in self.decorators.iter() {
             f.node(dec)?;
         }
@@ -97,11 +99,6 @@ impl NodeDisplay for ClassExpression {
         }
 
         f.node(&self.body)
-    }
-}
-impl FirstSpecialToken for ClassExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        SpecialToken::Declaration
     }
 }
 

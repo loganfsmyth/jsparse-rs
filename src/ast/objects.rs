@@ -1,7 +1,7 @@
 use std::default;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   FirstSpecialToken, SpecialToken};
+                   LookaheadSequence};
 
 use ast::alias;
 
@@ -15,6 +15,7 @@ node!(#[derive(Default)] pub struct ObjectExpression {
 });
 impl NodeDisplay for ObjectExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let mut f = f.lookahead_wrap_parens(LookaheadSequence::Curly);
         let mut f = f.wrap_curly();
 
         f.comma_list(&self.properties)?;
@@ -28,11 +29,6 @@ impl NodeDisplay for ObjectExpression {
         }
 
         Ok(())
-    }
-}
-impl FirstSpecialToken for ObjectExpression {
-    fn first_special_token(&self) -> SpecialToken {
-        SpecialToken::Object
     }
 }
 
@@ -140,4 +136,3 @@ impl NodeDisplay for ArrayExpression {
         Ok(())
     }
 }
-impl FirstSpecialToken for ArrayExpression {}

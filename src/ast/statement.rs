@@ -1,7 +1,7 @@
 use std::string;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
-                   FirstSpecialToken, SpecialToken};
+                   LookaheadRestriction};
 
 use ast::patterns::{LeftHandComplexAssign, Pattern};
 
@@ -247,13 +247,13 @@ impl NodeDisplay for ExpressionStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.allow_in();
 
-        if let SpecialToken::None = self.expression.first_special_token() {
+        {
+            let mut f = f.restrict_lookahead(LookaheadRestriction::ExpressionStatement);
             f.require_precedence(Precedence::Normal).node(
                 &self.expression,
             )?;
-        } else {
-            f.wrap_parens().node(&self.expression)?;
         }
+
         f.punctuator(Punctuator::Semicolon);
         Ok(())
     }
@@ -381,7 +381,7 @@ impl NodeDisplay for ForStatement {
             let mut f = f.wrap_parens();
             if let Some(ref init) = self.init {
                 let mut f = f.disallow_in();
-                f.node(init)?;
+                f.restrict_lookahead(LookaheadRestriction::ForInit).node(init)?;
             }
             f.punctuator(Punctuator::Semicolon);
             if let Some(ref test) = self.test {
@@ -401,9 +401,6 @@ node_enum!(@node_display pub enum ForInit {
     Var(VariableStatement),
     Let(LetDeclaration),
     Const(ConstDeclaration),
-
-    // TODO: Technically in sloppy mode someone could do "let[..]" here as a member expression,
-    // so we need parens here for that too.
     Expression(alias::Expression),
 });
 
@@ -468,7 +465,7 @@ impl NodeDisplay for ForInStatement {
         f.keyword(Keyword::For);
         {
             let mut f = f.wrap_parens();
-            f.node(&self.left)?;
+            f.restrict_lookahead(LookaheadRestriction::ForInit).node(&self.left)?;
             f.keyword(Keyword::In);
 
             let mut f = f.allow_in();
@@ -552,7 +549,7 @@ impl NodeDisplay for ForOfStatement {
         f.keyword(Keyword::For);
         {
             let mut f = f.wrap_parens();
-            f.node(&self.left)?;
+            f.restrict_lookahead(LookaheadRestriction::ForOfInit).node(&self.left)?;
             f.keyword(Keyword::Of);
             f.require_precedence(Precedence::Normal).node(&self.right)?;
         }
@@ -574,7 +571,7 @@ impl NodeDisplay for ForAwaitStatement {
         f.keyword(Keyword::Await);
         {
             let mut f = f.wrap_parens();
-            f.node(&self.left)?;
+            f.restrict_lookahead(LookaheadRestriction::ForOfInit).node(&self.left)?;
             f.keyword(Keyword::In);
 
             let mut f = f.allow_in();

@@ -1,7 +1,6 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence,
-                   FirstSpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence};
 
 use ast::alias;
 
@@ -48,7 +47,6 @@ impl NodeDisplay for Element {
         Ok(())
     }
 }
-impl FirstSpecialToken for Element {}
 
 
 node!(pub struct Identifier {

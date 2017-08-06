@@ -1,6 +1,6 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, FirstSpecialToken};
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword};
 // use super::misc;
 
 // #[cfg(test)]
@@ -45,7 +45,6 @@ impl NodeDisplay for Null {
         Ok(())
     }
 }
-impl FirstSpecialToken for Null {}
 
 
 // true/false
@@ -62,7 +61,6 @@ impl NodeDisplay for Boolean {
         Ok(())
     }
 }
-impl FirstSpecialToken for Boolean {}
 impl From<bool> for Boolean {
     fn from(value: bool) -> Boolean {
         Boolean {
@@ -83,7 +81,6 @@ impl NodeDisplay for Numeric {
         f.number(&self.value, self.raw.as_ref().map(string::String::as_str))
     }
 }
-impl FirstSpecialToken for Numeric {}
 impl From<f64> for Numeric {
     fn from(value: f64) -> Numeric {
         Numeric {
@@ -105,7 +102,6 @@ impl NodeDisplay for String {
         f.string(&self.value, self.raw.as_ref().map(string::String::as_str))
     }
 }
-impl FirstSpecialToken for String {}
 impl<T: Into<string::String>> From<T> for String {
     fn from(value: T) -> String {
         String {
@@ -127,4 +123,3 @@ impl NodeDisplay for RegExp {
         f.regexp(&self.value, &self.flags)
     }
 }
-impl FirstSpecialToken for RegExp {}
