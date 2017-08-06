@@ -141,7 +141,7 @@ impl NodeDisplay for PairAttribute {
 
 node_enum!(@node_display pub enum AttributeValue {
     String(StringLiteral),
-    Expression(Box<alias::Expression>),
+    Expression(alias::Expression),
     Element(Element),
 });
 
@@ -167,7 +167,7 @@ node_enum!(@node_display pub enum Child {
 });
 
 node!(pub struct Expression {
-    pub expression: Box<alias::Expression>,
+    pub expression: alias::Expression,
 });
 impl NodeDisplay for Expression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -182,7 +182,7 @@ impl NodeDisplay for Expression {
 
 // experimental?
 node!(pub struct ExpressionSpread {
-    pub expression: Box<alias::Expression>,
+    pub expression: alias::Expression,
 });
 impl NodeDisplay for ExpressionSpread {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

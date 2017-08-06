@@ -2,39 +2,6 @@ use std::string;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_prints_boolean() {
-        assert_serialize!(Boolean::from(true), "true");
-        assert_serialize!(Boolean::from(false), "false");
-    }
-
-    #[test]
-    fn it_prints_null() {
-        assert_serialize!(Null::default(), "null");
-    }
-
-    #[test]
-    fn it_prints_number() {
-        assert_serialize!(Numeric::from(42.0), "42");
-        assert_serialize!(Numeric::from(42.3), "42.3");
-        assert_serialize!(Numeric::from(42.9), "42.9");
-        assert_serialize!(Numeric::from(0.1), "0.1");
-        assert_serialize!(Numeric::from(32e10), "320000000000");
-    }
-
-    #[test]
-    fn it_prints_string() {
-        assert_serialize!(String::from("hello"), "'hello'");
-    }
-    #[test]
-    fn it_prints_regexp() {
-        assert_serialize!(RegExp { value: "hello".into(), flags: vec!['g', 'u'], position: None}, "/hello/gu");
-    }
-}
 
 // null
 node!(#[derive(Default)] pub struct Null {});
@@ -45,6 +12,15 @@ impl NodeDisplay for Null {
     }
 }
 
+#[cfg(test)]
+mod tests_null {
+    use super::*;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(Null::default(), "null");
+    }
+}
 
 // true/false
 node!(pub struct Boolean {
@@ -69,6 +45,16 @@ impl From<bool> for Boolean {
     }
 }
 
+#[cfg(test)]
+mod tests_boolean {
+    use super::*;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(Boolean::from(true), "true");
+        assert_serialize!(Boolean::from(false), "false");
+    }
+}
 
 // 12
 node!(pub struct Numeric {
@@ -90,6 +76,19 @@ impl From<f64> for Numeric {
     }
 }
 
+#[cfg(test)]
+mod tests_numeric {
+    use super::*;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(Numeric::from(42.0), "42");
+        assert_serialize!(Numeric::from(42.3), "42.3");
+        assert_serialize!(Numeric::from(42.9), "42.9");
+        assert_serialize!(Numeric::from(0.1), "0.1");
+        assert_serialize!(Numeric::from(32e10), "320000000000");
+    }
+}
 
 // "foo"
 node!(pub struct String {
@@ -111,6 +110,15 @@ impl<T: Into<string::String>> From<T> for String {
     }
 }
 
+#[cfg(test)]
+mod tests_string {
+    use super::*;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(String::from("hello"), "'hello'");
+    }
+}
 
 // /foo/g
 node!(pub struct RegExp {
@@ -120,5 +128,22 @@ node!(pub struct RegExp {
 impl NodeDisplay for RegExp {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.regexp(&self.value, &self.flags)
+    }
+}
+
+#[cfg(test)]
+mod tests_regexp {
+    use super::*;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            RegExp {
+                value: "hello".into(),
+                flags: vec!['g', 'u'],
+                position: None,
+            },
+            "/hello/gu"
+        );
     }
 }

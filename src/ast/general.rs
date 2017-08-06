@@ -56,10 +56,10 @@ impl NodeDisplay for PropertyIdentifier {
         f.identifier(&self.value, self.raw.as_ref().map(String::as_str))
     }
 }
-impl From<string::String> for PropertyIdentifier {
-    fn from(value: string::String) -> PropertyIdentifier {
+impl<T: Into<string::String>> From<T> for PropertyIdentifier {
+    fn from(value: T) -> PropertyIdentifier {
         PropertyIdentifier {
-            value,
+            value: value.into(),
             raw: None,
             position: None,
         }

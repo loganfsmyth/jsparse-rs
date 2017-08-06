@@ -35,15 +35,6 @@ node!(#[derive(Default)] pub struct ObjectPattern {
     pub properties: Vec<ObjectPatternProperty>,
     pub rest: Option<Box<LeftHandComplexAssign>>,
 });
-//     @[properties,]
-
-//     @?rest[
-//         // TODO: Needs a comma here _sometimes_
-//         ...@
-//     ]
-// });
-
-
 impl NodeDisplay for ObjectPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.lookahead_wrap_parens(LookaheadSequence::Curly);
@@ -64,13 +55,45 @@ impl NodeDisplay for ObjectPattern {
         Ok(())
     }
 }
+#[cfg(test)]
+mod tests_object_pattern {
+    use super::*;
+    use ast::literal;
+    use ast::general::PropertyIdentifier;
+
+    #[test]
+    fn it_prints_default() {
+        assert_serialize!(ObjectPattern::default(), "{}");
+    }
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(ObjectPattern {
+            properties: vec![
+                ObjectPatternIdentifierProperty::from(BindingIdentifier::from("foo")).into(),
+                ObjectPatternIdentifierProperty {
+                    id: BindingIdentifier::from("foo2"),
+                    init: literal::Boolean::from(true).into(),
+                    position: None,
+                }.into(),
+                ObjectPatternPatternProperty {
+                    name: PropertyIdentifier::from("foo3").into(),
+                    pattern: BindingIdentifier::from("foo4").into(),
+                    init: literal::Boolean::from(false).into(),
+                    position: None,
+                }.into(),
+            ],
+            rest: Default::default(),
+            position: None,
+        }, "{foo,foo2=true,foo3:foo4=false}");
+    }
+}
 
 
 node!(pub struct ObjectPatternIdentifierProperty {
     pub id: BindingIdentifier,
     pub init: Option<alias::Expression>,
 });
-
 impl NodeDisplay for ObjectPatternIdentifierProperty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.id)?;
@@ -84,6 +107,17 @@ impl NodeDisplay for ObjectPatternIdentifierProperty {
         Ok(())
     }
 }
+impl<T: Into<BindingIdentifier>> From<T> for ObjectPatternIdentifierProperty {
+    fn from(val: T) -> ObjectPatternIdentifierProperty {
+        ObjectPatternIdentifierProperty {
+            id: val.into(),
+            init: None,
+            position: None,
+        }
+    }
+}
+
+
 node!(pub struct ObjectPatternPatternProperty {
     pub name: PropertyName,
     pub pattern: LeftHandComplexAssign,
@@ -135,6 +169,32 @@ impl NodeDisplay for ArrayPattern {
         Ok(())
     }
 }
+#[cfg(test)]
+mod tests_array_pattern {
+    use super::*;
+    use ast::literal;
+
+    #[test]
+    fn it_prints_default() {
+        assert_serialize!(ObjectPattern::default(), "{}");
+    }
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(ArrayPattern {
+            items: vec![
+                ArrayPatternElement::from(BindingIdentifier::from("foo")).into(),
+                ArrayPatternElement {
+                    id: BindingIdentifier::from("foo2").into(),
+                    init: literal::Boolean::from(true).into(),
+                    position: None,
+                }.into(),
+            ],
+            rest: Default::default(),
+            position: None,
+        }, "[foo,foo2=true]");
+    }
+}
 
 
 node!(pub struct ArrayPatternElement {
@@ -153,5 +213,14 @@ impl NodeDisplay for ArrayPatternElement {
         }
 
         Ok(())
+    }
+}
+impl<T: Into<LeftHandComplexAssign>> From<T> for ArrayPatternElement {
+    fn from(val: T) -> ArrayPatternElement {
+        ArrayPatternElement {
+            id: val.into(),
+            init: None,
+            position: None,
+        }
     }
 }

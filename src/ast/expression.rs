@@ -304,22 +304,7 @@ node!(pub struct MemberExpression {
 });
 impl NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        let sequence =
-            if let alias::Expression::Binding(BindingIdentifier { ref value, .. }) = *self.object {
-                if value == "let" && !self.optional {
-                    if let PropertyAccess::Computed(_) = self.property {
-                        LookaheadSequence::LetSquare
-                    } else {
-                        LookaheadSequence::Let
-                    }
-                } else {
-                    LookaheadSequence::None
-                }
-            } else {
-                LookaheadSequence::None
-            };
-
-        let mut f = f.lookahead_wrap_parens(sequence);
+        let mut f = f.lookahead_wrap_parens(get_sequence(self));
         f.require_precedence(Precedence::Member).node(&self.object)?;
         if self.optional {
             f.punctuator(Punctuator::Question);
@@ -327,6 +312,22 @@ impl NodeDisplay for MemberExpression {
         f.punctuator(Punctuator::Period);
         f.node(&self.property)?;
         Ok(())
+    }
+}
+
+/// Figure out which, if any, lookahead sequence matches this expression.
+fn get_sequence(expr: &MemberExpression) -> LookaheadSequence {
+    use ast::alias::Expression::Binding;
+
+    match *expr.object {
+        Binding(BindingIdentifier { ref value, .. }) if value == "let" && !expr.optional => {
+            if let PropertyAccess::Computed(_) = expr.property {
+                LookaheadSequence::LetSquare
+            } else {
+                LookaheadSequence::Let
+            }
+        }
+        _ => LookaheadSequence::None,
     }
 }
 

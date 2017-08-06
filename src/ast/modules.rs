@@ -652,6 +652,23 @@ impl NodeDisplay for ExportNamespace {
     }
 }
 
+#[cfg(test)]
+mod tests_export_namespace {
+    use super::*;
+
+    #[test]
+    fn it_prints_without_specifiers() {
+        assert_serialize!(
+            ExportNamespace {
+                namespace: "foo".into(),
+                source: "file.js".into(),
+                position: None,
+            },
+            "export*as foo from'file.js';"
+        );
+    }
+}
+
 
 // export foo, {foo} from "";
 // export foo, {foo as bar} from "";
@@ -670,5 +687,44 @@ impl NodeDisplay for ExportNamedAndSpecifiers {
         f.node(&self.source)?;
         f.punctuator(Punctuator::Semicolon);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests_export_named_and_specifiers {
+    use super::*;
+
+    #[test]
+    fn it_prints_without_specifiers() {
+        assert_serialize!(
+            ExportNamedAndSpecifiers {
+                default: "foo".into(),
+                specifiers: vec![],
+                source: "file.js".into(),
+                position: None,
+            },
+            "export foo,{}from'file.js';"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_specifiers() {
+        assert_serialize!(
+            ExportNamedAndSpecifiers {
+                default: "foo".into(),
+                specifiers: vec![
+                    ModuleIdentifier::from("someName").into(),
+                    ModuleIdentifier::from("someOtherName").into(),
+                    SourceExportSpecifier {
+                        imported: "local".into(),
+                        exported: Some("exp".into()),
+                        position: None,
+                    },
+                ],
+                source: "file.js".into(),
+                position: None,
+            },
+            "export foo,{someName,someOtherName,local as exp}from'file.js';"
+        );
     }
 }

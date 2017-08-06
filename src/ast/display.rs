@@ -216,6 +216,8 @@ impl NodeFormatter {
     pub fn precedence<'a>(&'a mut self, p: Precedence) -> FormatterLock<'a> {
         let wrap = (p as u32) < (self.prec as u32);
 
+        // println!("{:?} to {:?}: {}", self.prec, p, wrap);
+
         self.wrap_parens_inner(wrap)
     }
 
@@ -383,11 +385,7 @@ impl NodeFormatter {
     /// if orphan if blocks are currently disallowed.
     pub fn wrap_orphan_if<'a>(&'a mut self, is_orphan: bool) -> FormatterLock<'a> {
         if !is_orphan || !self.wrap_standalone_if {
-            return FormatterLock::new(
-                self,
-                Box::new(move |_fmt| {
-                })
-            );
+            return FormatterLock::new(self, Box::new(move |_fmt| {}));
         }
 
         self.wrap_curly()

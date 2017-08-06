@@ -16,9 +16,6 @@ node!(#[derive(Default)] pub struct ExportDefaultClassDeclaration {
     pub extends: Option<Box<alias::Expression>>,
     pub body: ClassBody,
 });
-
-//   export default @[decorators] class @?id @?extends[extends @] @body);
-
 impl NodeDisplay for ExportDefaultClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Export);
@@ -36,6 +33,48 @@ impl NodeDisplay for ExportDefaultClassDeclaration {
         f.node(&self.body)
     }
 }
+#[cfg(test)]
+mod tests_class_export_default {
+    use super::*;
+
+    #[test]
+    fn it_prints_default() {
+        assert_serialize!(ExportDefaultClassDeclaration::default(), "export default class{}");
+    }
+
+    #[test]
+    fn it_prints_name() {
+        assert_serialize!(ExportDefaultClassDeclaration {
+            decorators: Default::default(),
+            id: BindingIdentifier::from("someName").into(),
+            extends: Default::default(),
+            body: Default::default(),
+            position: None,
+        }, "export default class someName{}");
+    }
+
+    #[test]
+    fn it_prints_extends() {
+        assert_serialize!(ExportDefaultClassDeclaration {
+            decorators: Default::default(),
+            id: Default::default(),
+            extends: BindingIdentifier::from("baseClass").into(),
+            body: Default::default(),
+            position: None,
+        }, "export default class extends baseClass{}");
+    }
+
+    #[test]
+    fn it_prints_name_extends() {
+        assert_serialize!(ExportDefaultClassDeclaration {
+            decorators: Default::default(),
+            id: BindingIdentifier::from("someName").into(),
+            extends: BindingIdentifier::from("baseClass").into(),
+            body: Default::default(),
+            position: None,
+        }, "export default class someName extends baseClass{}");
+    }
+}
 
 
 // class name {}
@@ -45,8 +84,6 @@ node!(pub struct ClassDeclaration {
     pub extends: Option<Box<alias::Expression>>,
     pub body: ClassBody,
 });
-//   export default @[decorators] class @id @?extends[extends @] @body);
-
 impl NodeDisplay for ClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node_list(&self.decorators)?;
@@ -63,6 +100,32 @@ impl NodeDisplay for ClassDeclaration {
         f.node(&self.body)
     }
 }
+#[cfg(test)]
+mod tests_class_declaration {
+    use super::*;
+
+    #[test]
+    fn it_prints_name() {
+        assert_serialize!(ClassDeclaration {
+            decorators: Default::default(),
+            id: BindingIdentifier::from("someName").into(),
+            extends: Default::default(),
+            body: Default::default(),
+            position: None,
+        }, "class someName{}");
+    }
+
+    #[test]
+    fn it_prints_name_extends() {
+        assert_serialize!(ClassDeclaration {
+            decorators: Default::default(),
+            id: BindingIdentifier::from("someName").into(),
+            extends: BindingIdentifier::from("baseClass").into(),
+            body: Default::default(),
+            position: None,
+        }, "class someName extends baseClass{}");
+    }
+}
 
 
 // (class {})
@@ -72,7 +135,6 @@ node!(#[derive(Default)] pub struct ClassExpression {
     pub extends: Option<Box<alias::Expression>>,
     pub body: ClassBody,
 });
-
 impl NodeDisplay for ClassExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.lookahead_wrap_parens(LookaheadSequence::Declaration);
@@ -91,6 +153,48 @@ impl NodeDisplay for ClassExpression {
         f.node(&self.body)
     }
 }
+#[cfg(test)]
+mod tests_class_expression {
+    use super::*;
+
+    #[test]
+    fn it_prints_default() {
+        assert_serialize!(ClassExpression::default(), "class{}");
+    }
+
+    #[test]
+    fn it_prints_name() {
+        assert_serialize!(ClassExpression {
+            decorators: Default::default(),
+            id: BindingIdentifier::from("someName").into(),
+            extends: Default::default(),
+            body: Default::default(),
+            position: None,
+        }, "class someName{}");
+    }
+
+    #[test]
+    fn it_prints_extends() {
+        assert_serialize!(ClassExpression {
+            decorators: Default::default(),
+            id: Default::default(),
+            extends: BindingIdentifier::from("baseClass").into(),
+            body: Default::default(),
+            position: None,
+        }, "class extends baseClass{}");
+    }
+
+    #[test]
+    fn it_prints_name_extends() {
+        assert_serialize!(ClassExpression {
+            decorators: Default::default(),
+            id: BindingIdentifier::from("someName").into(),
+            extends: BindingIdentifier::from("baseClass").into(),
+            body: Default::default(),
+            position: None,
+        }, "class someName extends baseClass{}");
+    }
+}
 
 
 node!(#[derive(Default)] pub struct ClassBody {
@@ -98,9 +202,7 @@ node!(#[derive(Default)] pub struct ClassBody {
 });
 impl NodeDisplay for ClassBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        let mut f = f.wrap_curly();
-
-        f.node_list(&self.items)?;
+        f.wrap_curly().node_list(&self.items)?;
 
         Ok(())
     }
@@ -130,13 +232,11 @@ node_enum!(@node_display pub enum ClassFieldId {
 
 // experimental
 node!(pub struct ClassField {
-    pub pos: FieldPosition,
     pub decorators: Vec<ClassItemDecorator>,
-
+    pub pos: FieldPosition,
     pub id: ClassFieldId,
     pub value: Option<alias::Expression>,
 });
-
 impl NodeDisplay for ClassField {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node_list(&self.decorators)?;
@@ -149,8 +249,58 @@ impl NodeDisplay for ClassField {
             f.punctuator(Punctuator::Eq);
             f.require_precedence(Precedence::Assignment).node(val)?;
         }
+        f.punctuator(Punctuator::Semicolon);
 
         Ok(())
+    }
+}
+#[cfg(test)]
+mod tests_class_field {
+    use super::*;
+    use ast::literal;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(ClassField {
+            decorators: Default::default(),
+            pos: Default::default(),
+            id: PropertyIdentifier::from("someName").into(),
+            value: Default::default(),
+            position: None,
+        }, "someName;");
+    }
+
+    #[test]
+    fn it_prints_with_pos() {
+        assert_serialize!(ClassField {
+            decorators: Default::default(),
+            pos: FieldPosition::Static,
+            id: PropertyIdentifier::from("someName").into(),
+            value: Default::default(),
+            position: None,
+        }, "static someName;");
+    }
+
+    #[test]
+    fn it_prints_with_value() {
+        assert_serialize!(ClassField {
+            decorators: Default::default(),
+            pos: Default::default(),
+            id: PropertyIdentifier::from("someName").into(),
+            value: literal::Boolean::from(true).into(),
+            position: None,
+        }, "someName=true;");
+    }
+
+    #[test]
+    fn it_prints_with_value_and_static() {
+        assert_serialize!(ClassField {
+            decorators: Default::default(),
+            pos: FieldPosition::Static,
+            id: PropertyIdentifier::from("someName").into(),
+            value: literal::Boolean::from(true).into(),
+            position: None,
+        }, "static someName=true;");
     }
 }
 
@@ -162,7 +312,6 @@ node!(pub struct ClassMethod {
     pub params: FunctionParams,
     pub body: FunctionBody,
 });
-
 impl NodeDisplay for ClassMethod {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node_list(&self.decorators)?;
@@ -177,6 +326,52 @@ impl NodeDisplay for ClassMethod {
         Ok(())
     }
 }
+#[cfg(test)]
+mod tests_class_method {
+    use super::*;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(ClassMethod {
+            decorators: Default::default(),
+            pos: Default::default(),
+            kind: Default::default(),
+            id: PropertyIdentifier::from("someName").into(),
+            params: Default::default(),
+            body: Default::default(),
+            position: None,
+        }, "someName(){}");
+    }
+
+    #[test]
+    fn it_prints_with_pos() {
+        assert_serialize!(ClassMethod {
+            decorators: Default::default(),
+            pos: FieldPosition::Static,
+            kind: Default::default(),
+            id: PropertyIdentifier::from("someName").into(),
+            params: Default::default(),
+            body: Default::default(),
+            position: None,
+        }, "static someName(){}");
+    }
+
+    #[test]
+    fn it_prints_with_async() {
+        assert_serialize!(ClassMethod {
+            decorators: Default::default(),
+            pos: Default::default(),
+            kind: MethodKind::Async,
+            id: PropertyIdentifier::from("someName").into(),
+            params: Default::default(),
+            body: Default::default(),
+            position: None,
+        }, "async someName(){}");
+    }
+}
+
+
+
 node_kind!(pub enum FieldPosition {
     Instance,
     Static,
@@ -204,6 +399,14 @@ impl NodeDisplay for ClassDecorator {
         f.node(&self.value)
     }
 }
+impl<T: Into<DecoratorValue>> From<T> for ClassDecorator {
+    fn from(obj: T) -> ClassDecorator {
+        ClassDecorator {
+            value: obj.into(),
+            position: None,
+        }
+    }
+}
 
 node!(pub struct ClassItemDecorator {
     pub value: DecoratorValue,
@@ -212,5 +415,13 @@ impl NodeDisplay for ClassItemDecorator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::At);
         f.node(&self.value)
+    }
+}
+impl<T: Into<DecoratorValue>> From<T> for ClassItemDecorator {
+    fn from(obj: T) -> ClassItemDecorator {
+        ClassItemDecorator {
+            value: obj.into(),
+            position: None,
+        }
     }
 }

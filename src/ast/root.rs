@@ -22,6 +22,27 @@ impl NodeDisplay for Script {
         Ok(())
     }
 }
+#[cfg(test)]
+mod tests_script {
+    use super::*;
+    use ast::general::BindingIdentifier;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(Script::default(), "");
+    }
+
+    #[test]
+    fn it_prints_items() {
+        assert_serialize!(Script {
+            directives: vec![ "use strict".into() ],
+            body: vec![
+                BindingIdentifier::from("someVar").into(),
+            ],
+            position: None,
+        }, "'use strict';someVar;");
+    }
+}
 
 
 node!(#[derive(Default)] pub struct Module {
@@ -35,5 +56,28 @@ impl NodeDisplay for Module {
         f.node_list(&self.body)?;
 
         Ok(())
+    }
+}
+#[cfg(test)]
+mod tests_module {
+    use super::*;
+    use ast::general::BindingIdentifier;
+    use ast::modules::ExportLocalBindings;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(Module::default(), "");
+    }
+
+    #[test]
+    fn it_prints_items() {
+        assert_serialize!(Module {
+            directives: vec![ "use strict".into() ],
+            body: vec![
+                BindingIdentifier::from("someVar").into(),
+                ExportLocalBindings::default().into(),
+            ],
+            position: None,
+        }, "'use strict';someVar;export{};");
     }
 }
