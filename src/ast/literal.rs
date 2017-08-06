@@ -1,41 +1,40 @@
 use std::string;
 
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword};
-// use super::misc;
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-//     #[test]
-//     fn it_prints_boolean() {
-//         assert_serialize!(Boolean, { value: true }, "true");
-//         assert_serialize!(Boolean, { value: false }, "false");
-//     }
+    #[test]
+    fn it_prints_boolean() {
+        assert_serialize!(Boolean::from(true), "true");
+        assert_serialize!(Boolean::from(false), "false");
+    }
 
-//     #[test]
-//     fn it_prints_null() {
-//         assert_serialize!(Null, { }, "null");
-//     }
+    #[test]
+    fn it_prints_null() {
+        assert_serialize!(Null::default(), "null");
+    }
 
-//     #[test]
-//     fn it_prints_number() {
-//         assert_serialize!(Numeric, { value: 42.0, raw: None }, "42");
-//         assert_serialize!(Numeric, { value: 42.3, raw: None }, "42.3");
-//         assert_serialize!(Numeric, { value: 42.9, raw: None }, "42.9");
-//         assert_serialize!(Numeric, { value: 0.1, raw: None }, "0.1");
-//         assert_serialize!(Numeric, { value: 32e10, raw: None }, "320000000000");
-//     }
+    #[test]
+    fn it_prints_number() {
+        assert_serialize!(Numeric::from(42.0), "42");
+        assert_serialize!(Numeric::from(42.3), "42.3");
+        assert_serialize!(Numeric::from(42.9), "42.9");
+        assert_serialize!(Numeric::from(0.1), "0.1");
+        assert_serialize!(Numeric::from(32e10), "320000000000");
+    }
 
-//     #[test]
-//     fn it_prints_string() {
-//         assert_serialize!(String, { value: "hello".into(), raw: None }, "'hello'");
-//     }
-//     #[test]
-//     fn it_prints_regexp() {
-//         assert_serialize!(RegExp, { value: "hello".into(), flags: vec!['g', 'u'] }, "/hello/gu");
-//     }
-// }
+    #[test]
+    fn it_prints_string() {
+        assert_serialize!(String::from("hello"), "'hello'");
+    }
+    #[test]
+    fn it_prints_regexp() {
+        assert_serialize!(RegExp { value: "hello".into(), flags: vec!['g', 'u'], position: None}, "/hello/gu");
+    }
+}
 
 // null
 node!(#[derive(Default)] pub struct Null {});
