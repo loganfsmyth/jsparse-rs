@@ -292,9 +292,9 @@ impl NodeFormatter {
         })
     }
 
-    // TODO: Make wrap function instead?
-    pub fn in_allowed(&self) -> bool {
-        self.in_operator
+    pub fn in_wrap_parens<'a>(&'a mut self) -> FormatterLock<'a> {
+        let in_operator = self.in_operator;
+        self.wrap_parens_inner(in_operator)
     }
 
     pub fn wrap_parens<'a>(&'a mut self) -> FormatterLock<'a> {

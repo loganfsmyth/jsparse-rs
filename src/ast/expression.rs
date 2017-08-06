@@ -642,17 +642,11 @@ impl NodeDisplay for BinaryExpression {
                 f.require_precedence(Precedence::Shift).node(&self.right)?;
             }
             BinaryOperator::In => {
-                if f.in_allowed() {
-                    let mut f = f.precedence(Precedence::Relational);
-                    f.node(&self.left)?;
-                    f.keyword(Keyword::In);
-                    f.require_precedence(Precedence::Shift).node(&self.right)?;
-                } else {
-                    let mut f = f.wrap_parens();
-                    f.node(&self.left)?;
-                    f.keyword(Keyword::In);
-                    f.require_precedence(Precedence::Shift).node(&self.right)?;
-                }
+                let mut f = f.precedence(Precedence::Relational);
+                let mut f = f.in_wrap_parens();
+                f.node(&self.left)?;
+                f.keyword(Keyword::In);
+                f.require_precedence(Precedence::Shift).node(&self.right)?;
             }
             BinaryOperator::Instanceof => {
                 let mut f = f.precedence(Precedence::Relational);
