@@ -13,7 +13,6 @@ use ast::alias;
 node!(#[derive(Default)] pub struct BlockStatement {
     pub body: Vec<alias::StatementItem>,
 });
-// display_dsl!(BlockStatement: @in { @[body] });
 
 impl NodeDisplay for BlockStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -69,7 +68,6 @@ mod tests_block {
 node!(pub struct VariableStatement {
     pub declarations: VariableDeclaratorList,
 });
-// display_dsl!(VariableStatement: var @declarations ;);
 
 impl NodeDisplay for VariableStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -85,7 +83,6 @@ node!(pub struct VariableDeclarator {
     pub id: Pattern,
     pub init: Option<alias::Expression>,
 });
-// display_dsl!(VariableDeclarator: @id @?init[= @]);
 
 impl NodeDisplay for VariableDeclarator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

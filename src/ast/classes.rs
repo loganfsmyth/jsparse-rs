@@ -17,7 +17,6 @@ node!(#[derive(Default)] pub struct ExportDefaultClassDeclaration {
     pub body: ClassBody,
 });
 
-// display_dsl!(ExportDefaultClassDeclaration:
 //   export default @[decorators] class @?id @?extends[extends @] @body);
 
 impl NodeDisplay for ExportDefaultClassDeclaration {
@@ -46,7 +45,6 @@ node!(pub struct ClassDeclaration {
     pub extends: Option<Box<alias::Expression>>,
     pub body: ClassBody,
 });
-// display_dsl!(ClassDeclaration:
 //   export default @[decorators] class @id @?extends[extends @] @body);
 
 impl NodeDisplay for ClassDeclaration {
@@ -74,7 +72,6 @@ node!(#[derive(Default)] pub struct ClassExpression {
     pub extends: Option<Box<alias::Expression>>,
     pub body: ClassBody,
 });
-// display_dsl!(ClassExpression: @[decorators] class @?id @?extends[extends @] @body);
 
 impl NodeDisplay for ClassExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -99,7 +96,6 @@ impl NodeDisplay for ClassExpression {
 node!(#[derive(Default)] pub struct ClassBody {
     pub items: Vec<ClassItem>,
 });
-// display_dsl!(ClassBody: { @[items] });
 impl NodeDisplay for ClassBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.wrap_curly();
@@ -111,7 +107,6 @@ impl NodeDisplay for ClassBody {
 }
 
 node!(#[derive(Default)] pub struct ClassEmpty {});
-// display_dsl!(ClassEmpty: ;);
 impl NodeDisplay for ClassEmpty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::Semicolon);
@@ -141,7 +136,6 @@ node!(pub struct ClassField {
     pub id: ClassFieldId,
     pub value: Option<alias::Expression>,
 });
-// display_dsl!(ClassField: @[decorators] @pos @id @?value[= @]);
 
 impl NodeDisplay for ClassField {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -168,7 +162,6 @@ node!(pub struct ClassMethod {
     pub params: FunctionParams,
     pub body: FunctionBody,
 });
-// display_dsl!(ClassMethod: @[decorators] @pos @kind @id @params @body);
 
 impl NodeDisplay for ClassMethod {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -205,7 +198,6 @@ impl Default for FieldPosition {
 node!(pub struct ClassDecorator {
     pub value: DecoratorValue,
 });
-// display_dsl!(ClassDecorator: @@ @value);
 impl NodeDisplay for ClassDecorator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::At);
@@ -216,7 +208,6 @@ impl NodeDisplay for ClassDecorator {
 node!(pub struct ClassItemDecorator {
     pub value: DecoratorValue,
 });
-// display_dsl!(ClassItemDecorator: @@ @value);
 impl NodeDisplay for ClassItemDecorator {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::At);

@@ -35,7 +35,6 @@ node!(#[derive(Default)] pub struct ObjectPattern {
     pub properties: Vec<ObjectPatternProperty>,
     pub rest: Option<Box<LeftHandComplexAssign>>,
 });
-// display_dsl!(ClassDecorator: {
 //     @[properties,]
 
 //     @?rest[
@@ -71,7 +70,6 @@ node!(pub struct ObjectPatternIdentifierProperty {
     pub id: BindingIdentifier,
     pub init: Option<alias::Expression>,
 });
-// display_dsl!(ObjectPatternIdentifierProperty: @id @?init[= @in {}]
 
 impl NodeDisplay for ObjectPatternIdentifierProperty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
