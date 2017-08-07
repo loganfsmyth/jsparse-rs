@@ -8,19 +8,30 @@ use ast::expression::MemberExpression;
 
 // Used for update and update-assignment
 node_enum!(@node_display pub enum LeftHandSimpleAssign {
-    // TODO: Parenthesized ident and member?
     Identifier(BindingIdentifier),
     Member(MemberExpression),
+    Parenthesized(ParenthesizedAssignmentPattern),
 });
 
 // Used for standard assignment, and for..in and for..of LHS
 node_enum!(@node_display pub enum LeftHandComplexAssign {
-    // TODO: Parenthesized ident and member?
+    Parenthesized(ParenthesizedAssignmentPattern),
     Identifier(BindingIdentifier),
     Member(MemberExpression),
     Object(ObjectAssignmentPattern),
     Array(ArrayAssignmentPattern),
 });
+
+
+// (i) = 4; and (obj.foo) = 4; are valid assignments in JS.
+node!(pub struct ParenthesizedAssignmentPattern {
+    pattern: Box<LeftHandSimpleAssign>,
+});
+impl NodeDisplay for ParenthesizedAssignmentPattern {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.wrap_parens().node(&self.pattern)
+    }
+}
 
 
 // ({     } =
@@ -218,15 +229,6 @@ impl<T: Into<LeftHandComplexAssign>> From<T> for ArrayAssignmentPatternElement {
         }
     }
 }
-
-
-
-
-
-
-
-
-
 
 
 
