@@ -6,7 +6,7 @@ use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punct
 
 use ast::general::BindingIdentifier;
 use ast::alias;
-use ast::patterns::Pattern;
+use ast::patterns::BindingPattern;
 
 use ast::decorators::DecoratorValue;
 
@@ -199,7 +199,7 @@ mod tests_function_params {
 
 node!(pub struct FunctionParam {
     pub decorators: Vec<FunctionParamDecorator>, // experimental
-    pub id: Pattern,
+    pub id: BindingPattern,
     pub init: Option<Box<alias::Expression>>,
 });
 impl NodeDisplay for FunctionParam {
@@ -215,7 +215,7 @@ impl NodeDisplay for FunctionParam {
         Ok(())
     }
 }
-impl<T: Into<Pattern>> From<T> for FunctionParam {
+impl<T: Into<BindingPattern>> From<T> for FunctionParam {
     fn from(v: T) -> FunctionParam {
         FunctionParam {
             decorators: Default::default(),
@@ -228,7 +228,7 @@ impl<T: Into<Pattern>> From<T> for FunctionParam {
 
 
 node!(pub struct FunctionRestParam {
-    pub id: Pattern,
+    pub id: BindingPattern,
 });
 impl NodeDisplay for FunctionRestParam {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

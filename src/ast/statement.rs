@@ -3,7 +3,7 @@ use std::string;
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
                    LookaheadRestriction};
 
-use ast::patterns::{LeftHandComplexAssign, Pattern};
+use ast::patterns::{LeftHandComplexAssign, BindingPattern};
 
 use ast::alias;
 
@@ -78,7 +78,7 @@ impl NodeDisplay for VariableStatement {
 
 type VariableDeclaratorList = DeclaratorList<VariableDeclarator>;
 node!(pub struct VariableDeclarator {
-    pub id: Pattern,
+    pub id: BindingPattern,
     pub init: Option<alias::Expression>,
 });
 
@@ -182,7 +182,7 @@ impl NodeDisplay for LetDeclaration {
 
 type LetDeclaratorList = DeclaratorList<LetDeclarator>;
 node!(pub struct LetDeclarator {
-    pub id: Pattern,
+    pub id: BindingPattern,
     pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for LetDeclarator {
@@ -211,7 +211,7 @@ impl NodeDisplay for ConstDeclaration {
 
 type ConstDeclaratorList = DeclaratorList<ConstDeclarator>;
 node!(pub struct ConstDeclarator {
-    pub id: Pattern,
+    pub id: BindingPattern,
     pub init: alias::Expression,
 });
 impl NodeDisplay for ConstDeclarator {
@@ -563,7 +563,9 @@ impl NodeDisplay for ForInStatement {
 
 
 node!(pub struct ForInVarPattern {
-    pub pattern: Pattern,
+    pub pattern: BindingPattern,
+    // TODO: Technically this default init is only allowed if the pattern is an identifier,
+    // Should this change to a special pattern type?
     pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for ForInVarPattern {
@@ -580,7 +582,7 @@ impl NodeDisplay for ForInVarPattern {
 
 
 node!(pub struct ForVarPattern {
-    pub pattern: Pattern,
+    pub pattern: BindingPattern,
 });
 impl NodeDisplay for ForVarPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -591,7 +593,7 @@ impl NodeDisplay for ForVarPattern {
 
 
 node!(pub struct ForLetPattern {
-    pub pattern: Pattern,
+    pub pattern: BindingPattern,
 });
 impl NodeDisplay for ForLetPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -602,7 +604,7 @@ impl NodeDisplay for ForLetPattern {
 
 
 node!(pub struct ForConstPattern {
-    pub pattern: Pattern,
+    pub pattern: BindingPattern,
 });
 impl NodeDisplay for ForConstPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -1005,7 +1007,7 @@ impl NodeDisplay for TryFinallyStatement {
 
 node!(#[derive(Default)] pub struct CatchClause {
     // Missing param is experimental
-    pub param: Option<Pattern>,
+    pub param: Option<BindingPattern>,
     pub body: BlockStatement,
 });
 impl NodeDisplay for CatchClause {

@@ -232,7 +232,7 @@ impl<T: Into<LeftHandComplexAssign>> From<T> for ArrayAssignmentPatternElement {
 
 
 // Used for binding declarations (var, let, const, and function params)
-node_enum!(@node_display pub enum Pattern {
+node_enum!(@node_display pub enum BindingPattern {
     Identifier(BindingIdentifier),
     Object(ObjectBindingPattern),
     Array(ArrayBindingPattern),
@@ -330,7 +330,7 @@ impl<T: Into<BindingIdentifier>> From<T> for ObjectBindingPatternIdentifierPrope
 
 node!(pub struct ObjectBindingPatternPatternProperty {
     pub name: PropertyName,
-    pub pattern: Pattern,
+    pub pattern: BindingPattern,
     pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for ObjectBindingPatternPatternProperty {
@@ -358,7 +358,7 @@ node_enum!(@node_display pub enum ObjectBindingPatternProperty {
 // ([     ] =
 node!(#[derive(Default)] pub struct ArrayBindingPattern {
     pub items: Vec<Option<ArrayBindingPatternElement>>,
-    pub rest: Option<Box<Pattern>>,
+    pub rest: Option<Box<BindingPattern>>,
 });
 impl NodeDisplay for ArrayBindingPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -408,7 +408,7 @@ mod tests_array_binding_pattern {
 
 
 node!(pub struct ArrayBindingPatternElement {
-    pub id: Pattern,
+    pub id: BindingPattern,
     pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for ArrayBindingPatternElement {
@@ -425,7 +425,7 @@ impl NodeDisplay for ArrayBindingPatternElement {
         Ok(())
     }
 }
-impl<T: Into<Pattern>> From<T> for ArrayBindingPatternElement {
+impl<T: Into<BindingPattern>> From<T> for ArrayBindingPatternElement {
     fn from(val: T) -> ArrayBindingPatternElement {
         ArrayBindingPatternElement {
             id: val.into(),
