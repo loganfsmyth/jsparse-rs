@@ -227,7 +227,6 @@ impl NodeDisplay for ObjectProperty {
         f.node(&self.name)?;
         f.punctuator(Punctuator::Colon);
 
-        let mut f = f.allow_in();
         f.require_precedence(Precedence::Assignment).node(
             &self.value,
         )?;
@@ -275,7 +274,6 @@ impl NodeDisplay for ArrayExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.precedence(Precedence::Primary);
         let mut f = f.wrap_square();
-        let mut f = f.allow_in();
 
         let mut f = f.require_precedence(Precedence::Assignment);
         f.comma_list(&self.elements)?;

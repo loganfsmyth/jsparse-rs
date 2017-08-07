@@ -302,7 +302,6 @@ node!(pub struct ExportDefaultExpression {
 });
 impl NodeDisplay for ExportDefaultExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        let mut f = f.allow_in();
         f.keyword(Keyword::Export);
         f.keyword(Keyword::Default);
 

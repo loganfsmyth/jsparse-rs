@@ -340,14 +340,17 @@ impl NodeFormatter {
     /// Creates a formatter lock that wraps the output in curly brackets.
     pub fn wrap_curly<'a>(&'a mut self) -> FormatterLock<'a> {
         let wrap_standalone_if = self.wrap_standalone_if;
+        let in_operator = self.in_operator;
 
         self.wrap_standalone_if = false;
+        self.in_operator = true;
         self.punctuator(Punctuator::CurlyL);
 
         FormatterLock::new(
             self,
             Box::new(move |fmt| {
                 fmt.wrap_standalone_if = wrap_standalone_if;
+                fmt.in_operator = in_operator;
                 fmt.punctuator(Punctuator::CurlyR);
             }),
         )
@@ -356,14 +359,17 @@ impl NodeFormatter {
     /// Creates a formatter lock that wraps the output in square brackets.
     pub fn wrap_square<'a>(&'a mut self) -> FormatterLock<'a> {
         let wrap_standalone_if = self.wrap_standalone_if;
+        let in_operator = self.in_operator;
 
         self.wrap_standalone_if = false;
+        self.in_operator = true;
         self.punctuator(Punctuator::SquareL);
 
         FormatterLock::new(
             self,
             Box::new(move |fmt| {
                 fmt.wrap_standalone_if = wrap_standalone_if;
+                fmt.in_operator = in_operator;
                 fmt.punctuator(Punctuator::SquareR);
             }),
         )

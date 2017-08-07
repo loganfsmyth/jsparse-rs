@@ -103,8 +103,6 @@ impl NodeDisplay for ObjectAssignmentPatternIdentifierProperty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.id)?;
         if let Some(ref init) = self.init {
-            let mut f = f.allow_in();
-
             f.punctuator(Punctuator::Eq);
             f.require_precedence(Precedence::Assignment).node(init)?;
         }
@@ -134,8 +132,6 @@ impl NodeDisplay for ObjectAssignmentPatternPatternProperty {
         f.punctuator(Punctuator::Colon);
         f.node(&self.pattern)?;
         if let Some(ref init) = self.init {
-            let mut f = f.allow_in();
-
             f.punctuator(Punctuator::Eq);
             f.require_precedence(Precedence::Assignment).node(init)?;
         }
@@ -211,8 +207,6 @@ impl NodeDisplay for ArrayAssignmentPatternElement {
         f.node(&self.id)?;
 
         if let Some(ref init) = self.init {
-            let mut f = f.allow_in();
-
             f.punctuator(Punctuator::Eq);
             f.require_precedence(Precedence::Assignment).node(init)?;
         }
@@ -310,8 +304,6 @@ impl NodeDisplay for ObjectBindingPatternIdentifierProperty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.id)?;
         if let Some(ref init) = self.init {
-            let mut f = f.allow_in();
-
             f.punctuator(Punctuator::Eq);
             f.require_precedence(Precedence::Assignment).node(init)?;
         }
@@ -341,8 +333,6 @@ impl NodeDisplay for ObjectBindingPatternPatternProperty {
         f.punctuator(Punctuator::Colon);
         f.node(&self.pattern)?;
         if let Some(ref init) = self.init {
-            let mut f = f.allow_in();
-
             f.punctuator(Punctuator::Eq);
             f.require_precedence(Precedence::Assignment).node(init)?;
         }
@@ -418,8 +408,6 @@ impl NodeDisplay for ArrayBindingPatternElement {
         f.node(&self.id)?;
 
         if let Some(ref init) = self.init {
-            let mut f = f.allow_in();
-
             f.punctuator(Punctuator::Eq);
             f.require_precedence(Precedence::Assignment).node(init)?;
         }

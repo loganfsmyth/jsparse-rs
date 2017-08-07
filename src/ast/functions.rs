@@ -111,7 +111,6 @@ node!(#[derive(Default)] pub struct FunctionParams {
 impl NodeDisplay for FunctionParams {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.wrap_parens();
-        let mut f = f.allow_in();
 
         f.comma_list(&self.params)?;
 
@@ -247,7 +246,6 @@ node!(#[derive(Default)] pub struct FunctionBody {
 impl NodeDisplay for FunctionBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.wrap_curly();
-        let mut f = f.allow_in();
 
         f.node_list(&self.directives)?;
         f.node_list(&self.body)?;

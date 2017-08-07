@@ -80,7 +80,6 @@ node!(pub struct ComputedPropertyName {
 impl NodeDisplay for ComputedPropertyName {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.wrap_square();
-        let mut f = f.allow_in();
 
         f.require_precedence(Precedence::Assignment).node(
             &self.expression,
