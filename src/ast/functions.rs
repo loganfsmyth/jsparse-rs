@@ -137,61 +137,70 @@ mod tests_function_params {
 
     #[test]
     fn it_prints_params() {
-        assert_serialize!(FunctionParams {
-            params: vec![
-                FunctionParam {
-                    decorators: Default::default(),
-                    id: BindingIdentifier::from("arg").into(),
-                    init: Default::default(),
-                    position: None,
-                },
-                FunctionParam {
-                    decorators: Default::default(),
-                    id: BindingIdentifier::from("arg2").into(),
-                    init: literal::Boolean::from(true).into(),
-                    position: None,
-                },
-            ],
-            rest: Default::default(),
-            position: None,
-        }, "(arg,arg2=true)");
+        assert_serialize!(
+            FunctionParams {
+                params: vec![
+                    FunctionParam {
+                        decorators: Default::default(),
+                        id: BindingIdentifier::from("arg").into(),
+                        init: Default::default(),
+                        position: None,
+                    },
+                    FunctionParam {
+                        decorators: Default::default(),
+                        id: BindingIdentifier::from("arg2").into(),
+                        init: literal::Boolean::from(true).into(),
+                        position: None,
+                    },
+                ],
+                rest: Default::default(),
+                position: None,
+            },
+            "(arg,arg2=true)"
+        );
     }
 
     #[test]
     fn it_prints_rest() {
-        assert_serialize!(FunctionParams {
-            params: Default::default(),
-            rest: FunctionRestParam {
-                id: BindingIdentifier::from("arg").into(),
+        assert_serialize!(
+            FunctionParams {
+                params: Default::default(),
+                rest: FunctionRestParam {
+                    id: BindingIdentifier::from("arg").into(),
+                    position: None,
+                }.into(),
                 position: None,
-            }.into(),
-            position: None,
-        }, "(...arg)");
+            },
+            "(...arg)"
+        );
     }
 
     #[test]
     fn it_prints_params_and_rest() {
-        assert_serialize!(FunctionParams {
-            params: vec![
-                FunctionParam {
-                    decorators: Default::default(),
-                    id: BindingIdentifier::from("arg").into(),
-                    init: Default::default(),
+        assert_serialize!(
+            FunctionParams {
+                params: vec![
+                    FunctionParam {
+                        decorators: Default::default(),
+                        id: BindingIdentifier::from("arg").into(),
+                        init: Default::default(),
+                        position: None,
+                    },
+                    FunctionParam {
+                        decorators: Default::default(),
+                        id: BindingIdentifier::from("arg2").into(),
+                        init: literal::Boolean::from(true).into(),
+                        position: None,
+                    },
+                ],
+                rest: FunctionRestParam {
+                    id: BindingIdentifier::from("arg3").into(),
                     position: None,
-                },
-                FunctionParam {
-                    decorators: Default::default(),
-                    id: BindingIdentifier::from("arg2").into(),
-                    init: literal::Boolean::from(true).into(),
-                    position: None,
-                },
-            ],
-            rest: FunctionRestParam {
-                id: BindingIdentifier::from("arg3").into(),
+                }.into(),
                 position: None,
-            }.into(),
-            position: None,
-        }, "(arg,arg2=true,...arg3)");
+            },
+            "(arg,arg2=true,...arg3)"
+        );
     }
 }
 
@@ -289,18 +298,24 @@ mod tests_function_export_default {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ExportDefaultFunctionDeclaration::default(), "export default function(){}");
+        assert_serialize!(
+            ExportDefaultFunctionDeclaration::default(),
+            "export default function(){}"
+        );
     }
 
     #[test]
     fn it_prints_with_name() {
-        assert_serialize!(ExportDefaultFunctionDeclaration {
-            kind: Default::default(),
-            id: BindingIdentifier::from("someName").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "export default function someName(){}");
+        assert_serialize!(
+            ExportDefaultFunctionDeclaration {
+                kind: Default::default(),
+                id: BindingIdentifier::from("someName").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "export default function someName(){}"
+        );
     }
 }
 
@@ -325,13 +340,16 @@ mod tests_function_declaration {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(FunctionDeclaration {
-            kind: Default::default(),
-            id: "someName".into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "function someName(){}");
+        assert_serialize!(
+            FunctionDeclaration {
+                kind: Default::default(),
+                id: "someName".into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "function someName(){}"
+        );
     }
 }
 
@@ -363,13 +381,16 @@ mod tests_function_expression {
 
     #[test]
     fn it_prints_with_name() {
-        assert_serialize!(FunctionDeclaration {
-            kind: Default::default(),
-            id: "someName".into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "function someName(){}");
+        assert_serialize!(
+            FunctionDeclaration {
+                kind: Default::default(),
+                id: "someName".into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "function someName(){}"
+        );
     }
 }
 
@@ -430,110 +451,134 @@ mod tests_arrow_function_expression {
 
     #[test]
     fn it_prints_single_ident() {
-        assert_serialize!(ArrowFunctionExpression {
-            kind: Default::default(),
-            params: BindingIdentifier::from("arg").into(),
-            body: Default::default(),
-            position: None,
-        }, "arg=>{}");
+        assert_serialize!(
+            ArrowFunctionExpression {
+                kind: Default::default(),
+                params: BindingIdentifier::from("arg").into(),
+                body: Default::default(),
+                position: None,
+            },
+            "arg=>{}"
+        );
     }
 
     #[test]
     fn it_prints_single_ident_async() {
-        assert_serialize!(ArrowFunctionExpression {
-            kind: ArrowFunctionKind::Async,
-            params: BindingIdentifier::from("arg").into(),
-            body: Default::default(),
-            position: None,
-        }, "async arg=>{}");
+        assert_serialize!(
+            ArrowFunctionExpression {
+                kind: ArrowFunctionKind::Async,
+                params: BindingIdentifier::from("arg").into(),
+                body: Default::default(),
+                position: None,
+            },
+            "async arg=>{}"
+        );
     }
 
     #[test]
     fn it_prints_single_ident_gen() {
-        assert_serialize!(ArrowFunctionExpression {
-            kind: ArrowFunctionKind::Generator,
-            params: BindingIdentifier::from("arg").into(),
-            body: Default::default(),
-            position: None,
-        }, "arg=*>{}");
+        assert_serialize!(
+            ArrowFunctionExpression {
+                kind: ArrowFunctionKind::Generator,
+                params: BindingIdentifier::from("arg").into(),
+                body: Default::default(),
+                position: None,
+            },
+            "arg=*>{}"
+        );
     }
 
     #[test]
     fn it_prints_single_ident_asyncgen() {
-        assert_serialize!(ArrowFunctionExpression {
-            kind: ArrowFunctionKind::AsyncGenerator,
-            params: BindingIdentifier::from("arg").into(),
-            body: Default::default(),
-            position: None,
-        }, "async arg=*>{}");
+        assert_serialize!(
+            ArrowFunctionExpression {
+                kind: ArrowFunctionKind::AsyncGenerator,
+                params: BindingIdentifier::from("arg").into(),
+                body: Default::default(),
+                position: None,
+            },
+            "async arg=*>{}"
+        );
     }
 
     #[test]
     fn it_prints_multi_param() {
-        assert_serialize!(ArrowFunctionExpression {
-            kind: Default::default(),
-            params: FunctionParams {
-                params: vec![
-                    BindingIdentifier::from("arg1").into(),
-                    BindingIdentifier::from("arg2").into(),
-                ],
-                rest: Default::default(),
+        assert_serialize!(
+            ArrowFunctionExpression {
+                kind: Default::default(),
+                params: FunctionParams {
+                    params: vec![
+                        BindingIdentifier::from("arg1").into(),
+                        BindingIdentifier::from("arg2").into(),
+                    ],
+                    rest: Default::default(),
+                    position: None,
+                }.into(),
+                body: Default::default(),
                 position: None,
-            }.into(),
-            body: Default::default(),
-            position: None,
-        }, "(arg1,arg2)=>{}");
+            },
+            "(arg1,arg2)=>{}"
+        );
     }
 
     #[test]
     fn it_prints_multi_param_async() {
-        assert_serialize!(ArrowFunctionExpression {
-            kind: ArrowFunctionKind::Async,
-            params: FunctionParams {
-                params: vec![
-                    BindingIdentifier::from("arg1").into(),
-                    BindingIdentifier::from("arg2").into(),
-                ],
-                rest: Default::default(),
+        assert_serialize!(
+            ArrowFunctionExpression {
+                kind: ArrowFunctionKind::Async,
+                params: FunctionParams {
+                    params: vec![
+                        BindingIdentifier::from("arg1").into(),
+                        BindingIdentifier::from("arg2").into(),
+                    ],
+                    rest: Default::default(),
+                    position: None,
+                }.into(),
+                body: Default::default(),
                 position: None,
-            }.into(),
-            body: Default::default(),
-            position: None,
-        }, "async(arg1,arg2)=>{}");
+            },
+            "async(arg1,arg2)=>{}"
+        );
     }
 
     #[test]
     fn it_prints_multi_param_gen() {
-        assert_serialize!(ArrowFunctionExpression {
-            kind: ArrowFunctionKind::Generator,
-            params: FunctionParams {
-                params: vec![
-                    BindingIdentifier::from("arg1").into(),
-                    BindingIdentifier::from("arg2").into(),
-                ],
-                rest: Default::default(),
+        assert_serialize!(
+            ArrowFunctionExpression {
+                kind: ArrowFunctionKind::Generator,
+                params: FunctionParams {
+                    params: vec![
+                        BindingIdentifier::from("arg1").into(),
+                        BindingIdentifier::from("arg2").into(),
+                    ],
+                    rest: Default::default(),
+                    position: None,
+                }.into(),
+                body: Default::default(),
                 position: None,
-            }.into(),
-            body: Default::default(),
-            position: None,
-        }, "(arg1,arg2)=*>{}");
+            },
+            "(arg1,arg2)=*>{}"
+        );
     }
 
     #[test]
     fn it_prints_multi_param_asyncgen() {
-        assert_serialize!(ArrowFunctionExpression {
-            kind: ArrowFunctionKind::AsyncGenerator,
-            params: FunctionParams {
-                params: vec![
-                    BindingIdentifier::from("arg1").into(),
-                    BindingIdentifier::from("arg2").into(),
-                ],
-                rest: Default::default(),
+        assert_serialize!(
+            ArrowFunctionExpression {
+                kind: ArrowFunctionKind::AsyncGenerator,
+                params: FunctionParams {
+                    params: vec![
+                        BindingIdentifier::from("arg1").into(),
+                        BindingIdentifier::from("arg2").into(),
+                    ],
+                    rest: Default::default(),
+                    position: None,
+                }.into(),
+                body: Default::default(),
                 position: None,
-            }.into(),
-            body: Default::default(),
-            position: None,
-        }, "async(arg1,arg2)=*>{}");
+            },
+            "async(arg1,arg2)=*>{}"
+        );
     }
 }
 
@@ -588,17 +633,23 @@ mod tests_arrow_function_expression_body {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ArrowFunctionExpressionBody {
-            expression: literal::Boolean::from(false).into(),
-            position: None,
-        }, "false");
+        assert_serialize!(
+            ArrowFunctionExpressionBody {
+                expression: literal::Boolean::from(false).into(),
+                position: None,
+            },
+            "false"
+        );
     }
 
     #[test]
     fn it_prints_with_parens() {
-        assert_serialize!(ArrowFunctionExpressionBody {
-            expression: objects::ObjectExpression::default().into(),
-            position: None,
-        }, "({})");
+        assert_serialize!(
+            ArrowFunctionExpressionBody {
+                expression: objects::ObjectExpression::default().into(),
+                position: None,
+            },
+            "({})"
+        );
     }
 }

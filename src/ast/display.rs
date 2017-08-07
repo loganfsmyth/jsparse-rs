@@ -216,6 +216,8 @@ impl NodeFormatter {
     pub fn precedence<'a>(&'a mut self, p: Precedence) -> FormatterLock<'a> {
         let wrap = (p as u32) < (self.prec as u32);
 
+        // TODO: does this need to set and restore the precedence too?
+
         // println!("{:?} to {:?}: {}", self.prec, p, wrap);
 
         self.wrap_parens_inner(wrap)

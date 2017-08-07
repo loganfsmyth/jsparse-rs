@@ -137,9 +137,7 @@ mod tests_element {
             Element {
                 opening: Identifier::from("foo-bar").into(),
                 attributes: Default::default(),
-                children: vec![
-                    Text::from("some text").into(),
-                ],
+                children: vec![Text::from("some text").into()],
                 closing: Default::default(),
                 position: None,
             },
@@ -153,9 +151,7 @@ mod tests_element {
             Element {
                 opening: Identifier::from("foo-bar").into(),
                 attributes: Default::default(),
-                children: vec![
-                    Text::from("some text").into(),
-                ],
+                children: vec![Text::from("some text").into()],
                 closing: Identifier::from("foo-bar").into(),
                 position: None,
             },
@@ -414,9 +410,7 @@ mod tests_element_children {
             Element {
                 opening: Identifier::from("div").into(),
                 attributes: Default::default(),
-                children: vec![
-                    Empty::default().into(),
-                ],
+                children: vec![Empty::default().into()],
                 closing: Default::default(),
                 position: None,
             },
@@ -430,9 +424,7 @@ mod tests_element_children {
             Element {
                 opening: Identifier::from("div").into(),
                 attributes: Default::default(),
-                children: vec![
-                    Text::from("content").into()
-                ],
+                children: vec![Text::from("content").into()],
                 closing: Default::default(),
                 position: None,
             },

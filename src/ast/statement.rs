@@ -337,7 +337,7 @@ mod tests_expression_statement {
                             optional: false,
                             expression: literal::Boolean::from(false).into(),
                             position: None,
-                        }
+                        },
                     ),
                     position: None,
                 }.into(),

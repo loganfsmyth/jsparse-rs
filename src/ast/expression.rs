@@ -318,7 +318,7 @@ fn get_sequence(expr: &MemberExpression) -> LookaheadSequence {
             match expr.property {
                 PropertyAccess::Computed(ComputedPropertyAccess { optional, .. }) if !optional => {
                     LookaheadSequence::LetSquare
-                },
+                }
                 _ => LookaheadSequence::Let,
             }
         }

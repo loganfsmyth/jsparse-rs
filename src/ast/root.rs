@@ -34,13 +34,14 @@ mod tests_script {
 
     #[test]
     fn it_prints_items() {
-        assert_serialize!(Script {
-            directives: vec![ "use strict".into() ],
-            body: vec![
-                BindingIdentifier::from("someVar").into(),
-            ],
-            position: None,
-        }, "'use strict';someVar;");
+        assert_serialize!(
+            Script {
+                directives: vec!["use strict".into()],
+                body: vec![BindingIdentifier::from("someVar").into()],
+                position: None,
+            },
+            "'use strict';someVar;"
+        );
     }
 }
 
@@ -71,13 +72,16 @@ mod tests_module {
 
     #[test]
     fn it_prints_items() {
-        assert_serialize!(Module {
-            directives: vec![ "use strict".into() ],
-            body: vec![
-                BindingIdentifier::from("someVar").into(),
-                ExportLocalBindings::default().into(),
-            ],
-            position: None,
-        }, "'use strict';someVar;export{};");
+        assert_serialize!(
+            Module {
+                directives: vec!["use strict".into()],
+                body: vec![
+                    BindingIdentifier::from("someVar").into(),
+                    ExportLocalBindings::default().into(),
+                ],
+                position: None,
+            },
+            "'use strict';someVar;export{};"
+        );
     }
 }

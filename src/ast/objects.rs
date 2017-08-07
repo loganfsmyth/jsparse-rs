@@ -46,48 +46,57 @@ mod tests_object_expression {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ObjectExpression {
-            properties: vec![
-                ObjectProperty {
-                    name: PropertyIdentifier::from("fooProp").into(),
-                    value: literal::Boolean::from(false).into(),
-                    position: None,
-                }.into(),
-                ObjectMethod {
-                    kind: Default::default(),
-                    id: PropertyIdentifier::from("fooMethod").into(),
-                    params: Default::default(),
-                    body: Default::default(),
-                    position: None,
-                }.into(),
-            ],
-            spread: Default::default(),
-            position: None,
-        }, "{fooProp:false,fooMethod(){}}");
+        assert_serialize!(
+            ObjectExpression {
+                properties: vec![
+                    ObjectProperty {
+                        name: PropertyIdentifier::from("fooProp").into(),
+                        value: literal::Boolean::from(false).into(),
+                        position: None,
+                    }.into(),
+                    ObjectMethod {
+                        kind: Default::default(),
+                        id: PropertyIdentifier::from("fooMethod").into(),
+                        params: Default::default(),
+                        body: Default::default(),
+                        position: None,
+                    }.into(),
+                ],
+                spread: Default::default(),
+                position: None,
+            },
+            "{fooProp:false,fooMethod(){}}"
+        );
     }
 
     #[test]
     fn it_prints_prop_and_spread() {
-        assert_serialize!(ObjectExpression {
-            properties: vec![
-                ObjectProperty {
-                    name: PropertyIdentifier::from("fooProp").into(),
-                    value: literal::Boolean::from(false).into(),
-                    position: None,
-                }.into(),
-            ],
-            spread: literal::Boolean::from(true).into(),
-            position: None,
-        }, "{fooProp:false,...true}");
+        assert_serialize!(
+            ObjectExpression {
+                properties: vec![
+                    ObjectProperty {
+                        name: PropertyIdentifier::from("fooProp").into(),
+                        value: literal::Boolean::from(false).into(),
+                        position: None,
+                    }.into(),
+                ],
+                spread: literal::Boolean::from(true).into(),
+                position: None,
+            },
+            "{fooProp:false,...true}"
+        );
     }
 
     #[test]
     fn it_prints_spread() {
-        assert_serialize!(ObjectExpression {
-            properties: vec![],
-            spread: literal::Boolean::from(true).into(),
-            position: None,
-        }, "{...true}");
+        assert_serialize!(
+            ObjectExpression {
+                properties: vec![],
+                spread: literal::Boolean::from(true).into(),
+                position: None,
+            },
+            "{...true}"
+        );
     }
 }
 
@@ -151,68 +160,86 @@ mod tests_object_method {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ObjectMethod {
-            kind: Default::default(),
-            id: PropertyIdentifier::from("fooMethod").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "fooMethod(){}");
+        assert_serialize!(
+            ObjectMethod {
+                kind: Default::default(),
+                id: PropertyIdentifier::from("fooMethod").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "fooMethod(){}"
+        );
     }
 
     #[test]
     fn it_prints_async() {
-        assert_serialize!(ObjectMethod {
-            kind: MethodKind::Async,
-            id: PropertyIdentifier::from("fooMethod").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "async fooMethod(){}");
+        assert_serialize!(
+            ObjectMethod {
+                kind: MethodKind::Async,
+                id: PropertyIdentifier::from("fooMethod").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "async fooMethod(){}"
+        );
     }
 
     #[test]
     fn it_prints_generator() {
-        assert_serialize!(ObjectMethod {
-            kind: MethodKind::Generator,
-            id: PropertyIdentifier::from("fooMethod").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "*fooMethod(){}");
+        assert_serialize!(
+            ObjectMethod {
+                kind: MethodKind::Generator,
+                id: PropertyIdentifier::from("fooMethod").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "*fooMethod(){}"
+        );
     }
 
     #[test]
     fn it_prints_async_generator() {
-        assert_serialize!(ObjectMethod {
-            kind: MethodKind::AsyncGenerator,
-            id: PropertyIdentifier::from("fooMethod").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "async*fooMethod(){}");
+        assert_serialize!(
+            ObjectMethod {
+                kind: MethodKind::AsyncGenerator,
+                id: PropertyIdentifier::from("fooMethod").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "async*fooMethod(){}"
+        );
     }
 
     #[test]
     fn it_prints_getter() {
-        assert_serialize!(ObjectMethod {
-            kind: MethodKind::Get,
-            id: PropertyIdentifier::from("fooMethod").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "get fooMethod(){}");
+        assert_serialize!(
+            ObjectMethod {
+                kind: MethodKind::Get,
+                id: PropertyIdentifier::from("fooMethod").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "get fooMethod(){}"
+        );
     }
 
     #[test]
     fn it_prints_setter() {
-        assert_serialize!(ObjectMethod {
-            kind: MethodKind::Set,
-            id: PropertyIdentifier::from("fooMethod").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "set fooMethod(){}");
+        assert_serialize!(
+            ObjectMethod {
+                kind: MethodKind::Set,
+                id: PropertyIdentifier::from("fooMethod").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "set fooMethod(){}"
+        );
     }
 }
 
@@ -243,24 +270,30 @@ mod tests_object_property {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ObjectProperty {
-            name: PropertyIdentifier::from("fooProp").into(),
-            value: literal::Boolean::from(false).into(),
-            position: None,
-        }, "fooProp:false");
+        assert_serialize!(
+            ObjectProperty {
+                name: PropertyIdentifier::from("fooProp").into(),
+                value: literal::Boolean::from(false).into(),
+                position: None,
+            },
+            "fooProp:false"
+        );
     }
 
     #[test]
     fn it_prints_with_precedence() {
-        assert_serialize!(ObjectProperty {
-            name: PropertyIdentifier::from("fooProp").into(),
-            value: SequenceExpression {
-                left: literal::Boolean::from(false).into(),
-                right: literal::Boolean::from(true).into(),
+        assert_serialize!(
+            ObjectProperty {
+                name: PropertyIdentifier::from("fooProp").into(),
+                value: SequenceExpression {
+                    left: literal::Boolean::from(false).into(),
+                    right: literal::Boolean::from(true).into(),
+                    position: None,
+                }.into(),
                 position: None,
-            }.into(),
-            position: None,
-        }, "fooProp:(false,true)");
+            },
+            "fooProp:(false,true)"
+        );
     }
 }
 
@@ -304,70 +337,79 @@ mod tests_array_expression {
 
     #[test]
     fn it_prints_with_elision() {
-        assert_serialize!(ArrayExpression {
-            elements: vec![
-                None,
-                None,
-            ],
-            spread: Default::default(),
-            position: None,
-        }, "[,]");
+        assert_serialize!(
+            ArrayExpression {
+                elements: vec![None, None],
+                spread: Default::default(),
+                position: None,
+            },
+            "[,]"
+        );
     }
 
     #[test]
     fn it_prints_with_items() {
-        assert_serialize!(ArrayExpression {
-            elements: vec![
-                literal::Boolean::from(false).into(),
-                literal::Boolean::from(true).into(),
-            ],
-            spread: Default::default(),
-            position: None,
-        }, "[false,true]");
+        assert_serialize!(
+            ArrayExpression {
+                elements: vec![
+                    literal::Boolean::from(false).into(),
+                    literal::Boolean::from(true).into(),
+                ],
+                spread: Default::default(),
+                position: None,
+            },
+            "[false,true]"
+        );
     }
 
     #[test]
     fn it_prints_with_items_and_elision() {
-        assert_serialize!(ArrayExpression {
-            elements: vec![
-                None,
-                literal::Boolean::from(true).into(),
-            ],
-            spread: Default::default(),
-            position: None,
-        }, "[,true]");
+        assert_serialize!(
+            ArrayExpression {
+                elements: vec![None, literal::Boolean::from(true).into()],
+                spread: Default::default(),
+                position: None,
+            },
+            "[,true]"
+        );
     }
 
     #[test]
     fn it_prints_with_spread() {
-        assert_serialize!(ArrayExpression {
-            elements: vec![],
-            spread: literal::Boolean::from(true).into(),
-            position: None,
-        }, "[...true]");
+        assert_serialize!(
+            ArrayExpression {
+                elements: vec![],
+                spread: literal::Boolean::from(true).into(),
+                position: None,
+            },
+            "[...true]"
+        );
     }
 
     #[test]
     fn it_prints_with_items_and_spread() {
-        assert_serialize!(ArrayExpression {
-            elements: vec![
-                literal::Boolean::from(false).into(),
-                literal::Boolean::from(true).into(),
-            ],
-            spread: literal::Boolean::from(true).into(),
-            position: None,
-        }, "[false,true,...true]");
+        assert_serialize!(
+            ArrayExpression {
+                elements: vec![
+                    literal::Boolean::from(false).into(),
+                    literal::Boolean::from(true).into(),
+                ],
+                spread: literal::Boolean::from(true).into(),
+                position: None,
+            },
+            "[false,true,...true]"
+        );
     }
 
     #[test]
     fn it_prints_with_items_elision_and_spread() {
-        assert_serialize!(ArrayExpression {
-            elements: vec![
-                None,
-                literal::Boolean::from(true).into(),
-            ],
-            spread: literal::Boolean::from(true).into(),
-            position: None,
-        }, "[,true,...true]");
+        assert_serialize!(
+            ArrayExpression {
+                elements: vec![None, literal::Boolean::from(true).into()],
+                spread: literal::Boolean::from(true).into(),
+                position: None,
+            },
+            "[,true,...true]"
+        );
     }
 }

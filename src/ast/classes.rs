@@ -39,40 +39,52 @@ mod tests_class_export_default {
 
     #[test]
     fn it_prints_default() {
-        assert_serialize!(ExportDefaultClassDeclaration::default(), "export default class{}");
+        assert_serialize!(
+            ExportDefaultClassDeclaration::default(),
+            "export default class{}"
+        );
     }
 
     #[test]
     fn it_prints_name() {
-        assert_serialize!(ExportDefaultClassDeclaration {
-            decorators: Default::default(),
-            id: BindingIdentifier::from("someName").into(),
-            extends: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "export default class someName{}");
+        assert_serialize!(
+            ExportDefaultClassDeclaration {
+                decorators: Default::default(),
+                id: BindingIdentifier::from("someName").into(),
+                extends: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "export default class someName{}"
+        );
     }
 
     #[test]
     fn it_prints_extends() {
-        assert_serialize!(ExportDefaultClassDeclaration {
-            decorators: Default::default(),
-            id: Default::default(),
-            extends: BindingIdentifier::from("baseClass").into(),
-            body: Default::default(),
-            position: None,
-        }, "export default class extends baseClass{}");
+        assert_serialize!(
+            ExportDefaultClassDeclaration {
+                decorators: Default::default(),
+                id: Default::default(),
+                extends: BindingIdentifier::from("baseClass").into(),
+                body: Default::default(),
+                position: None,
+            },
+            "export default class extends baseClass{}"
+        );
     }
 
     #[test]
     fn it_prints_name_extends() {
-        assert_serialize!(ExportDefaultClassDeclaration {
-            decorators: Default::default(),
-            id: BindingIdentifier::from("someName").into(),
-            extends: BindingIdentifier::from("baseClass").into(),
-            body: Default::default(),
-            position: None,
-        }, "export default class someName extends baseClass{}");
+        assert_serialize!(
+            ExportDefaultClassDeclaration {
+                decorators: Default::default(),
+                id: BindingIdentifier::from("someName").into(),
+                extends: BindingIdentifier::from("baseClass").into(),
+                body: Default::default(),
+                position: None,
+            },
+            "export default class someName extends baseClass{}"
+        );
     }
 }
 
@@ -106,24 +118,30 @@ mod tests_class_declaration {
 
     #[test]
     fn it_prints_name() {
-        assert_serialize!(ClassDeclaration {
-            decorators: Default::default(),
-            id: BindingIdentifier::from("someName").into(),
-            extends: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "class someName{}");
+        assert_serialize!(
+            ClassDeclaration {
+                decorators: Default::default(),
+                id: BindingIdentifier::from("someName").into(),
+                extends: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "class someName{}"
+        );
     }
 
     #[test]
     fn it_prints_name_extends() {
-        assert_serialize!(ClassDeclaration {
-            decorators: Default::default(),
-            id: BindingIdentifier::from("someName").into(),
-            extends: BindingIdentifier::from("baseClass").into(),
-            body: Default::default(),
-            position: None,
-        }, "class someName extends baseClass{}");
+        assert_serialize!(
+            ClassDeclaration {
+                decorators: Default::default(),
+                id: BindingIdentifier::from("someName").into(),
+                extends: BindingIdentifier::from("baseClass").into(),
+                body: Default::default(),
+                position: None,
+            },
+            "class someName extends baseClass{}"
+        );
     }
 }
 
@@ -164,35 +182,44 @@ mod tests_class_expression {
 
     #[test]
     fn it_prints_name() {
-        assert_serialize!(ClassExpression {
-            decorators: Default::default(),
-            id: BindingIdentifier::from("someName").into(),
-            extends: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "class someName{}");
+        assert_serialize!(
+            ClassExpression {
+                decorators: Default::default(),
+                id: BindingIdentifier::from("someName").into(),
+                extends: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "class someName{}"
+        );
     }
 
     #[test]
     fn it_prints_extends() {
-        assert_serialize!(ClassExpression {
-            decorators: Default::default(),
-            id: Default::default(),
-            extends: BindingIdentifier::from("baseClass").into(),
-            body: Default::default(),
-            position: None,
-        }, "class extends baseClass{}");
+        assert_serialize!(
+            ClassExpression {
+                decorators: Default::default(),
+                id: Default::default(),
+                extends: BindingIdentifier::from("baseClass").into(),
+                body: Default::default(),
+                position: None,
+            },
+            "class extends baseClass{}"
+        );
     }
 
     #[test]
     fn it_prints_name_extends() {
-        assert_serialize!(ClassExpression {
-            decorators: Default::default(),
-            id: BindingIdentifier::from("someName").into(),
-            extends: BindingIdentifier::from("baseClass").into(),
-            body: Default::default(),
-            position: None,
-        }, "class someName extends baseClass{}");
+        assert_serialize!(
+            ClassExpression {
+                decorators: Default::default(),
+                id: BindingIdentifier::from("someName").into(),
+                extends: BindingIdentifier::from("baseClass").into(),
+                body: Default::default(),
+                position: None,
+            },
+            "class someName extends baseClass{}"
+        );
     }
 }
 
@@ -261,46 +288,58 @@ mod tests_class_field {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ClassField {
-            decorators: Default::default(),
-            pos: Default::default(),
-            id: PropertyIdentifier::from("someName").into(),
-            value: Default::default(),
-            position: None,
-        }, "someName;");
+        assert_serialize!(
+            ClassField {
+                decorators: Default::default(),
+                pos: Default::default(),
+                id: PropertyIdentifier::from("someName").into(),
+                value: Default::default(),
+                position: None,
+            },
+            "someName;"
+        );
     }
 
     #[test]
     fn it_prints_with_pos() {
-        assert_serialize!(ClassField {
-            decorators: Default::default(),
-            pos: FieldPosition::Static,
-            id: PropertyIdentifier::from("someName").into(),
-            value: Default::default(),
-            position: None,
-        }, "static someName;");
+        assert_serialize!(
+            ClassField {
+                decorators: Default::default(),
+                pos: FieldPosition::Static,
+                id: PropertyIdentifier::from("someName").into(),
+                value: Default::default(),
+                position: None,
+            },
+            "static someName;"
+        );
     }
 
     #[test]
     fn it_prints_with_value() {
-        assert_serialize!(ClassField {
-            decorators: Default::default(),
-            pos: Default::default(),
-            id: PropertyIdentifier::from("someName").into(),
-            value: literal::Boolean::from(true).into(),
-            position: None,
-        }, "someName=true;");
+        assert_serialize!(
+            ClassField {
+                decorators: Default::default(),
+                pos: Default::default(),
+                id: PropertyIdentifier::from("someName").into(),
+                value: literal::Boolean::from(true).into(),
+                position: None,
+            },
+            "someName=true;"
+        );
     }
 
     #[test]
     fn it_prints_with_value_and_static() {
-        assert_serialize!(ClassField {
-            decorators: Default::default(),
-            pos: FieldPosition::Static,
-            id: PropertyIdentifier::from("someName").into(),
-            value: literal::Boolean::from(true).into(),
-            position: None,
-        }, "static someName=true;");
+        assert_serialize!(
+            ClassField {
+                decorators: Default::default(),
+                pos: FieldPosition::Static,
+                id: PropertyIdentifier::from("someName").into(),
+                value: literal::Boolean::from(true).into(),
+                position: None,
+            },
+            "static someName=true;"
+        );
     }
 }
 
@@ -332,41 +371,50 @@ mod tests_class_method {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ClassMethod {
-            decorators: Default::default(),
-            pos: Default::default(),
-            kind: Default::default(),
-            id: PropertyIdentifier::from("someName").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "someName(){}");
+        assert_serialize!(
+            ClassMethod {
+                decorators: Default::default(),
+                pos: Default::default(),
+                kind: Default::default(),
+                id: PropertyIdentifier::from("someName").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "someName(){}"
+        );
     }
 
     #[test]
     fn it_prints_with_pos() {
-        assert_serialize!(ClassMethod {
-            decorators: Default::default(),
-            pos: FieldPosition::Static,
-            kind: Default::default(),
-            id: PropertyIdentifier::from("someName").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "static someName(){}");
+        assert_serialize!(
+            ClassMethod {
+                decorators: Default::default(),
+                pos: FieldPosition::Static,
+                kind: Default::default(),
+                id: PropertyIdentifier::from("someName").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "static someName(){}"
+        );
     }
 
     #[test]
     fn it_prints_with_async() {
-        assert_serialize!(ClassMethod {
-            decorators: Default::default(),
-            pos: Default::default(),
-            kind: MethodKind::Async,
-            id: PropertyIdentifier::from("someName").into(),
-            params: Default::default(),
-            body: Default::default(),
-            position: None,
-        }, "async someName(){}");
+        assert_serialize!(
+            ClassMethod {
+                decorators: Default::default(),
+                pos: Default::default(),
+                kind: MethodKind::Async,
+                id: PropertyIdentifier::from("someName").into(),
+                params: Default::default(),
+                body: Default::default(),
+                position: None,
+            },
+            "async someName(){}"
+        );
     }
 }
 

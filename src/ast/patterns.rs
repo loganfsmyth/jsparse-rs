@@ -73,24 +73,29 @@ mod tests_object_assignment_pattern {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ObjectAssignmentPattern {
-            properties: vec![
-                ObjectAssignmentPatternIdentifierProperty::from(BindingIdentifier::from("foo")).into(),
-                ObjectAssignmentPatternIdentifierProperty {
-                    id: BindingIdentifier::from("foo2"),
-                    init: literal::Boolean::from(true).into(),
-                    position: None,
-                }.into(),
-                ObjectAssignmentPatternPatternProperty {
-                    name: PropertyIdentifier::from("foo3").into(),
-                    pattern: BindingIdentifier::from("foo4").into(),
-                    init: literal::Boolean::from(false).into(),
-                    position: None,
-                }.into(),
-            ],
-            rest: Default::default(),
-            position: None,
-        }, "{foo,foo2=true,foo3:foo4=false}");
+        assert_serialize!(
+            ObjectAssignmentPattern {
+                properties: vec![
+                    ObjectAssignmentPatternIdentifierProperty::from(
+                        BindingIdentifier::from("foo")
+                    ).into(),
+                    ObjectAssignmentPatternIdentifierProperty {
+                        id: BindingIdentifier::from("foo2"),
+                        init: literal::Boolean::from(true).into(),
+                        position: None,
+                    }.into(),
+                    ObjectAssignmentPatternPatternProperty {
+                        name: PropertyIdentifier::from("foo3").into(),
+                        pattern: BindingIdentifier::from("foo4").into(),
+                        init: literal::Boolean::from(false).into(),
+                        position: None,
+                    }.into(),
+                ],
+                rest: Default::default(),
+                position: None,
+            },
+            "{foo,foo2=true,foo3:foo4=false}"
+        );
     }
 }
 
@@ -182,18 +187,22 @@ mod tests_array_assignment_pattern {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ArrayAssignmentPattern {
-            items: vec![
-                ArrayAssignmentPatternElement::from(BindingIdentifier::from("foo")).into(),
-                ArrayAssignmentPatternElement {
-                    id: BindingIdentifier::from("foo2").into(),
-                    init: literal::Boolean::from(true).into(),
-                    position: None,
-                }.into(),
-            ],
-            rest: Default::default(),
-            position: None,
-        }, "[foo,foo2=true]");
+        assert_serialize!(
+            ArrayAssignmentPattern {
+                items: vec![
+                    ArrayAssignmentPatternElement::from(BindingIdentifier::from("foo"))
+                        .into(),
+                    ArrayAssignmentPatternElement {
+                        id: BindingIdentifier::from("foo2").into(),
+                        init: literal::Boolean::from(true).into(),
+                        position: None,
+                    }.into(),
+                ],
+                rest: Default::default(),
+                position: None,
+            },
+            "[foo,foo2=true]"
+        );
     }
 }
 
@@ -274,24 +283,29 @@ mod tests_object_binding_pattern {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ObjectBindingPattern {
-            properties: vec![
-                ObjectBindingPatternIdentifierProperty::from(BindingIdentifier::from("foo")).into(),
-                ObjectBindingPatternIdentifierProperty {
-                    id: BindingIdentifier::from("foo2"),
-                    init: literal::Boolean::from(true).into(),
-                    position: None,
-                }.into(),
-                ObjectBindingPatternPatternProperty {
-                    name: PropertyIdentifier::from("foo3").into(),
-                    pattern: BindingIdentifier::from("foo4").into(),
-                    init: literal::Boolean::from(false).into(),
-                    position: None,
-                }.into(),
-            ],
-            rest: Default::default(),
-            position: None,
-        }, "{foo,foo2=true,foo3:foo4=false}");
+        assert_serialize!(
+            ObjectBindingPattern {
+                properties: vec![
+                    ObjectBindingPatternIdentifierProperty::from(
+                        BindingIdentifier::from("foo")
+                    ).into(),
+                    ObjectBindingPatternIdentifierProperty {
+                        id: BindingIdentifier::from("foo2"),
+                        init: literal::Boolean::from(true).into(),
+                        position: None,
+                    }.into(),
+                    ObjectBindingPatternPatternProperty {
+                        name: PropertyIdentifier::from("foo3").into(),
+                        pattern: BindingIdentifier::from("foo4").into(),
+                        init: literal::Boolean::from(false).into(),
+                        position: None,
+                    }.into(),
+                ],
+                rest: Default::default(),
+                position: None,
+            },
+            "{foo,foo2=true,foo3:foo4=false}"
+        );
     }
 }
 
@@ -383,18 +397,21 @@ mod tests_array_binding_pattern {
 
     #[test]
     fn it_prints() {
-        assert_serialize!(ArrayBindingPattern {
-            items: vec![
-                ArrayBindingPatternElement::from(BindingIdentifier::from("foo")).into(),
-                ArrayBindingPatternElement {
-                    id: BindingIdentifier::from("foo2").into(),
-                    init: literal::Boolean::from(true).into(),
-                    position: None,
-                }.into(),
-            ],
-            rest: Default::default(),
-            position: None,
-        }, "[foo,foo2=true]");
+        assert_serialize!(
+            ArrayBindingPattern {
+                items: vec![
+                    ArrayBindingPatternElement::from(BindingIdentifier::from("foo")).into(),
+                    ArrayBindingPatternElement {
+                        id: BindingIdentifier::from("foo2").into(),
+                        init: literal::Boolean::from(true).into(),
+                        position: None,
+                    }.into(),
+                ],
+                rest: Default::default(),
+                position: None,
+            },
+            "[foo,foo2=true]"
+        );
     }
 }
 
