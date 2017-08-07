@@ -355,6 +355,8 @@ mod tests_expression_statement {
 // if () {}
 node!(pub struct IfStatement {
     pub test: alias::Expression,
+
+    // TODO: Technically Annex B allows function declarations in either of these
     pub consequent: Box<alias::Statement>,
     pub alternate: Option<Box<alias::Statement>>,
 });
@@ -565,7 +567,7 @@ impl NodeDisplay for ForInStatement {
 node!(pub struct ForInVarPattern {
     pub pattern: BindingPattern,
     // TODO: Technically this default init is only allowed if the pattern is an identifier,
-    // Should this change to a special pattern type?
+    // Should this change to a special pattern type? Annex B feature.
     pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for ForInVarPattern {
@@ -854,6 +856,8 @@ impl NodeDisplay for LabelIdentifier {
 // foo: while(false) ;
 node!(pub struct LabelledStatement {
     pub label: LabelIdentifier,
+
+    // TODO: Annex B technically allows function declarations here, do we care?
     pub body: Box<alias::Statement>,
 });
 impl NodeDisplay for LabelledStatement {
