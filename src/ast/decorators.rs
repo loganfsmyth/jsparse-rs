@@ -1,6 +1,6 @@
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence};
 
-use ast::general::{BindingIdentifier, PropertyIdentifier};
+use ast::general::{ReferenceIdentifier, PropertyIdentifier};
 use ast::alias;
 
 use ast::expression::CallArguments;
@@ -40,7 +40,7 @@ impl NodeDisplay for DecoratorMemberAccess {
 
 // experimental
 node_enum!(@node_display pub enum DecoratorValueExpression {
-    Identifier(BindingIdentifier),
+    Identifier(ReferenceIdentifier),
     Member(DecoratorMemberAccess),
 });
 

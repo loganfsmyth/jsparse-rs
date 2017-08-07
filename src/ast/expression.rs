@@ -9,7 +9,7 @@ use ast::alias;
 
 use ast::patterns::{LeftHandSimpleAssign, LeftHandComplexAssign};
 use ast::statement::BlockStatement;
-use ast::general::{BindingIdentifier, PropertyIdentifier};
+use ast::general::{ReferenceIdentifier, PropertyIdentifier};
 
 
 // this
@@ -159,7 +159,7 @@ impl From<Vec<alias::Expression>> for CallArguments {
 #[cfg(test)]
 mod tests_call_args {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
     use ast::literal;
 
     #[test]
@@ -172,7 +172,7 @@ mod tests_call_args {
         assert_serialize!(
             CallArguments::from(vec![
                 ThisExpression::default().into(),
-                BindingIdentifier::from("arg").into(),
+                ReferenceIdentifier::from("arg").into(),
                 literal::Boolean::from(true).into(),
             ]),
             "(this,arg,true)"
@@ -183,13 +183,13 @@ mod tests_call_args {
     fn it_prints_args_with_precedence() {
         assert_serialize!(
             CallArguments::from(vec![
-                BindingIdentifier::from("arg1").into(),
+                ReferenceIdentifier::from("arg1").into(),
                 SequenceExpression {
                     left: ThisExpression::default().into(),
                     right: literal::Boolean::from(true).into(),
                     position: None,
                 }.into(),
-                BindingIdentifier::from("arg3").into(),
+                ReferenceIdentifier::from("arg3").into(),
             ]),
             "(arg1,(this,true),arg3)"
         );
@@ -201,7 +201,7 @@ mod tests_call_args {
             CallArguments {
                 args: vec![
                     ThisExpression::default().into(),
-                    BindingIdentifier::from("arg").into(),
+                    ReferenceIdentifier::from("arg").into(),
                     literal::Boolean::from(true).into(),
                 ],
                 spread: literal::Numeric::from(3.6).into(),
@@ -215,7 +215,7 @@ mod tests_call_args {
     fn it_prints_args_with_spread_and_precedence() {
         assert_serialize!(
             CallArguments {
-                args: vec![BindingIdentifier::from("arg").into()],
+                args: vec![ReferenceIdentifier::from("arg").into()],
                 spread: SequenceExpression {
                     left: ThisExpression::default().into(),
                     right: literal::Boolean::from(true).into(),
@@ -314,7 +314,7 @@ fn get_sequence(expr: &MemberExpression) -> LookaheadSequence {
     use ast::alias::Expression::Binding;
 
     match *expr.object {
-        Binding(BindingIdentifier { ref value, .. }) if value == "let" => {
+        Binding(ReferenceIdentifier { ref value, .. }) if value == "let" => {
             match expr.property {
                 PropertyAccess::Computed(ComputedPropertyAccess { optional, .. }) if !optional => {
                     LookaheadSequence::LetSquare

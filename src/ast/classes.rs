@@ -36,6 +36,7 @@ impl NodeDisplay for ExportDefaultClassDeclaration {
 #[cfg(test)]
 mod tests_class_export_default {
     use super::*;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints_default() {
@@ -65,7 +66,7 @@ mod tests_class_export_default {
             ExportDefaultClassDeclaration {
                 decorators: Default::default(),
                 id: Default::default(),
-                extends: BindingIdentifier::from("baseClass").into(),
+                extends: ReferenceIdentifier::from("baseClass").into(),
                 body: Default::default(),
                 position: None,
             },
@@ -79,7 +80,7 @@ mod tests_class_export_default {
             ExportDefaultClassDeclaration {
                 decorators: Default::default(),
                 id: BindingIdentifier::from("someName").into(),
-                extends: BindingIdentifier::from("baseClass").into(),
+                extends: ReferenceIdentifier::from("baseClass").into(),
                 body: Default::default(),
                 position: None,
             },
@@ -115,6 +116,7 @@ impl NodeDisplay for ClassDeclaration {
 #[cfg(test)]
 mod tests_class_declaration {
     use super::*;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints_name() {
@@ -136,7 +138,7 @@ mod tests_class_declaration {
             ClassDeclaration {
                 decorators: Default::default(),
                 id: BindingIdentifier::from("someName").into(),
-                extends: BindingIdentifier::from("baseClass").into(),
+                extends: ReferenceIdentifier::from("baseClass").into(),
                 body: Default::default(),
                 position: None,
             },
@@ -174,6 +176,7 @@ impl NodeDisplay for ClassExpression {
 #[cfg(test)]
 mod tests_class_expression {
     use super::*;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints_default() {
@@ -200,7 +203,7 @@ mod tests_class_expression {
             ClassExpression {
                 decorators: Default::default(),
                 id: Default::default(),
-                extends: BindingIdentifier::from("baseClass").into(),
+                extends: ReferenceIdentifier::from("baseClass").into(),
                 body: Default::default(),
                 position: None,
             },
@@ -214,7 +217,7 @@ mod tests_class_expression {
             ClassExpression {
                 decorators: Default::default(),
                 id: BindingIdentifier::from("someName").into(),
-                extends: BindingIdentifier::from("baseClass").into(),
+                extends: ReferenceIdentifier::from("baseClass").into(),
                 body: Default::default(),
                 position: None,
             },

@@ -186,7 +186,7 @@ impl Default for Statement {
 
 
 node_enum!(@node_display pub enum Expression {
-    Binding(general::BindingIdentifier),
+    Binding(general::ReferenceIdentifier),
     This(expression::ThisExpression),
     Array(objects::ArrayExpression),
     Object(objects::ObjectExpression),
@@ -216,12 +216,12 @@ node_enum!(@node_display pub enum Expression {
     JSX(jsx::Element),
 });
 
-// impl<T: Into<general::BindingIdentifier>> From<T> for Expression {
+// impl<T: Into<general::ReferenceIdentifier>> From<T> for Expression {
 //     fn from(v: T) -> Expression {
 //         Expression::Binding(v.into())
 //     }
 // }
-// impl<T: Into<general::BindingIdentifier>> From<T> for Box<Expression> {
+// impl<T: Into<general::ReferenceIdentifier>> From<T> for Box<Expression> {
 //     fn from(v: T) -> Box<Expression> {
 //         Expression::Binding(v.into()).into()
 //     }

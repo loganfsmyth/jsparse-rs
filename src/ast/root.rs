@@ -25,7 +25,7 @@ impl NodeDisplay for Script {
 #[cfg(test)]
 mod tests_script {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints() {
@@ -37,7 +37,7 @@ mod tests_script {
         assert_serialize!(
             Script {
                 directives: vec!["use strict".into()],
-                body: vec![BindingIdentifier::from("someVar").into()],
+                body: vec![ReferenceIdentifier::from("someVar").into()],
                 position: None,
             },
             "'use strict';someVar;"
@@ -62,7 +62,7 @@ impl NodeDisplay for Module {
 #[cfg(test)]
 mod tests_module {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
     use ast::modules::ExportLocalBindings;
 
     #[test]
@@ -76,7 +76,7 @@ mod tests_module {
             Module {
                 directives: vec!["use strict".into()],
                 body: vec![
-                    BindingIdentifier::from("someVar").into(),
+                    ReferenceIdentifier::from("someVar").into(),
                     ExportLocalBindings::default().into(),
                 ],
                 position: None,

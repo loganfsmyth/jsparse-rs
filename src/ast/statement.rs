@@ -33,7 +33,7 @@ impl From<Vec<alias::StatementItem>> for BlockStatement {
 #[cfg(test)]
 mod tests_block {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints() {
@@ -51,7 +51,7 @@ mod tests_block {
         assert_serialize!(
             BlockStatement {
                 body: vec![
-                    ExpressionStatement::new(BindingIdentifier::new("someWord")).into(),
+                    ExpressionStatement::new(ReferenceIdentifier::new("someWord")).into(),
                 ],
                 position: None,
             },
@@ -95,7 +95,7 @@ impl NodeDisplay for VariableDeclarator {
 #[cfg(test)]
 mod tests_var {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::{BindingIdentifier, ReferenceIdentifier};
 
     #[test]
     fn it_prints() {
@@ -118,7 +118,7 @@ mod tests_var {
             VariableStatement {
                 declarations: DeclaratorList::Last(VariableDeclarator {
                     id: BindingIdentifier::from("myVar").into(),
-                    init: BindingIdentifier::from("initialVal").into(),
+                    init: ReferenceIdentifier::from("initialVal").into(),
                     position: None,
                 }),
                 position: None,
@@ -136,7 +136,7 @@ mod tests_var {
     //                 raw: None,
     //                 position: None,
     //             }.into(),
-    //             init: Some(BindingIdentifier {
+    //             init: Some(ReferenceIdentifier {
     //                 value: "initialVal".into(),
     //                 raw: None,
     //                 position: None,
@@ -260,7 +260,7 @@ impl<T: Into<alias::Expression>> From<T> for ExpressionStatement {
 mod tests_expression_statement {
     use super::*;
     use ast::literal;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
     use ast::functions;
     use ast::classes;
     use ast::objects;
@@ -271,7 +271,7 @@ mod tests_expression_statement {
     fn it_prints() {
         assert_serialize!(
             ExpressionStatement {
-                expression: BindingIdentifier::from("foo").into(),
+                expression: ReferenceIdentifier::from("foo").into(),
                 position: None,
             },
             "foo;"
@@ -317,7 +317,7 @@ mod tests_expression_statement {
             ExpressionStatement {
                 expression: expression::AssignmentExpression {
                     left: patterns::ObjectAssignmentPattern::default().into(),
-                    right: BindingIdentifier::from("foo").into(),
+                    right: ReferenceIdentifier::from("foo").into(),
                     position: None,
                 }.into(),
                 position: None,
@@ -331,7 +331,7 @@ mod tests_expression_statement {
         assert_serialize!(
             ExpressionStatement {
                 expression: expression::MemberExpression {
-                    object: BindingIdentifier::from("let").into(),
+                    object: ReferenceIdentifier::from("let").into(),
                     property: expression::PropertyAccess::Computed(
                         expression::ComputedPropertyAccess {
                             optional: false,
@@ -377,13 +377,13 @@ impl NodeDisplay for IfStatement {
 #[cfg(test)]
 mod tests_if {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints() {
         assert_serialize!(
             IfStatement {
-                test: BindingIdentifier::from("myVar").into(),
+                test: ReferenceIdentifier::from("myVar").into(),
                 consequent: EmptyStatement::default().into(),
                 alternate: None,
                 position: None,
@@ -396,7 +396,7 @@ mod tests_if {
     fn it_prints_else() {
         assert_serialize!(
             IfStatement {
-                test: BindingIdentifier::from("myVar").into(),
+                test: ReferenceIdentifier::from("myVar").into(),
                 consequent: EmptyStatement::default().into(),
                 alternate: EmptyStatement::default().into(),
                 position: None,
@@ -409,9 +409,9 @@ mod tests_if {
     fn it_prints_wrapped_if() {
         assert_serialize!(
             IfStatement {
-                test: BindingIdentifier::from("myVar").into(),
+                test: ReferenceIdentifier::from("myVar").into(),
                 consequent: IfStatement {
-                    test: BindingIdentifier::from("myVar2").into(),
+                    test: ReferenceIdentifier::from("myVar2").into(),
                     consequent: EmptyStatement::default().into(),
                     alternate: None,
                     position: None,
@@ -426,11 +426,11 @@ mod tests_if {
     fn it_prints_wrapped_if_deep() {
         assert_serialize!(
             IfStatement {
-                test: BindingIdentifier::from("myVar").into(),
+                test: ReferenceIdentifier::from("myVar").into(),
                 consequent: WhileStatement {
-                    test: BindingIdentifier::from("myVar2").into(),
+                    test: ReferenceIdentifier::from("myVar2").into(),
                     body: IfStatement {
-                        test: BindingIdentifier::from("myVar3").into(),
+                        test: ReferenceIdentifier::from("myVar3").into(),
                         consequent: EmptyStatement::default().into(),
                         alternate: None,
                         position: None,
@@ -486,7 +486,7 @@ node_enum!(@node_display pub enum ForInit {
 #[cfg(test)]
 mod tests_for {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
     use ast::literal;
 
     #[test]
@@ -499,7 +499,7 @@ mod tests_for {
         assert_serialize!(
             ForStatement {
                 init: None,
-                test: BindingIdentifier::from("myVar").into(),
+                test: ReferenceIdentifier::from("myVar").into(),
                 update: None,
                 body: EmptyStatement::default().into(),
                 position: None,
@@ -512,9 +512,9 @@ mod tests_for {
     fn it_prints_complex() {
         assert_serialize!(
             ForStatement {
-                init: alias::Expression::from(BindingIdentifier::from("init")).into(),
-                test: BindingIdentifier::from("test").into(),
-                update: BindingIdentifier::from("update").into(),
+                init: alias::Expression::from(ReferenceIdentifier::from("init")).into(),
+                test: ReferenceIdentifier::from("test").into(),
+                update: ReferenceIdentifier::from("update").into(),
                 body: BlockStatement {
                     body: vec![
                         literal::Boolean::from(true).into(),
@@ -719,14 +719,14 @@ impl NodeDisplay for SwitchStatement {
 #[cfg(test)]
 mod tests_switch {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
     use ast::literal;
 
     #[test]
     fn it_prints_empty() {
         assert_serialize!(
             SwitchStatement {
-                discriminant: BindingIdentifier::from("myVar").into(),
+                discriminant: ReferenceIdentifier::from("myVar").into(),
                 cases: vec![],
                 position: None,
             },
@@ -738,7 +738,7 @@ mod tests_switch {
     fn it_prints_cases() {
         assert_serialize!(
             SwitchStatement {
-                discriminant: BindingIdentifier::from("myVar").into(),
+                discriminant: ReferenceIdentifier::from("myVar").into(),
                 cases: vec![
                     SwitchCase {
                         test: literal::Numeric::from(6.2).into(),

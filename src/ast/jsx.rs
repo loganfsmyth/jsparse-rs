@@ -46,7 +46,7 @@ impl NodeDisplay for Element {
 #[cfg(test)]
 mod tests_element {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints() {
@@ -119,7 +119,7 @@ mod tests_element {
                 opening: Identifier::from("foo-bar").into(),
                 attributes: vec![
                     SpreadAttribute {
-                        expression: BindingIdentifier::from("someVar").into(),
+                        expression: ReferenceIdentifier::from("someVar").into(),
                         position: None,
                     }.into(),
                 ],
@@ -227,13 +227,13 @@ node_enum!(@node_display pub enum Attribute {
 #[cfg(test)]
 mod tests_attribute {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints_spread() {
         assert_serialize!(
             SpreadAttribute {
-                expression: BindingIdentifier::from("attrName").into(),
+                expression: ReferenceIdentifier::from("attrName").into(),
                 position: None,
             },
             "{...attrName}"
@@ -274,7 +274,7 @@ mod tests_attribute {
             PairAttribute {
                 name: Identifier::from("attrName").into(),
                 value: ExpressionAttribute {
-                    expression: BindingIdentifier::from("omg").into(),
+                    expression: ReferenceIdentifier::from("omg").into(),
                     position: None,
                 }.into(),
                 position: None,
@@ -402,7 +402,7 @@ node_enum!(@node_display pub enum Child {
 #[cfg(test)]
 mod tests_element_children {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints_empty() {
@@ -464,7 +464,7 @@ mod tests_element_children {
                 attributes: Default::default(),
                 children: vec![
                     Expression {
-                        expression: BindingIdentifier::from("someVar").into(),
+                        expression: ReferenceIdentifier::from("someVar").into(),
                         position: None,
                     }.into(),
                 ],
@@ -483,7 +483,7 @@ mod tests_element_children {
                 attributes: Default::default(),
                 children: vec![
                     ExpressionSpread {
-                        expression: BindingIdentifier::from("someVar").into(),
+                        expression: ReferenceIdentifier::from("someVar").into(),
                         position: None,
                     }.into(),
                 ],

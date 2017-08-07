@@ -1,14 +1,14 @@
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence};
 
 use ast::alias;
-use ast::general::{BindingIdentifier, PropertyName};
+use ast::general::{BindingIdentifier, ReferenceIdentifier, PropertyName};
 
 // TODO: Should we split member expression into an member access and member assign?
 use ast::expression::MemberExpression;
 
 // Used for update and update-assignment
 node_enum!(@node_display pub enum LeftHandSimpleAssign {
-    Identifier(BindingIdentifier),
+    Identifier(ReferenceIdentifier),
     Member(MemberExpression),
     Parenthesized(ParenthesizedAssignmentPattern),
 });
@@ -16,7 +16,7 @@ node_enum!(@node_display pub enum LeftHandSimpleAssign {
 // Used for standard assignment, and for..in and for..of LHS
 node_enum!(@node_display pub enum LeftHandComplexAssign {
     Parenthesized(ParenthesizedAssignmentPattern),
-    Identifier(BindingIdentifier),
+    Identifier(ReferenceIdentifier),
     Member(MemberExpression),
     Object(ObjectAssignmentPattern),
     Array(ArrayAssignmentPattern),
@@ -77,16 +77,16 @@ mod tests_object_assignment_pattern {
             ObjectAssignmentPattern {
                 properties: vec![
                     ObjectAssignmentPatternIdentifierProperty::from(
-                        BindingIdentifier::from("foo")
+                        ReferenceIdentifier::from("foo")
                     ).into(),
                     ObjectAssignmentPatternIdentifierProperty {
-                        id: BindingIdentifier::from("foo2"),
+                        id: ReferenceIdentifier::from("foo2"),
                         init: literal::Boolean::from(true).into(),
                         position: None,
                     }.into(),
                     ObjectAssignmentPatternPatternProperty {
                         name: PropertyIdentifier::from("foo3").into(),
-                        pattern: BindingIdentifier::from("foo4").into(),
+                        pattern: ReferenceIdentifier::from("foo4").into(),
                         init: literal::Boolean::from(false).into(),
                         position: None,
                     }.into(),
@@ -101,7 +101,7 @@ mod tests_object_assignment_pattern {
 
 
 node!(pub struct ObjectAssignmentPatternIdentifierProperty {
-    pub id: BindingIdentifier,
+    pub id: ReferenceIdentifier,
     pub init: Option<alias::Expression>,
 });
 impl NodeDisplay for ObjectAssignmentPatternIdentifierProperty {
@@ -115,7 +115,7 @@ impl NodeDisplay for ObjectAssignmentPatternIdentifierProperty {
         Ok(())
     }
 }
-impl<T: Into<BindingIdentifier>> From<T> for ObjectAssignmentPatternIdentifierProperty {
+impl<T: Into<ReferenceIdentifier>> From<T> for ObjectAssignmentPatternIdentifierProperty {
     fn from(val: T) -> ObjectAssignmentPatternIdentifierProperty {
         ObjectAssignmentPatternIdentifierProperty {
             id: val.into(),
@@ -190,10 +190,10 @@ mod tests_array_assignment_pattern {
         assert_serialize!(
             ArrayAssignmentPattern {
                 items: vec![
-                    ArrayAssignmentPatternElement::from(BindingIdentifier::from("foo"))
+                    ArrayAssignmentPatternElement::from(ReferenceIdentifier::from("foo"))
                         .into(),
                     ArrayAssignmentPatternElement {
-                        id: BindingIdentifier::from("foo2").into(),
+                        id: ReferenceIdentifier::from("foo2").into(),
                         init: literal::Boolean::from(true).into(),
                         position: None,
                     }.into(),

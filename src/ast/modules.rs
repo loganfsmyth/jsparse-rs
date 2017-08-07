@@ -9,7 +9,7 @@ use ast::functions::FunctionDeclaration;
 use ast::literal::String;
 use ast::alias;
 
-use ast::general::BindingIdentifier;
+use ast::general::{BindingIdentifier, ReferenceIdentifier};
 
 
 // identifiers used as names of imports and exports
@@ -448,14 +448,14 @@ impl From<Vec<LocalExportSpecifier>> for ExportLocalBindings {
 #[cfg(test)]
 mod tests_export_specifiers {
     use super::*;
-    use ast::general::BindingIdentifier;
+    use ast::general::ReferenceIdentifier;
 
     #[test]
     fn it_prints_with_specifiers() {
         assert_serialize!(
             ExportLocalBindings::from(vec![
-                BindingIdentifier::from("someName").into(),
-                BindingIdentifier::from("someOtherName").into(),
+                ReferenceIdentifier::from("someName").into(),
+                ReferenceIdentifier::from("someOtherName").into(),
                 LocalExportSpecifier {
                     local: "local".into(),
                     exported: Some("exp".into()),
@@ -469,7 +469,7 @@ mod tests_export_specifiers {
 
 
 node!(pub struct LocalExportSpecifier {
-    pub local: BindingIdentifier,
+    pub local: ReferenceIdentifier,
     pub exported: Option<ModuleIdentifier>,
 });
 impl NodeDisplay for LocalExportSpecifier {
@@ -483,8 +483,8 @@ impl NodeDisplay for LocalExportSpecifier {
         Ok(())
     }
 }
-impl From<BindingIdentifier> for LocalExportSpecifier {
-    fn from(b: BindingIdentifier) -> LocalExportSpecifier {
+impl From<ReferenceIdentifier> for LocalExportSpecifier {
+    fn from(b: ReferenceIdentifier) -> LocalExportSpecifier {
         LocalExportSpecifier {
             local: b,
             exported: None,

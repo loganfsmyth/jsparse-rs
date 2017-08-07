@@ -4,8 +4,7 @@ use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Precedence};
 use ast::alias;
 use ast::literal;
 
-// identifiers used as variables
-// TODO: Split this into a binding-declaration type and a binding-reference type
+// identifiers used as binding names
 node!(pub struct BindingIdentifier {
     pub value: string::String,
     pub raw: Option<string::String>,
@@ -28,6 +27,36 @@ impl NodeDisplay for BindingIdentifier {
 impl<T: Into<string::String>> From<T> for BindingIdentifier {
     fn from(value: T) -> BindingIdentifier {
         BindingIdentifier {
+            value: value.into(),
+            raw: None,
+            position: None,
+        }
+    }
+}
+
+
+// identifiers used as references to bindings
+node!(pub struct ReferenceIdentifier {
+    pub value: string::String,
+    pub raw: Option<string::String>,
+});
+impl ReferenceIdentifier {
+    pub fn new<T: Into<String>>(s: T) -> ReferenceIdentifier {
+        ReferenceIdentifier {
+            value: s.into(),
+            raw: None,
+            position: None,
+        }
+    }
+}
+impl NodeDisplay for ReferenceIdentifier {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.identifier(&self.value, self.raw.as_ref().map(string::String::as_str))
+    }
+}
+impl<T: Into<string::String>> From<T> for ReferenceIdentifier {
+    fn from(value: T) -> ReferenceIdentifier {
+        ReferenceIdentifier {
             value: value.into(),
             raw: None,
             position: None,
