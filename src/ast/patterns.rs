@@ -25,7 +25,7 @@ node_enum!(@node_display pub enum LeftHandComplexAssign {
 
 // (i) = 4; and (obj.foo) = 4; are valid assignments in JS.
 node!(pub struct ParenthesizedAssignmentPattern {
-    pattern: Box<LeftHandSimpleAssign>,
+    pub pattern: Box<LeftHandSimpleAssign>,
 });
 impl NodeDisplay for ParenthesizedAssignmentPattern {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {

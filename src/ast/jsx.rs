@@ -43,16 +43,145 @@ impl NodeDisplay for Element {
         Ok(())
     }
 }
+#[cfg(test)]
+mod tests_element {
+    use super::*;
+    use ast::general::BindingIdentifier;
+
+    #[test]
+    fn it_prints() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("foo-bar").into(),
+                attributes: Default::default(),
+                children: Default::default(),
+                closing: Default::default(),
+                position: None,
+            },
+            "<foo-bar/>"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_member_name() {
+        assert_serialize!(
+            Element {
+                opening: MemberExpression {
+                    object: Identifier::from("foo-bar").into(),
+                    property: Identifier::from("baz-bat").into(),
+                    position: None,
+                }.into(),
+                attributes: Default::default(),
+                children: Default::default(),
+                closing: Default::default(),
+                position: None,
+            },
+            "<foo-bar.baz-bat/>"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_namespace() {
+        assert_serialize!(
+            Element {
+                opening: NamespacedName {
+                    namespace: Identifier::from("foo-bar").into(),
+                    name: Identifier::from("baz-bat").into(),
+                    position: None,
+                }.into(),
+                attributes: Default::default(),
+                children: Default::default(),
+                closing: Default::default(),
+                position: None,
+            },
+            "<foo-bar:baz-bat/>"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_closing() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("foo-bar").into(),
+                attributes: Default::default(),
+                children: Default::default(),
+                closing: Identifier::from("foo-bar").into(),
+                position: None,
+            },
+            "<foo-bar></foo-bar>"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_attributes() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("foo-bar").into(),
+                attributes: vec![
+                    SpreadAttribute {
+                        expression: BindingIdentifier::from("someVar").into(),
+                        position: None,
+                    }.into(),
+                ],
+                children: Default::default(),
+                closing: Default::default(),
+                position: None,
+            },
+            "<foo-bar{...someVar}/>"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_children() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("foo-bar").into(),
+                attributes: Default::default(),
+                children: vec![
+                    Text::from("some text").into(),
+                ],
+                closing: Default::default(),
+                position: None,
+            },
+            "<foo-bar>some text</foo-bar>"
+        );
+    }
+
+    #[test]
+    fn it_prints_with_children_and_closing() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("foo-bar").into(),
+                attributes: Default::default(),
+                children: vec![
+                    Text::from("some text").into(),
+                ],
+                closing: Identifier::from("foo-bar").into(),
+                position: None,
+            },
+            "<foo-bar>some text</foo-bar>"
+        );
+    }
+}
 
 
 node!(pub struct Identifier {
     // Same as a JS identifier, but allows "-"
-    pub raw: string::String,
+    pub raw: Option<string::String>,
     pub value: string::String,
 });
 impl NodeDisplay for Identifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.jsx_identifier(&self.value, Some(&self.raw))
+        f.jsx_identifier(&self.value, self.raw.as_ref().map(String::as_str))
+    }
+}
+impl<T: Into<string::String>> From<T> for Identifier {
+    fn from(v: T) -> Identifier {
+        Identifier {
+            raw: None,
+            value: v.into(),
+            position: None,
+        }
     }
 }
 
@@ -99,6 +228,95 @@ node_enum!(@node_display pub enum Attribute {
     Spread(SpreadAttribute),
     Pair(PairAttribute),
 });
+#[cfg(test)]
+mod tests_attribute {
+    use super::*;
+    use ast::general::BindingIdentifier;
+
+    #[test]
+    fn it_prints_spread() {
+        assert_serialize!(
+            SpreadAttribute {
+                expression: BindingIdentifier::from("attrName").into(),
+                position: None,
+            },
+            "{...attrName}"
+        );
+    }
+
+    #[test]
+    fn it_prints_pair() {
+        assert_serialize!(
+            PairAttribute {
+                name: Identifier::from("attrName").into(),
+                value: StringAttribute::from("omg").into(),
+                position: None,
+            },
+            "attrName='omg'"
+        );
+    }
+
+    #[test]
+    fn it_prints_pair_namespace() {
+        assert_serialize!(
+            PairAttribute {
+                name: NamespacedName {
+                    namespace: Identifier::from("attrName").into(),
+                    name: Identifier::from("prop").into(),
+                    position: None,
+                }.into(),
+                value: StringAttribute::from("omg").into(),
+                position: None,
+            },
+            "attrName:prop='omg'"
+        );
+    }
+
+    #[test]
+    fn it_prints_pair_expression() {
+        assert_serialize!(
+            PairAttribute {
+                name: Identifier::from("attrName").into(),
+                value: ExpressionAttribute {
+                    expression: BindingIdentifier::from("omg").into(),
+                    position: None,
+                }.into(),
+                position: None,
+            },
+            "attrName={omg}"
+        );
+    }
+
+    #[test]
+    fn it_prints_pair_element() {
+        assert_serialize!(
+            PairAttribute {
+                name: Identifier::from("attrName").into(),
+                value: Element {
+                    opening: Identifier::from("div").into(),
+                    attributes: Default::default(),
+                    children: Default::default(),
+                    closing: Default::default(),
+                    position: None,
+                }.into(),
+                position: None,
+            },
+            "attrName=<div/>"
+        );
+    }
+
+    #[test]
+    fn it_prints_pair_novalue() {
+        assert_serialize!(
+            PairAttribute {
+                name: Identifier::from("attrName").into(),
+                value: None,
+                position: None,
+            },
+            "attrName"
+        );
+    }
+}
 
 
 node_enum!(@node_display pub enum AttributeName {
@@ -108,7 +326,7 @@ node_enum!(@node_display pub enum AttributeName {
 
 
 node!(pub struct SpreadAttribute {
-    pub argument: alias::Expression,
+    pub expression: alias::Expression,
 });
 impl NodeDisplay for SpreadAttribute {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -116,7 +334,7 @@ impl NodeDisplay for SpreadAttribute {
 
         f.punctuator(Punctuator::Ellipsis);
         f.require_precedence(Precedence::Assignment).node(
-            &self.argument,
+            &self.expression,
         )?;
         Ok(())
     }
@@ -140,20 +358,40 @@ impl NodeDisplay for PairAttribute {
 
 
 node_enum!(@node_display pub enum AttributeValue {
-    String(StringLiteral),
-    Expression(alias::Expression),
+    String(StringAttribute),
+    Expression(ExpressionAttribute),
     Element(Element),
 });
 
 
-node!(pub struct StringLiteral {
+node!(pub struct ExpressionAttribute {
     // String literal that allows _all_ chars, except closing quote
-    pub raw: string::String,
+    pub expression: alias::Expression,
+});
+impl NodeDisplay for ExpressionAttribute {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.wrap_curly().node(&self.expression)
+    }
+}
+
+
+node!(#[derive(Default)] pub struct StringAttribute {
+    // String literal that allows _all_ chars, except closing quote
+    pub raw: Option<string::String>,
     pub value: string::String,
 });
-impl NodeDisplay for StringLiteral {
+impl NodeDisplay for StringAttribute {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.jsx_string(&self.value, Some(&self.raw))
+        f.jsx_string(&self.value, self.raw.as_ref().map(String::as_str))
+    }
+}
+impl<T: Into<string::String>> From<T> for StringAttribute {
+    fn from(v: T) -> StringAttribute {
+        StringAttribute {
+            raw: None,
+            value: v.into(),
+            position: None,
+        }
     }
 }
 
@@ -165,6 +403,105 @@ node_enum!(@node_display pub enum Child {
     Expression(Expression),
     Spread(ExpressionSpread),
 });
+#[cfg(test)]
+mod tests_element_children {
+    use super::*;
+    use ast::general::BindingIdentifier;
+
+    #[test]
+    fn it_prints_empty() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("div").into(),
+                attributes: Default::default(),
+                children: vec![
+                    Empty::default().into(),
+                ],
+                closing: Default::default(),
+                position: None,
+            },
+            "<div>{}</div>"
+        );
+    }
+
+    #[test]
+    fn it_prints_text() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("div").into(),
+                attributes: Default::default(),
+                children: vec![
+                    Text::from("content").into()
+                ],
+                closing: Default::default(),
+                position: None,
+            },
+            "<div>content</div>"
+        );
+    }
+
+    #[test]
+    fn it_prints_element() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("div").into(),
+                attributes: Default::default(),
+                children: vec![
+                    Text::from("before").into(),
+                    Element {
+                        opening: Identifier::from("div").into(),
+                        attributes: Default::default(),
+                        children: Default::default(),
+                        closing: Default::default(),
+                        position: None,
+                    }.into(),
+                    Text::from("after").into(),
+                ],
+                closing: Default::default(),
+                position: None,
+            },
+            "<div>before<div/>after</div>"
+        );
+    }
+
+    #[test]
+    fn it_prints_expression() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("div").into(),
+                attributes: Default::default(),
+                children: vec![
+                    Expression {
+                        expression: BindingIdentifier::from("someVar").into(),
+                        position: None,
+                    }.into(),
+                ],
+                closing: Default::default(),
+                position: None,
+            },
+            "<div>{someVar}</div>"
+        );
+    }
+
+    #[test]
+    fn it_prints_expression_spread() {
+        assert_serialize!(
+            Element {
+                opening: Identifier::from("div").into(),
+                attributes: Default::default(),
+                children: vec![
+                    ExpressionSpread {
+                        expression: BindingIdentifier::from("someVar").into(),
+                        position: None,
+                    }.into(),
+                ],
+                closing: Default::default(),
+                position: None,
+            },
+            "<div>{...someVar}</div>"
+        );
+    }
+}
 
 node!(pub struct Expression {
     pub expression: alias::Expression,
@@ -196,7 +533,7 @@ impl NodeDisplay for ExpressionSpread {
     }
 }
 
-node!(pub struct Empty {});
+node!(#[derive(Default)] pub struct Empty {});
 impl NodeDisplay for Empty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.wrap_curly();
@@ -204,7 +541,7 @@ impl NodeDisplay for Empty {
     }
 }
 
-node!(pub struct Text {
+node!(#[derive(Default)] pub struct Text {
     // Serialized string should contain HTML entities since it,
     // allows all chars except {, }, <, and >
     pub value: string::String,
@@ -213,5 +550,14 @@ node!(pub struct Text {
 impl NodeDisplay for Text {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.jsx_text(&self.value, None)
+    }
+}
+impl<T: Into<string::String>> From<T> for Text {
+    fn from(v: T) -> Text {
+        Text {
+            raw: None,
+            value: v.into(),
+            position: None,
+        }
     }
 }
