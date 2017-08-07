@@ -319,7 +319,7 @@ mod tests_expression_statement {
         assert_serialize!(
             ExpressionStatement {
                 expression: expression::AssignmentExpression {
-                    left: patterns::ObjectPattern::default().into(),
+                    left: patterns::ObjectAssignmentPattern::default().into(),
                     right: BindingIdentifier::from("foo").into(),
                     position: None,
                 }.into(),
