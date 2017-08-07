@@ -128,6 +128,11 @@ node!(#[derive(Default)] pub struct CallArguments {
     pub args: Vec<alias::Expression>,
     pub spread: Option<Box<alias::Expression>>,
 });
+impl CallArguments {
+    fn is_empty() -> bool {
+        self.args.is_empty() && self.spread.is_none()
+    }
+}
 impl NodeDisplay for CallArguments {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.wrap_parens();
@@ -238,6 +243,7 @@ node!(pub struct CallExpression {
 });
 impl NodeDisplay for CallExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        // TODO: I think this sometimes adds parens when not needed?
         f.require_precedence(Precedence::New).node(&self.callee)?;
         if self.optional {
             f.punctuator(Punctuator::Question);
@@ -254,9 +260,17 @@ node!(pub struct NewExpression {
 });
 impl NodeDisplay for NewExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.keyword(Keyword::New);
-        f.require_precedence(Precedence::New).node(&self.callee)?;
-        f.node(&self.arguments)
+
+        if self.arguments.is_empty() {
+            let mut f = f.precedence(Precedence::New);
+            f.keyword(Keyword::New);
+            f.require_precedence(Precedence::New).node(&self.callee)?;
+        } else {
+            let mut f = f.precedence(Precedence::Member);
+            f.keyword(Keyword::New);
+            f.require_precedence(Precedence::Member).node(&self.callee)?;
+            f.node(&self.arguments)
+        }
     }
 }
 
@@ -301,6 +315,10 @@ node!(pub struct MemberExpression {
 });
 impl NodeDisplay for MemberExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        // TODO: I think this sometimes adds parens when not needed?
+        // Member expressions can either be part of the MemberExpression grammar or
+        // the CallExpression grammar
+
         let mut f = f.lookahead_wrap_parens(get_sequence(self));
         f.require_precedence(Precedence::Member).node(&self.object)?;
 
@@ -440,6 +458,8 @@ node_kind!(pub enum UnaryOperator {
 });
 impl NodeDisplay for UnaryExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let mut f = f.precedence(Precedence::Unary);
+
         match self.operator {
             UnaryOperator::Delete => f.keyword(Keyword::Delete),
             UnaryOperator::Void => f.keyword(Keyword::Void),
@@ -449,14 +469,24 @@ impl NodeDisplay for UnaryExpression {
             UnaryOperator::BitNegate => f.punctuator(Punctuator::Tilde),
             UnaryOperator::Negate => f.punctuator(Punctuator::Exclam),
             UnaryOperator::Await => f.keyword(Keyword::Await),
-            UnaryOperator::Yield => f.keyword(Keyword::Yield),
+            UnaryOperator::Yield => {
+                f.keyword(Keyword::Yield);
+                f.require_precedence(Precedence::Assignment).node(&self.value)?;
+                return Ok(())
+            }
             UnaryOperator::YieldDelegate => {
                 f.keyword(Keyword::Yield);
-                f.punctuator(Punctuator::Star)
+                f.punctuator(Punctuator::Star);
+                f.require_precedence(Precedence::Assignment).node(&self.value)?;
+                return Ok(())
             }
 
             // TODO: Precedence on this is hard
-            UnaryOperator::Bind => f.punctuator(Punctuator::Bind),
+            UnaryOperator::Bind => {
+                f.punctuator(Punctuator::Bind);
+                f.require_precedence(Precedence::Member).node(&self.value)?;
+                return Ok(())
+            }
         }
 
         f.require_precedence(Precedence::Unary).node(&self.value)
@@ -468,6 +498,9 @@ impl NodeDisplay for UnaryExpression {
 node!(pub struct BinaryExpression {
     pub left: Box<alias::Expression>,
     pub operator: BinaryOperator,
+
+    // TODO: For bind, this can be restructed to MemberExpression or SuperProperty,
+    // so it should probably be its own node type.
     pub right: Box<alias::Expression>,
 });
 node_kind!(pub enum BinaryOperator {
@@ -677,10 +710,11 @@ impl NodeDisplay for BinaryExpression {
                 )?;
             }
             BinaryOperator::Bind => {
-                // TODO: Precedence
-                f.node(&self.left)?;
+                // TODO: Parens might not be right when inside a callexpr?
+                let mut f = f.precedence(Precedence::LeftHand);
+                f.require_precedence(Precedence::LeftHand).node(&self.left)?;
                 f.punctuator(Punctuator::ColonColon);
-                f.node(&self.right)?;
+                f.require_precedence(Precedence::MemberExpression).node(&self.right)?;
             }
         }
 
