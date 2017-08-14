@@ -129,7 +129,7 @@ node!(#[derive(Default)] pub struct CallArguments {
     pub spread: Option<Box<alias::Expression>>,
 });
 impl CallArguments {
-    fn is_empty() -> bool {
+    fn is_empty(&self) -> bool {
         self.args.is_empty() && self.spread.is_none()
     }
 }
@@ -260,7 +260,6 @@ node!(pub struct NewExpression {
 });
 impl NodeDisplay for NewExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-
         if self.arguments.is_empty() {
             let mut f = f.precedence(Precedence::New);
             f.keyword(Keyword::New);
@@ -269,8 +268,9 @@ impl NodeDisplay for NewExpression {
             let mut f = f.precedence(Precedence::Member);
             f.keyword(Keyword::New);
             f.require_precedence(Precedence::Member).node(&self.callee)?;
-            f.node(&self.arguments)
+            f.node(&self.arguments)?;
         }
+        Ok(())
     }
 }
 
@@ -489,7 +489,8 @@ impl NodeDisplay for UnaryExpression {
             }
         }
 
-        f.require_precedence(Precedence::Unary).node(&self.value)
+        f.require_precedence(Precedence::Unary).node(&self.value)?;
+        Ok(())
     }
 }
 
@@ -714,7 +715,7 @@ impl NodeDisplay for BinaryExpression {
                 let mut f = f.precedence(Precedence::LeftHand);
                 f.require_precedence(Precedence::LeftHand).node(&self.left)?;
                 f.punctuator(Punctuator::ColonColon);
-                f.require_precedence(Precedence::MemberExpression).node(&self.right)?;
+                f.require_precedence(Precedence::Member).node(&self.right)?;
             }
         }
 
