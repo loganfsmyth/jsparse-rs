@@ -86,6 +86,38 @@ impl<T: Into<Expression>> From<T> for ModuleStatementItem {
         ModuleStatementItem::Expression(statement::ExpressionStatement::from(v))
     }
 }
+impl From<StatementItem> for ModuleStatementItem {
+    fn from(v: StatementItem) -> ModuleStatementItem {
+        match v {
+            StatementItem::Block(n) => n.into(),
+            StatementItem::Variable(n) => n.into(),
+            StatementItem::Empty(n) => n.into(),
+            StatementItem::Expression(n) => n.into(),
+            StatementItem::If(n) => n.into(),
+            StatementItem::For(n) => n.into(),
+            StatementItem::ForIn(n) => n.into(),
+            StatementItem::ForOf(n) => n.into(),
+            StatementItem::ForAwait(n) => n.into(),
+            StatementItem::While(n) => n.into(),
+            StatementItem::DoWhile(n) => n.into(),
+            StatementItem::Switch(n) => n.into(),
+            StatementItem::Continue(n) => n.into(),
+            StatementItem::Break(n) => n.into(),
+            StatementItem::Return(n) => n.into(),
+            StatementItem::With(n) => n.into(),
+            StatementItem::Labelled(n) => n.into(),
+            StatementItem::Throw(n) => n.into(),
+            StatementItem::TryCatch(n) => n.into(),
+            StatementItem::TryCatchFinally(n) => n.into(),
+            StatementItem::TryFinally(n) => n.into(),
+            StatementItem::Debugger(n) => n.into(),
+            StatementItem::Function(n) => n.into(),
+            StatementItem::Class(n) => n.into(),
+            StatementItem::Let(n) => n.into(),
+            StatementItem::Const(n) => n.into(),
+        }
+    }
+}
 
 
 node_enum!(@node_display pub enum StatementItem {
