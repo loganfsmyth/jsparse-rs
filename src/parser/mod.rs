@@ -16,6 +16,20 @@ macro_rules! try_parse {
         }
     };
 }
+macro_rules! try_token {
+    ($self:expr, $p:path) => {
+        if let None = $self.peek(|tok| match tok {
+            &$p => {
+                Some(())
+            }
+            _ => {
+                None
+            }
+        }) {
+            return Ok(None);
+        }
+    };
+}
 macro_rules! try_keyword {
     ($self:expr, $e:expr) => {
         if let None = $self.peek(|tok| match tok {
@@ -46,29 +60,48 @@ macro_rules! try_if_keyword {
         }
     };
 }
-// macro_rules! try_token {
-//     ($self:expr, $p:ty) => {
-//         $self.peek(|tok| match tok {
-//             $p => {
-//                 Ok(Some(()))
-//             }
-//             _ => {
-//                 Ok(None)
-//             }
-//         })
-//     };
-// }
-macro_rules! eat_token {
-    ($self:expr, $p:path) => {
-        if let Some(tok) = $self.peek(|tok| match tok {
+
+macro_rules! try_if_token {
+    ($self:expr, $p:ty) => {
+        if let Some(_) = $self.peek(|tok| match tok {
             &$p => {
-                None
+                Some(())
             }
             _ => {
-                Some(tok.clone())
+                None
             }
         }) {
-            return Err(ParseError::new(format!("unexpected token {:?}", tok)));
+            true
+        } else {
+            false
+        }
+    };
+}
+macro_rules! eat_token {
+    ($self:expr, $p:path) => {
+        if let Some(err) = $self.peek(|tok| match tok {
+            &$p => {
+                Some(None)
+            }
+            _ => {
+                Some(Some(Err(ParseError::new(format!("unexpected token {:?}", tok)))))
+            }
+        }).unwrap() {
+            return err;
+        }
+    };
+}
+macro_rules! eat_keyword {
+    ($self:expr, $e:expr) => {
+        if let Some(err) = $self.peek(|tok| match tok {
+            &TokenType::IdentifierName { ref value, .. } if value == $e => {
+                Some(None)
+            }
+            _ => {
+                Some(Some(Err(ParseError::new(format!("unexpected token {:?}", tok)))))
+            }
+        }).unwrap() {
+            return err;
         }
     };
 }
@@ -434,29 +467,32 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_block_statement(&mut self) -> MaybeResult<ast::statement::BlockStatement> {
-        unimplemented!();
-        // self.eat_token(TokenType::LCurly);
+        try_token!(self, TokenType::LCurly);
 
-        // let body = {
-        //     let mut directives: Vec<ast::alias::StatementItem> = vec![];
+        let body = {
+            let mut items: Vec<ast::alias::StatementItem> = vec![];
 
-        //     while let Some(directive) = self.parse_statement_item()? {
-        //         directives.push(directive);
-        //     }
+            while let Some(item) = self.parse_statement_item()? {
+                items.push(item);
+            }
 
-        //     directives
-        // };
+            items
+        };
 
-        // self.eat_token(TokenType::RCurly);
+        eat_token!(self, TokenType::RCurly);
 
-        // ast::statement::BlockStatement::new(body);
+        Ok(Some(ast::statement::BlockStatement {
+            body,
+            position: None,
+        }))
     }
     fn parse_empty_statement(&mut self) -> MaybeResult<ast::statement::EmptyStatement> {
-        unimplemented!();
         // ASI is not allowed to create empty statements.
-        // self.eat_token(TokenType::Semicolon);
+        eat_token!(self, TokenType::Semicolon);
 
-        // Ok(ast::statement::EmptyStatement::new())
+        Ok(Some(ast::statement::EmptyStatement {
+            position: None,
+        }))
     }
     fn parse_function_statement(&mut self) -> MaybeResult<ast::functions::FunctionDeclaration> {
         try_keyword!(self, "function");
@@ -601,10 +637,10 @@ impl<'a> Parser<'a> {
     fn parse_if_statement(&mut self) -> MaybeResult<ast::statement::IfStatement> {
         try_keyword!(self, "if");
         eat_token!(self, TokenType::LParen);
-        let test = self.parse_expression()?;
+        let test = self.parse_expression()?.into();
         eat_token!(self, TokenType::RParen);
 
-        let consequent = eat_parse!(self, self.parse_block_statement()?);
+        let consequent = eat_parse!(self, self.parse_statement()?);
 
         let alternate = if try_if_keyword!(self, "else") {
             Some(eat_parse!(self, self.parse_statement()?))
@@ -621,91 +657,97 @@ impl<'a> Parser<'a> {
     }
     fn parse_switch_statement(&mut self) -> MaybeResult<ast::statement::SwitchStatement> {
         try_keyword!(self, "switch");
-        unimplemented!();
-        // self.eat_keyword("switch");
-        // self.eat_token(TokenType::LParen);
-        // let discriminant = self.parse_expression()?;
-        // self.eat_token(TokenType::RParen);
+        eat_token!(self, TokenType::LParen);
+        let discriminant = self.parse_expression()?.into();
+        eat_token!(self, TokenType::RParen);
 
-        // self.eat_token(TokenType::LCurly);
+        eat_token!(self, TokenType::LCurly);
 
-        // let mut cases = vec![];
-        // loop {
-        //     let test = if self.eat_keyword_maybe("case") {
-        //         let test = self.parse_expression()?;
-        //         self.eat_token(TokenType::Colon);
-        //         Some(test)
-        //     } else if self.eat_keyword_maybe("default") {
-        //         self.eat_token(TokenType::Colon);
-        //         None
-        //     } else {
-        //         break;
-        //     };
+        let mut cases = vec![];
+        loop {
+            let test = if try_if_keyword!(self, "case") {
+                let test = self.parse_expression()?.into();
+                eat_token!(self, TokenType::Colon);
+                Some(test)
+            } else if try_if_keyword!(self, "default") {
+                eat_token!(self, TokenType::Colon);
+                None
+            } else {
+                break;
+            };
 
-        //     let statements = self.parse_statement_items()?;
+            cases.push(ast::statement::SwitchCase {
+                test,
+                consequent: parse_list(|| self.parse_statement_item())?,
+                position: None,
+            });
+        }
 
-        //     cases.push(ast::statement::SwitchCase::new(test, statements));
-        // }
+        eat_token!(self, TokenType::RCurly);
 
-        // self.eat_token(TokenType::RCurly);
-
-        // Ok(ast::statement::SwitchStatement::new(discriminant, cases))
+        Ok(Some(ast::statement::SwitchStatement {
+            discriminant,
+            cases,
+            position: None,
+        }))
     }
     fn parse_forish_loop_statement(&mut self) -> MaybeResult<ast::alias::Statement> {
         try_keyword!(self, "for");
+
+
         unimplemented!();
-        // self.eat_keyword("for");
         // ast::statement::ForStatement | ast::statement::ForInStatement | ast::statement::ForOfStatement | ast::statement::ForAwaitStatement
-
-
-
     }
     fn parse_do_while_statement(&mut self) -> MaybeResult<ast::statement::DoWhileStatement> {
         try_keyword!(self, "do");
-        unimplemented!();
-        // self.eat_keyword("do");
 
-        // let statement = self.parse_statement();
+        let body = eat_parse!(self, self.parse_statement()?);
 
-        // Ok(if self.eat_keyword_maybe("while") {
-        //     self.eat_token(TokenType::LParen);
-        //     let test = self.parse_expression()?;
-        //     self.eat_token(TokenType::RParen);
+        eat_keyword!(self, "while");
 
-        //     ast::statement::DoWhileStatement::new(test, statement)
-        // } else {
-        //     ast::statement::DoStatement::new(test, statement)
-        // })
+        eat_token!(self, TokenType::LParen);
+        let test = self.parse_expression()?.into();
+        eat_token!(self, TokenType::RParen);
+
+        Ok(Some(ast::statement::DoWhileStatement {
+            test,
+            body,
+            position: None,
+        }))
     }
     fn parse_while_statement(&mut self) -> MaybeResult<ast::statement::WhileStatement> {
         try_keyword!(self, "while");
-        unimplemented!();
-        // self.eat_keyword("while")?;
-        // self.eat_token(TokenType::LParen);
-        // let test = self.parse_expression()?;
-        // self.eat_token(TokenType::RParen);
+        eat_token!(self, TokenType::LParen);
+        let test = self.parse_expression()?.into();
+        eat_token!(self, TokenType::RParen);
 
-        // let statement = self.parse_statement()?;
+        let body = eat_parse!(self, self.parse_statement()?);
 
-        // Ok(ast::statement::WhileStatement::new(test, statement));
+        Ok(Some(ast::statement::WhileStatement {
+            test,
+            body,
+            position: None,
+        }))
     }
     fn parse_break_statement(&mut self) -> MaybeResult<ast::statement::BreakStatement> {
         try_keyword!(self, "break");
-        unimplemented!();
-        // self.eat_keyword("break");
-        // let id = self.parse_label()?;
-        // self.eat_semicolon()?;
+        let label = self.parse_label()?;
+        self.eat_semicolon()?;
 
-        // Ok(ast::statement::BreakStatement::new(id));
+        Ok(Some(ast::statement::BreakStatement {
+            label,
+            position: None,
+        }))
     }
     fn parse_continue_statement(&mut self) -> MaybeResult<ast::statement::ContinueStatement> {
-        try_keyword!(self, "break");
-        unimplemented!();
-        // self.eat_keyword("continue");
-        // let id = self.parse_label()?;
-        // self.eat_semicolon()?;
+        try_keyword!(self, "continue");
+        let label = self.parse_label()?;
+        self.eat_semicolon()?;
 
-        // Ok(ast::statement::BreakStatement::new(id));
+        Ok(Some(ast::statement::ContinueStatement {
+            label,
+            position: None,
+        }))
     }
     fn parse_return_statement(&mut self) -> MaybeResult<ast::statement::ReturnStatement> {
         try_keyword!(self, "return");
@@ -731,15 +773,17 @@ impl<'a> Parser<'a> {
     }
     fn parse_with_statement(&mut self) -> MaybeResult<ast::statement::WithStatement> {
         try_keyword!(self, "with");
-        unimplemented!();
-        // self.eat_keyword("with");
-        // self.eat_token(TokenType::LParen);
-        // let test = self.parse_expression()?;
-        // self.eat_token(TokenType::RParen);
+        eat_token!(self, TokenType::LParen);
+        let object = self.parse_expression()?.into();
+        eat_token!(self, TokenType::RParen);
 
-        // let statement = self.parse_statement()?;
+        let body = eat_parse!(self, self.parse_statement()?);
 
-        // Ok(ast::statement::WithStatement::new(test, statement).into())
+        Ok(Some(ast::statement::WithStatement {
+            object,
+            body,
+            position: None,
+        }))
     }
     fn parse_throw_statement(&mut self) -> MaybeResult<ast::statement::ThrowStatement> {
         try_keyword!(self, "throw");
@@ -754,37 +798,65 @@ impl<'a> Parser<'a> {
         try_keyword!(self, "try");
 
         // ast::statement::TryCatchStatement | ast::statement::TryFinallyStatement | ast::statement::TryCatchFinallyStatement
-        unimplemented!();
-        // self.eat_keyword("try");
-        // let body = self.parse_block_statement();
 
-        // let catch_clause = if self.eat_keyword("catch") {
-        //     self.eat_token(TokenType::LParen);
-        //     let test = self.parse_binding_pattern()?;
-        //     self.eat_token(TokenType::RParen);
+        let body = eat_parse!(self, self.parse_block_statement()?);
 
-        //     let body = self.parse_block_statement()?;
+        let catch_clause = if try_if_keyword!(self, "catch") {
+            eat_token!(self, TokenType::LParen);
+            let param = self.parse_binding_pattern()?;
+            eat_token!(self, TokenType::RParen);
 
-        //     Some(ast::statement::CatchClause::new(test, body))
-        // } else {
-        //     None
-        // };
+            let body = eat_parse!(self, self.parse_block_statement()?);
 
-        // let finally_clause = if self.eat_keyword("finally") {
-        //     Some(self.parse_block_statement()?)
-        // } else {
-        //     None
-        // };
+            Some(ast::statement::CatchClause {
+                param,
+                body,
+                position: None,
+            })
+        } else {
+            None
+        };
 
-        // Ok(ast::statement::TryCatchStatement::new(body, catch_clause, finally_clause))
+        let finally_clause = if try_if_keyword!(self, "finally") {
+            Some(eat_parse!(self, self.parse_block_statement()?))
+        } else {
+            None
+        };
+
+        if let Some(catch) = catch_clause {
+            if let Some(finalizer) = finally_clause {
+                Ok(Some(ast::statement::TryCatchFinallyStatement {
+                    body,
+                    catch,
+                    finalizer,
+                    position: None,
+                }.into()))
+            } else {
+                Ok(Some(ast::statement::TryCatchStatement {
+                    body,
+                    catch,
+                    position: None,
+                }.into()))
+            }
+        } else {
+            if let Some(finalizer) = finally_clause {
+                Ok(Some(ast::statement::TryFinallyStatement {
+                    body,
+                    finalizer,
+                    position: None,
+                }.into()))
+            } else {
+                Err(ParseError::new(format!("'try' statements must be followed by a catch and/or finally")))
+            }
+        }
     }
     fn parse_debugger_statement(&mut self) -> MaybeResult<ast::statement::DebuggerStatement> {
         try_keyword!(self, "debugger");
-        unimplemented!();
-        // self.eat_keyword("debugger");
-        // self.eat_semicolon();
+        self.eat_semicolon()?;
 
-        // Ok(ast::statement::DebuggerStatement::new())
+        Ok(Some(ast::statement::DebuggerStatement {
+            position: None,
+        }))
     }
     fn parse_labelled_statement(&mut self) -> MaybeResult<ast::statement::LabelledStatement> {
         unimplemented!();
@@ -806,6 +878,14 @@ impl<'a> Parser<'a> {
 
 
     fn parse_expression(&mut self) -> Result<ast::alias::Expression> {
+        unimplemented!();
+    }
+
+    fn parse_label(&mut self) -> Result<Option<ast::statement::LabelIdentifier>> {
+        unimplemented!();
+    }
+
+    fn parse_binding_pattern(&mut self) -> MaybeResult<ast::patterns::BindingPattern> {
         unimplemented!();
     }
 }

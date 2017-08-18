@@ -856,14 +856,14 @@ impl NodeDisplay for ThrowStatement {
 
 // try {} catch(foo) {}
 node!(#[derive(Default)] pub struct TryCatchStatement {
-    pub block: BlockStatement,
-    pub handler: CatchClause,
+    pub body: BlockStatement,
+    pub catch: CatchClause,
 });
 impl NodeDisplay for TryCatchStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Try);
-        f.node(&self.block)?;
-        f.node(&self.handler)
+        f.node(&self.body)?;
+        f.node(&self.catch)
     }
 }
 
@@ -882,8 +882,8 @@ mod tests_try_catch {
     fn it_prints_with_binding() {
         assert_serialize!(
             TryCatchStatement {
-                block: vec![literal::Boolean::from(false).into()].into(),
-                handler: CatchClause {
+                body: vec![literal::Boolean::from(false).into()].into(),
+                catch: CatchClause {
                     param: BindingIdentifier::from("err").into(),
                     body: vec![literal::Boolean::from(true).into()].into(),
                     position: None,
@@ -898,40 +898,19 @@ mod tests_try_catch {
 
 // try {} catch(foo) {} finally {}
 node!(#[derive(Default)] pub struct TryCatchFinallyStatement {
-    pub block: BlockStatement,
-    pub handler: CatchClause,
+    pub body: BlockStatement,
+    pub catch: CatchClause,
     pub finalizer: BlockStatement,
 });
 impl NodeDisplay for TryCatchFinallyStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Try);
-        f.node(&self.block)?;
+        f.node(&self.body)?;
 
-        f.node(&self.handler)?;
+        f.node(&self.catch)?;
 
         f.keyword(Keyword::Finally);
         f.node(&self.finalizer)
-    }
-}
-
-impl From<TryCatchStatement> for TryCatchFinallyStatement {
-    fn from(stmt: TryCatchStatement) -> TryCatchFinallyStatement {
-        TryCatchFinallyStatement {
-            block: stmt.block,
-            handler: stmt.handler,
-            finalizer: Default::default(),
-            position: stmt.position,
-        }
-    }
-}
-impl From<TryFinallyStatement> for TryCatchFinallyStatement {
-    fn from(stmt: TryFinallyStatement) -> TryCatchFinallyStatement {
-        TryCatchFinallyStatement {
-            block: stmt.block,
-            handler: Default::default(),
-            finalizer: stmt.finalizer,
-            position: stmt.position,
-        }
     }
 }
 
@@ -943,33 +922,17 @@ mod tests_try_catch_finally {
     fn it_prints_default() {
         assert_serialize!(TryCatchFinallyStatement::default(), "try{}catch{}finally{}");
     }
-
-    #[test]
-    fn it_prints_default_from_catch() {
-        assert_serialize!(
-            TryCatchFinallyStatement::from(TryCatchStatement::default()),
-            "try{}catch{}finally{}"
-        );
-    }
-
-    #[test]
-    fn it_prints_default_from_finally() {
-        assert_serialize!(
-            TryCatchFinallyStatement::from(TryFinallyStatement::default()),
-            "try{}catch{}finally{}"
-        );
-    }
 }
 
 // try {} finally {}
 node!(#[derive(Default)] pub struct TryFinallyStatement {
-    pub block: BlockStatement,
+    pub body: BlockStatement,
     pub finalizer: BlockStatement,
 });
 impl NodeDisplay for TryFinallyStatement {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Try);
-        f.node(&self.block)?;
+        f.node(&self.body)?;
 
         f.keyword(Keyword::Finally);
         f.node(&self.finalizer)
