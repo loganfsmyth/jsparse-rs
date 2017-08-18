@@ -44,6 +44,14 @@ macro_rules! try_keyword {
         }
     };
 }
+macro_rules! try_identifier {
+    ($self:expr) => {
+        $self.peek(
+            |tok| if let &TokenType::IdentifierName { ref value, ref raw } = tok { Some((value.clone(), raw.clone())) } else { None }
+        )
+    }
+}
+
 macro_rules! try_if_keyword {
     ($self:expr, $e:expr) => {
         if let None = $self.peek(|tok| match tok {
@@ -60,9 +68,8 @@ macro_rules! try_if_keyword {
         }
     };
 }
-
 macro_rules! try_if_token {
-    ($self:expr, $p:ty) => {
+    ($self:expr, $p:path) => {
         if let Some(_) = $self.peek(|tok| match tok {
             &$p => {
                 Some(())
@@ -77,6 +84,7 @@ macro_rules! try_if_token {
         }
     };
 }
+
 macro_rules! eat_token {
     ($self:expr, $p:path) => {
         if let Some(err) = $self.peek(|tok| match tok {
@@ -115,6 +123,7 @@ macro_rules! eat_parse {
         }
     };
 }
+
 
 
 pub struct ParseError {
@@ -488,7 +497,7 @@ impl<'a> Parser<'a> {
     }
     fn parse_empty_statement(&mut self) -> MaybeResult<ast::statement::EmptyStatement> {
         // ASI is not allowed to create empty statements.
-        eat_token!(self, TokenType::Semicolon);
+        try_token!(self, TokenType::Semicolon);
 
         Ok(Some(ast::statement::EmptyStatement {
             position: None,
@@ -496,16 +505,77 @@ impl<'a> Parser<'a> {
     }
     fn parse_function_statement(&mut self) -> MaybeResult<ast::functions::FunctionDeclaration> {
         try_keyword!(self, "function");
-        unimplemented!();
-        // self.eat_keyword("function");
-        // let is_generator = self.eat_token_maybe(TokenType::Star)?;
+        let kind = if try_if_token!(self, TokenType::Star) {
+            ast::functions::FunctionKind::Normal
+        } else {
+            ast::functions::FunctionKind::Generator
+        };
 
-        // let name = self.parse_binding_identifier()?;
-        // let params = self.parse_function_params()?;
-        // let body = self.parse_function_body()?;
+        let id = eat_parse!(self, self.parse_binding_identifier()?);
+        let params = self.parse_function_params()?;
+        let body = self.parse_function_body()?;
 
-        // Ok(ast::functions::FunctionDeclaration::new(name, params, body))
+        Ok(Some(ast::functions::FunctionDeclaration {
+            kind,
+            id,
+            params,
+            body,
+            position: None,
+        }))
     }
+    fn parse_function_params(&mut self) -> Result<ast::functions::FunctionParams> {
+        eat_token!(self, TokenType::LParen);
+        let mut rest = None;
+        let mut params = vec![];
+        loop {
+            if try_if_token!(self, TokenType::Ellipsis) {
+                let id = self.parse_binding_pattern()?;
+                rest = Some(ast::functions::FunctionRestParam {
+                    id,
+                    position: None,
+                });
+                break;
+            }
+            let id = self.parse_binding_pattern()?;
+            let init = if try_if_token!(self, TokenType::Eq) {
+                Some(self.parse_assignment_expression()?.into())
+            } else {
+                None
+            };
+
+            params.push(ast::functions::FunctionParam {
+                decorators: vec![],
+                id,
+                init,
+                position: None,
+            });
+
+            if !try_if_token!(self, TokenType::Comma) {
+                break;
+            }
+        }
+        eat_token!(self, TokenType::RParen);
+
+        Ok(ast::functions::FunctionParams {
+            params,
+            rest,
+            position: None,
+        })
+    }
+
+    fn parse_function_body(&mut self) -> Result<ast::functions::FunctionBody> {
+        eat_token!(self, TokenType::LCurly);
+        let directives = self.parse_directives()?;
+        let body = parse_list(|| self.parse_statement_item())?;
+        eat_token!(self, TokenType::RCurly);
+
+        Ok(ast::functions::FunctionBody {
+            directives,
+            body,
+            position: None,
+        })
+    }
+
     fn parse_async_function_statement(&mut self) -> MaybeResult<ast::functions::FunctionDeclaration> {
         try_keyword!(self, "async");
         unimplemented!();
@@ -521,41 +591,43 @@ impl<'a> Parser<'a> {
         // Ok(ast::functions::FunctionDeclaration::new(name, params, body))
     }
     fn parse_class_statement(&mut self) -> MaybeResult<ast::classes::ClassDeclaration> {
+        let decorators = self.parse_class_decorator_list()?;
         try_keyword!(self, "class");
-        unimplemented!();
-        // let decorators = self.parse_decorator_list()?;
 
-        // self.eat_keyword("class");
+        let id = eat_parse!(self, self.parse_binding_identifier()?);
 
-        // let name = self.parse_binding_identifier()?;
+        let extends = if try_if_keyword!(self, "extends") {
+            Some(self.parse_left_hand_expression()?.into())
+        } else {
+            None
+        };
 
-        // let parent = if self.eat_keyword_maybe("extends") {
-        //     Some(self.parse_expression())
-        // } else {
-        //     None
-        // };
+        let body = self.parse_class_body()?;
 
-        // let body = self.parse_class_body()?;
-
-        // Ok(ast::classes::ClassDeclaration::new(name, parent, body, decorators))
+        Ok(Some(ast::classes::ClassDeclaration {
+            decorators,
+            id,
+            extends,
+            body,
+            position: None,
+        }))
     }
 
     fn parse_class_body(&mut self) -> Result<ast::classes::ClassBody> {
-        unimplemented!();
-        // self.eat_token(TokenType::LCurly);
+        let mut items = vec![];
 
-        // let items = vec![];
-        // while !self.eat_token_maybe(TokenType::RCurly) {
-        //     if self.eat_token_maybe(TokenType::Semicolon) {
-        //         continue;
-        //     }
+        eat_token!(self, TokenType::LCurly);
+        while let Some(item) = self.parse_class_body_item()? {
+            items.push(item);
+        }
+        eat_token!(self, TokenType::RCurly);
 
-        //     items.push(self.parse_class_body_item()?);
-        // }
-
-        // ast::classes::ClassBody::new(items)
+        Ok(ast::classes::ClassBody {
+            items,
+            position: None,
+        })
     }
-    fn parse_class_body_item(&mut self) {
+    fn parse_class_body_item(&mut self) -> MaybeResult<ast::classes::ClassItem> {
         unimplemented!();
         // self.node(|&mut self| {
         //     let is_static = self.eat_keyword_maybe("static");
@@ -584,6 +656,9 @@ impl<'a> Parser<'a> {
 
         //     }
         // })
+    }
+    fn parse_class_decorator_list(&mut self) -> Result<Vec<ast::classes::ClassDecorator>> {
+        unimplemented!();
     }
 
     fn parse_let_statement(&mut self) -> MaybeResult<ast::statement::LetDeclaration> {
@@ -787,8 +862,11 @@ impl<'a> Parser<'a> {
     }
     fn parse_throw_statement(&mut self) -> MaybeResult<ast::statement::ThrowStatement> {
         try_keyword!(self, "throw");
+
+        // if next token is not newline and not semicolon, parse expression
+
+
         unimplemented!();
-        // self.eat_keyword("throw");
         // let expr = self.parse_expression()?;
         // self.eat_semicolon();
 
@@ -802,9 +880,13 @@ impl<'a> Parser<'a> {
         let body = eat_parse!(self, self.parse_block_statement()?);
 
         let catch_clause = if try_if_keyword!(self, "catch") {
-            eat_token!(self, TokenType::LParen);
-            let param = self.parse_binding_pattern()?;
-            eat_token!(self, TokenType::RParen);
+            let param = if try_if_token!(self, TokenType::LParen) {
+                let param = self.parse_binding_pattern()?;
+                eat_token!(self, TokenType::RParen);
+                Some(param)
+            } else {
+                None
+            };
 
             let body = eat_parse!(self, self.parse_block_statement()?);
 
@@ -881,11 +963,175 @@ impl<'a> Parser<'a> {
         unimplemented!();
     }
 
+    fn parse_assignment_expression(&mut self) -> Result<ast::alias::Expression> {
+        unimplemented!();
+    }
+
+    fn parse_left_hand_expression(&mut self) -> Result<ast::alias::Expression> {
+        unimplemented!();
+    }
+
     fn parse_label(&mut self) -> Result<Option<ast::statement::LabelIdentifier>> {
         unimplemented!();
     }
 
-    fn parse_binding_pattern(&mut self) -> MaybeResult<ast::patterns::BindingPattern> {
+    fn parse_binding_pattern(&mut self) -> Result<ast::patterns::BindingPattern> {
+        if let Some(obj) = self.parse_binding_object()? {
+            return Ok(From::from(obj));
+        }
+        if let Some(obj) = self.parse_binding_array()? {
+            return Ok(From::from(obj));
+        }
+        if let Some(obj) = self.parse_binding_identifier()? {
+            return Ok(From::from(obj));
+        }
+
+        Err(ParseError::new("expected binding pattern"))
+    }
+
+    fn parse_binding_identifier(&mut self) -> MaybeResult<ast::general::BindingIdentifier> {
+        Ok(if let Some((value, raw)) = try_identifier!(self) {
+            Some(ast::general::BindingIdentifier {
+                value,
+                raw,
+                position: None,
+            })
+        } else {
+            None
+        })
+    }
+
+    fn parse_binding_object(&mut self) -> MaybeResult<ast::patterns::ObjectBindingPattern> {
+        let mut properties = vec![];
+        let mut rest = None;
+
+        try_token!(self, TokenType::LCurly);
+        loop {
+            if try_if_token!(self, TokenType::Ellipsis) {
+                rest = Some(eat_parse!(self, self.parse_binding_identifier()?));
+                break;
+            }
+
+            if try_if_token!(self, TokenType::RCurly) {
+                break;
+            } else {
+                properties.push(if let Some((value, raw)) = try_identifier!(self) {
+                    // a,
+                    // a: PAT
+                    // a = 4,
+                    // a: PAT = 4,
+
+                    let pat = if try_if_token!(self, TokenType::Colon) {
+                        Some(self.parse_binding_pattern()?)
+                    } else {
+                        None
+                    };
+
+                    let init = if try_if_token!(self, TokenType::Eq) {
+                        Some(self.parse_assignment_expression()?)
+                    } else {
+                        None
+                    };
+
+                    if let Some(pattern) = pat {
+                        ast::patterns::ObjectBindingPatternPatternProperty {
+                            name: ast::general::PropertyIdentifier {
+                                value,
+                                raw,
+                                position: None,
+                            }.into(),
+                            pattern,
+                            init,
+                            position: None,
+                        }.into()
+                    } else {
+                        ast::patterns::ObjectBindingPatternIdentifierProperty {
+                            id: ast::general::BindingIdentifier {
+                                value,
+                                raw,
+                                position: None,
+                            }.into(),
+                            init,
+                            position: None,
+                        }.into()
+                    }
+                } else {
+                    // [omg]: PAT
+                    // [omg]: PAT = 4,
+                    let name = self.parse_property_name()?;
+
+                    eat_token!(self, TokenType::Colon);
+
+                    let pattern = self.parse_binding_pattern()?;
+
+                    let init = if try_if_token!(self, TokenType::Eq) {
+                        Some(self.parse_assignment_expression()?)
+                    } else {
+                        None
+                    };
+
+                    ast::patterns::ObjectBindingPatternPatternProperty {
+                        name,
+                        pattern,
+                        init,
+                        position: None,
+                    }.into()
+                });
+
+                // TODO: This token logic is wrong
+                try_if_token!(self, TokenType::Comma);
+            }
+        }
+
+        Ok(Some(ast::patterns::ObjectBindingPattern {
+            properties,
+            rest,
+            position: None,
+        }))
+    }
+
+    fn parse_binding_array(&mut self) -> MaybeResult<ast::patterns::ArrayBindingPattern> {
+        let mut items = vec![];
+        let mut rest = None;
+
+        try_token!(self, TokenType::LParen);
+        loop {
+            if try_if_token!(self, TokenType::Ellipsis) {
+                rest = Some(self.parse_binding_pattern()?.into());
+                break;
+            }
+
+            if try_if_token!(self, TokenType::RParen) {
+                break;
+            } else if try_if_token!(self, TokenType::Comma) {
+                items.push(None);
+            } else {
+                let id = self.parse_binding_pattern()?;
+                let init = if try_if_token!(self, TokenType::Eq) {
+                    Some(self.parse_assignment_expression()?.into())
+                } else {
+                    None
+                };
+
+                items.push(Some(ast::patterns::ArrayBindingPatternElement {
+                    id,
+                    init,
+                    position: None,
+                }));
+
+                // TODO: This token logic is wrong
+                try_if_token!(self, TokenType::Comma);
+            }
+        }
+
+        Ok(Some(ast::patterns::ArrayBindingPattern {
+            items,
+            rest,
+            position: None,
+        }))
+    }
+
+    fn parse_property_name(&mut self) -> Result<ast::general::PropertyName> {
         unimplemented!();
     }
 }

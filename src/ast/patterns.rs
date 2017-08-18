@@ -364,6 +364,8 @@ node_enum!(@node_display pub enum ObjectBindingPatternProperty {
 // ([     ] =
 node!(#[derive(Default)] pub struct ArrayBindingPattern {
     pub items: Vec<Option<ArrayBindingPatternElement>>,
+
+    // TODO: Maybe make this a BindingRestPattern
     pub rest: Option<Box<BindingPattern>>,
 });
 impl NodeDisplay for ArrayBindingPattern {
