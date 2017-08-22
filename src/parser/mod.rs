@@ -51,6 +51,20 @@ macro_rules! try_identifier {
         )
     }
 }
+macro_rules! try_numeric {
+    ($self:expr) => {
+        $self.peek(
+            |tok| if let &TokenType::NumericLiteral { ref value, ref raw } = tok { Some((value.clone(), raw.clone())) } else { None }
+        )
+    }
+}
+macro_rules! try_string {
+    ($self:expr) => {
+        $self.peek(
+            |tok| if let &TokenType::StringLiteral { ref value, ref raw } = tok { Some((value.clone(), raw.clone())) } else { None }
+        )
+    }
+}
 
 macro_rules! try_if_keyword {
     ($self:expr, $e:expr) => {
@@ -1132,7 +1146,38 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_property_name(&mut self) -> Result<ast::general::PropertyName> {
-        unimplemented!();
+        if let Some((value, raw)) = try_identifier!(self) {
+            return Ok(ast::general::PropertyIdentifier {
+                value,
+                raw,
+                position: None,
+            }.into())
+        }
+        if let Some((value, raw)) = try_string!(self) {
+            return Ok(ast::literal::String {
+                value,
+                raw,
+                position: None,
+            }.into())
+        }
+        if let Some((value, raw)) = try_numeric!(self) {
+            return Ok(ast::literal::Numeric {
+                value,
+                raw,
+                position: None,
+            }.into())
+        }
+        if try_if_token!(self, TokenType::LSquare) {
+            let expression = self.parse_expression()?.into();
+            eat_token!(self, TokenType::RSquare);
+
+            return Ok(ast::general::ComputedPropertyName {
+                expression,
+                position: None,
+            }.into())
+        }
+
+        Err(ParseError::new("expected property name"))
     }
 }
 
