@@ -1,3 +1,5 @@
+use ast::{SeparatorTokens, KeywordData, CommentIterator, LeadingComments};
+
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
                    LookaheadSequence};
 
@@ -9,27 +11,52 @@ use ast::general::{BindingIdentifier, PropertyIdentifier, PropertyName};
 
 use ast::alias;
 
+node!(pub struct ClassHeritage {
+    pub token_extends: KeywordData,
+    pub tokens_extends_post: SeparatorTokens,
+    pub expression: Option<Box<alias::Expression>>,
+});
+impl NodeDisplay for ClassHeritage {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.keyword(Keyword::Extends, &self.token_extends);
+        // f.separator(&self.tokens_extends_post);
+        f.require_precedence(Precedence::LeftHand).node(&self.expression)?;
+
+        Ok(())
+    }
+}
+
+node!(pub struct ClassName {
+    pub tokens_prefix: SeparatorTokens,
+    pub id: BindingIdentifier,
+});
+impl NodeDisplay for ClassName {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        // f.separator(&self.tokens_prefix);
+        f.node(&self.id)
+    }
+}
+
 // export default class name {}
 node!(#[derive(Default)] pub struct ExportDefaultClassDeclaration {
     pub decorators: Vec<ClassDecorator>, // experimental
-    pub id: Option<BindingIdentifier>,
-    pub extends: Option<Box<alias::Expression>>,
+    pub token_export: KeywordData,
+    pub token_default: KeywordData,
+    pub token_class: KeywordData,
+    pub id: Option<ClassName>,
+    pub heritage: Option<ClassHeritage>,
     pub body: ClassBody,
 });
 impl NodeDisplay for ExportDefaultClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.keyword(Keyword::Export);
-        f.keyword(Keyword::Default);
+        f.keyword(Keyword::Export, &self.token_export);
+        f.keyword(Keyword::Default, &self.token_default);
 
         f.node_list(&self.decorators)?;
-        f.keyword(Keyword::Class);
+        f.keyword(Keyword::Class, &self.token_class);
 
         f.node(&self.id)?;
-
-        if let Some(ref extends) = self.extends {
-            f.keyword(Keyword::Extends);
-            f.require_precedence(Precedence::LeftHand).node(extends)?;
-        }
+        f.node(&self.heritage)?;
         f.node(&self.body)
     }
 }
@@ -93,23 +120,19 @@ mod tests_class_export_default {
 // class name {}
 node!(pub struct ClassDeclaration {
     pub decorators: Vec<ClassDecorator>, // experimental
-    pub id: BindingIdentifier,
-    pub extends: Option<Box<alias::Expression>>,
+    pub token_class: KeywordData,
+    pub id: ClassName,
+    pub heritage: Option<ClassHeritage>,
     pub body: ClassBody,
 });
 impl NodeDisplay for ClassDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node_list(&self.decorators)?;
 
-        f.keyword(Keyword::Class);
+        f.keyword(Keyword::Class, &self.token_class);
 
         f.node(&self.id)?;
-
-        if let Some(ref expr) = self.extends {
-            f.keyword(Keyword::Extends);
-            f.require_precedence(Precedence::LeftHand).node(expr)?;
-        }
-
+        f.node(&self.heritage)?;
         f.node(&self.body)
     }
 }
@@ -151,8 +174,9 @@ mod tests_class_declaration {
 // (class {})
 node!(#[derive(Default)] pub struct ClassExpression {
     pub decorators: Vec<ClassDecorator>, // experimental
-    pub id: Option<BindingIdentifier>,
-    pub extends: Option<Box<alias::Expression>>,
+    pub token_class: KeywordData,
+    pub id: Option<ClassName>,
+    pub heritage: Option<ClassHeritage>,
     pub body: ClassBody,
 });
 impl NodeDisplay for ClassExpression {
@@ -161,15 +185,10 @@ impl NodeDisplay for ClassExpression {
 
         f.node_list(&self.decorators)?;
 
-        f.keyword(Keyword::Class);
+        f.keyword(Keyword::Class, &self.token_class);
 
         f.node(&self.id)?;
-
-        if let Some(ref expr) = self.extends {
-            f.keyword(Keyword::Extends);
-            f.require_precedence(Precedence::LeftHand).node(expr)?;
-        }
-
+        f.node(&self.heritage)?;
         f.node(&self.body)
     }
 }
@@ -228,7 +247,9 @@ mod tests_class_expression {
 
 
 node!(#[derive(Default)] pub struct ClassBody {
+    pub token_curly_l: KeywordData,
     pub items: Vec<ClassItem>,
+    pub token_curly_r: KeywordData,
 });
 impl NodeDisplay for ClassBody {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -238,7 +259,9 @@ impl NodeDisplay for ClassBody {
     }
 }
 
-node!(#[derive(Default)] pub struct ClassEmpty {});
+node!(#[derive(Default)] pub struct ClassEmpty {
+    pub token: KeywordData,
+});
 impl NodeDisplay for ClassEmpty {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.punctuator(Punctuator::Semicolon);
@@ -255,7 +278,7 @@ node_enum!(@node_display pub enum ClassItem {
 });
 
 // experimental
-node_enum!(@node_display pub enum ClassFieldId {
+node_enum!(@node_display @leading_comments pub enum ClassFieldId {
     Public(PropertyName),
     Private(PropertyIdentifier),
 });
@@ -263,27 +286,36 @@ node_enum!(@node_display pub enum ClassFieldId {
 // experimental
 node!(pub struct ClassField {
     pub decorators: Vec<ClassItemDecorator>,
-    pub pos: FieldPosition,
+    pub pos: Option<StaticPosition>,
     pub id: ClassFieldId,
-    pub value: Option<alias::Expression>,
+    pub init: Option<general::Initializer>,
 });
 impl NodeDisplay for ClassField {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node_list(&self.decorators)?;
 
         f.node(&self.pos)?;
-
         f.node(&self.id)?;
+        f.node(&self.init)?;
 
-        if let Some(ref val) = self.value {
-            f.punctuator(Punctuator::Eq);
-            f.require_precedence(Precedence::Assignment).node(val)?;
-        }
         f.punctuator(Punctuator::Semicolon);
 
         Ok(())
     }
 }
+// impl LeadingComments for ClassField {
+//     fn leading_comments(&self) -> CommentIterator {
+//         if let Some(ref dec) = self.decorators.get(0) {
+//             dec.leading_comments()
+//         } else if let Some(ref pos) = self.pos {
+//             pos.leading_comments()
+//         } else {
+//             self.id.leading_comments()
+//         }
+//     }
+// }
+
+
 #[cfg(test)]
 mod tests_class_field {
     use super::*;
@@ -348,7 +380,7 @@ mod tests_class_field {
 
 node!(pub struct ClassMethod {
     pub decorators: Vec<ClassItemDecorator>,
-    pub pos: FieldPosition,
+    pub pos: Option<StaticPosition>,
     pub kind: MethodKind,
     pub id: ClassFieldId,
     pub params: FunctionParams,
@@ -423,25 +455,23 @@ mod tests_class_method {
 
 
 
-node_kind!(pub enum FieldPosition {
-    Instance,
-    Static,
+node!(#[derive(Default)] pub struct StaticPosition {
+    pub token_static: KeywordData,
 });
-impl NodeDisplay for FieldPosition {
+impl NodeDisplay for StaticPosition {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        if let FieldPosition::Static = *self {
-            f.keyword(Keyword::Static);
-        }
+        f.keyword(Keyword::Static);
         Ok(())
     }
 }
-impl Default for FieldPosition {
-    fn default() -> FieldPosition {
-        FieldPosition::Instance
-    }
-}
+// impl LeadingComments for StaticPosition {
+//     fn leading_comments(&self) -> CommentIterator {
+//         CommentIterator::new(&self.token_static)
+//     }
+// }
 
 node!(pub struct ClassDecorator {
+    pub tokens_prefix: SeparatorTokens,
     pub value: DecoratorValue,
 });
 impl NodeDisplay for ClassDecorator {
@@ -453,6 +483,7 @@ impl NodeDisplay for ClassDecorator {
 impl<T: Into<DecoratorValue>> From<T> for ClassDecorator {
     fn from(obj: T) -> ClassDecorator {
         ClassDecorator {
+            tokens_prefix: Default::default(),
             value: obj.into(),
             position: None,
         }
@@ -460,6 +491,7 @@ impl<T: Into<DecoratorValue>> From<T> for ClassDecorator {
 }
 
 node!(pub struct ClassItemDecorator {
+    pub tokens_prefix: SeparatorTokens,
     pub value: DecoratorValue,
 });
 impl NodeDisplay for ClassItemDecorator {
@@ -468,9 +500,15 @@ impl NodeDisplay for ClassItemDecorator {
         f.node(&self.value)
     }
 }
+// impl LeadingComments for ClassItemDecorator {
+//     fn leading_comments(&self) -> CommentIterator {
+//         CommentIterator::new(&self.tokens_prefix)
+//     }
+// }
 impl<T: Into<DecoratorValue>> From<T> for ClassItemDecorator {
     fn from(obj: T) -> ClassItemDecorator {
         ClassItemDecorator {
+            tokens_prefix: Default::default(),
             value: obj.into(),
             position: None,
         }

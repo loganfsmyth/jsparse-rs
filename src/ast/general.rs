@@ -1,6 +1,8 @@
 use std::string;
 
-use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Precedence};
+use ast::{MaybeTokenPosition, KeywordWrappedData};
+
+use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Precedence, Punctuator};
 use ast::alias;
 use ast::literal;
 
@@ -117,3 +119,30 @@ impl NodeDisplay for ComputedPropertyName {
         Ok(())
     }
 }
+
+
+node!(pub struct Initializer {
+    pub token_eq: KeywordWrappedData,
+    pub expression: Box<alias::Expression>,
+});
+impl NodeDisplay for Initializer {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.punctuator(Punctuator::Eq, &self.token_eq);
+        f.require_precedence(Precedence::Assignment).node(&self.expression)
+    }
+}
+impl From<alias::Expression> for Initializer {
+    fn from(expression: alias::Expression) -> Initializer {
+        Initializer {
+            expression,
+            position: None,
+        }
+    }
+}
+// impl<T: Into<Expression>> From<T> for Initializer {
+//     fn from(v: T) -> Initializer {
+//         Initializer {
+//             expression: v.into(),
+//         }
+//     }
+// }

@@ -1,5 +1,7 @@
 use std::string;
 
+use ast::MaybeTokenPosition;
+
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence};
 
 use ast::alias;

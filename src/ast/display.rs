@@ -1,6 +1,8 @@
 use std::fmt;
 use std::fmt::Write;
 
+use ast::{MaybeTokenPosition, KeywordData};
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Punctuator {
     Eq,
@@ -80,6 +82,8 @@ pub enum Punctuator {
 
     SlashAngle,
     AngleSlash,
+
+    QuestionPeriod,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -391,8 +395,8 @@ impl NodeFormatter {
 
     /// Creates a formatter lock that will wrap the output in curly brackets
     /// if orphan if blocks are currently disallowed.
-    pub fn wrap_orphan_if<'a>(&'a mut self, is_orphan: bool) -> FormatterLock<'a> {
-        if !is_orphan || !self.wrap_standalone_if {
+    pub fn wrap_orphan_if<'a>(&'a mut self) -> FormatterLock<'a> {
+        if !self.wrap_standalone_if {
             return FormatterLock::new(self, Box::new(move |_fmt| {}));
         }
 
@@ -400,12 +404,12 @@ impl NodeFormatter {
     }
 
     /// Prints a list of items with commas between them.
-    pub fn comma_list<T: NodeDisplay>(&mut self, list: &[T]) -> NodeDisplayResult {
-        for (i, item) in list.iter().enumerate() {
-            if i != 0 {
-                self.punctuator(Punctuator::Comma);
-            }
-            self.require_precedence(Precedence::Assignment).node(item)?;
+    pub fn comma_list<T: NodeDisplay>(&mut self, list: &[(T, KeywordData)]) -> NodeDisplayResult {
+        let mut f = self.require_precedence(Precedence::Assignment);
+
+        for &(ref item, ref dat) in list {
+            f.node(item)?;
+            f.punctuator(Punctuator::Comma, dat);
         }
 
         Ok(())
@@ -424,8 +428,12 @@ impl NodeFormatter {
         s.fmt(self)
     }
 
+    // pub fn separators<T: Separators>(&mut self, s: &T) {
+    //     unimplemented!();
+    // }
+
     /// Prints a given keyword.
-    pub fn keyword(&mut self, t: Keyword) {
+    pub fn keyword(&mut self, t: Keyword, _pos: &KeywordData) {
         // println!("{:?}", t);
 
         if self.ends_with_keyword {
@@ -489,7 +497,7 @@ impl NodeFormatter {
     }
 
     /// Prints a given punctuator.
-    pub fn punctuator(&mut self, p: Punctuator) {
+    pub fn punctuator(&mut self, p: Punctuator, _pos: &KeywordData) {
         self.ends_with_keyword = false;
         self.ends_with_integer = false;
         self.lookahead_restriction = None;
@@ -549,6 +557,7 @@ impl NodeFormatter {
             Punctuator::TemplateTick => write!(self, "`"),
             Punctuator::SlashAngle => write!(self, "/>"),
             Punctuator::AngleSlash => write!(self, "</"),
+            Punctuator::QuestionPeriod => write!(self, "?."),
         }.unwrap()
     }
 

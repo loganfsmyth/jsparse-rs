@@ -56,6 +56,17 @@ macro_rules! node_enum {
             }
         }
     };
+    (@impl @leading_comments $name:ident { $( $key:ident($type:ty) ,)* }) => {
+        impl $crate::ast::LeadingComments for $name {
+            fn leading_comments(&self) -> $crate::ast::CommentIterator {
+                match *self {
+                    $(
+                        $name::$key(ref n) => n.leading_comments(),
+                    )*
+                }
+            }
+        }
+    };
 
     (@$label1:ident @$label2:ident @$label3:ident @$label4:ident $($it:tt)*) => {
         node_enum!((@$label1 @$label2 @$label3 @$label4) $($it)*);
@@ -132,6 +143,8 @@ pub mod patterns;
 pub mod root;
 pub mod statement;
 
+use std::iter::Iterator;
+
 #[derive(Debug)]
 pub struct NodePosition {
     pub start: usize,
@@ -143,4 +156,69 @@ pub struct NodePosition {
 pub struct PositionRange {
     pub start: (usize, usize),
     pub end: (usize, usize),
+}
+
+pub type MaybeTokenPosition = Option<Box<PositionRange>>;
+pub type SeparatorTokens = Vec<Separators>;
+
+pub type SeparatorTokensSingleLine = Vec<Separators>;
+
+#[derive(Default, Debug)]
+pub struct KeywordData {
+    prefix: SeparatorTokens,
+    position: MaybeTokenPosition,
+}
+#[derive(Default, Debug)]
+pub struct KeywordSuffixData {
+    position: MaybeTokenPosition,
+    suffix: SeparatorTokens,
+}
+#[derive(Default, Debug)]
+pub struct KeywordWrappedData {
+    position: MaybeTokenPosition,
+    suffix: SeparatorTokens,
+}
+
+
+pub trait LeadingComments {
+    fn leading_comments(&self) -> CommentIterator;
+}
+
+pub trait SeparatorList {
+    // fn
+
+}
+
+#[derive(Debug)]
+pub enum Separators {
+    Comment(CommentNode),
+    Whitespace,
+}
+
+pub struct CommentNode;
+
+pub struct CommentIterator<'a> {
+    it: ::std::slice::Iter<'a, Separators>,
+}
+impl<'a> CommentIterator<'a> {
+    fn new(v: &'a Vec<Separators>) -> CommentIterator<'a> {
+        CommentIterator {
+            it: v.iter(),
+        }
+    }
+}
+impl<'a> Iterator for CommentIterator<'a> {
+    type Item = &'a CommentNode;
+
+    fn next(&mut self) -> Option<&'a CommentNode> {
+        while let Some(sep) = self.it.next() {
+            match *sep {
+                Separators::Comment(ref comment) => {
+                    return Some(comment);
+                }
+                _ => {},
+            }
+        }
+        None
+    }
 }

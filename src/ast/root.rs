@@ -1,3 +1,5 @@
+use ast::MaybeTokenPosition;
+
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult};
 
 use ast::functions::Directive;

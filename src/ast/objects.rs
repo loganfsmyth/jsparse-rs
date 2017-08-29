@@ -1,5 +1,7 @@
 use std::default;
 
+use ast::{MaybeTokenPosition, KeywordData, SeparatorTokens};
+
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
                    LookaheadSequence};
 
@@ -8,10 +10,24 @@ use ast::alias;
 use ast::general::PropertyName;
 use ast::functions::{FunctionParams, FunctionBody};
 
+// experimental
+node!(pub struct ObjectSpreadElement {
+    pub expression: Box<alias::Expression>,
+});
+impl NodeDisplay for ObjectSpreadElement {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.punctuator(Punctuator::Ellipsis);
+        f.require_precedence(Precedence::Assignment).node(&self.expression)?;
+        Ok(())
+    }
+}
+
 // {a: 1, ...b}
 node!(#[derive(Default)] pub struct ObjectExpression {
-    pub properties: Vec<ObjectItem>,
-    pub spread: Option<Box<alias::Expression>>, // experimental
+    pub token_curly_left: MaybeTokenPosition,
+    pub properties: Vec<(ObjectItem, KeywordData)>,
+    pub last_property: Option<ObjectItem>,
+    pub token_curly_right: MaybeTokenPosition,
 });
 impl NodeDisplay for ObjectExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
@@ -19,15 +35,7 @@ impl NodeDisplay for ObjectExpression {
         let mut f = f.wrap_curly();
 
         f.comma_list(&self.properties)?;
-
-        if let Some(ref expr) = self.spread {
-            if !self.properties.is_empty() {
-                f.punctuator(Punctuator::Comma);
-            }
-
-            f.punctuator(Punctuator::Ellipsis);
-            f.require_precedence(Precedence::Assignment).node(expr)?;
-        }
+        f.node(&self.last_property)?;
 
         Ok(())
     }
@@ -104,6 +112,7 @@ mod tests_object_expression {
 node_enum!(@node_display pub enum ObjectItem {
     Method(ObjectMethod),
     Property(ObjectProperty),
+    Spread(ObjectSpreadElement),
 });
 
 
@@ -298,31 +307,47 @@ mod tests_object_property {
 }
 
 
+node_enum!(@node_display pub enum ArrayItem {
+    Expression(ArrayExpressionItem),
+    Spread(ArraySpreadItem),
+});
+
+node!(pub struct ArrayExpressionItem {
+    pub token_prefix: SeparatorTokens,
+    pub expression: Box<alias::Expression>,
+});
+impl NodeDisplay for ArrayExpressionItem {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let mut f = f.require_precedence(Precedence::Assignment);
+        f.node(&self.expression)
+    }
+}
+node!(pub struct ArraySpreadItem {
+    pub token_prefix: SeparatorTokens,
+    pub expression: Box<alias::Expression>,
+
+});
+impl NodeDisplay for ArraySpreadItem {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        let mut f = f.require_precedence(Precedence::Assignment);
+
+        f.punctuator(Punctuator::Ellipsis);
+        f.node(&self.expression)
+    }
+}
+
 // [1, 2, 3, ...4]
 node!(#[derive(Default)] pub struct ArrayExpression {
-    pub elements: Vec<Option<Box<alias::Expression>>>,
-    pub spread: Option<Box<alias::Expression>>,
+    pub elements: Vec<(ArrayExpressionItem, KeywordData)>,
+    pub last_element: ArrayExpressionItem,
 });
 impl NodeDisplay for ArrayExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.precedence(Precedence::Primary);
         let mut f = f.wrap_square();
 
-        let mut f = f.require_precedence(Precedence::Assignment);
         f.comma_list(&self.elements)?;
-
-        // TODO: This is not handling comma elision property, it loses an item.
-
-        if let Some(ref expr) = self.spread {
-            if !self.elements.is_empty() {
-                f.punctuator(Punctuator::Comma);
-            }
-
-            f.punctuator(Punctuator::Ellipsis);
-            f.node(expr)?;
-        }
-
-        Ok(())
+        f.node(&self.last_element)
     }
 }
 #[cfg(test)]

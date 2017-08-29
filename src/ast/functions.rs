@@ -1,10 +1,13 @@
 use std::string;
 use std::default;
 
+use ast::{MaybeTokenPosition, KeywordData, SeparatorTokens};
+
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
                    LookaheadRestriction, LookaheadSequence};
 
 use ast::general::BindingIdentifier;
+use ast::general;
 use ast::alias;
 use ast::patterns::BindingPattern;
 
@@ -13,11 +16,12 @@ use ast::decorators::DecoratorValue;
 
 node!(pub struct Directive {
     pub value: DirectiveLiteral,
+    pub token_semi: KeywordData,
 });
 impl NodeDisplay for Directive {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node(&self.value)?;
-        f.punctuator(Punctuator::Semicolon);
+        f.punctuator(Punctuator::Semicolon, &self.token_semi);
         Ok(())
     }
 }
@@ -25,6 +29,7 @@ impl<T: Into<DirectiveLiteral>> From<T> for Directive {
     fn from(v: T) -> Directive {
         Directive {
             value: v.into(),
+            token_semi: Default::default(),
             position: None,
         }
     }
@@ -40,6 +45,7 @@ mod tests_directive {
 }
 
 node!(pub struct DirectiveLiteral {
+    pub tokens_prefix: SeparatorTokens,
     pub value: string::String,
 });
 impl NodeDisplay for DirectiveLiteral {
@@ -52,6 +58,7 @@ impl NodeDisplay for DirectiveLiteral {
 impl<T: Into<string::String>> From<T> for DirectiveLiteral {
     fn from(v: T) -> DirectiveLiteral {
         DirectiveLiteral {
+            tokens_prefix: Default::default(),
             value: v.into(),
             position: None,
         }
@@ -105,23 +112,15 @@ impl NodeDisplay for FunctionKind {
 
 
 node!(#[derive(Default)] pub struct FunctionParams {
-    pub params: Vec<FunctionParam>,
-    pub rest: Option<FunctionRestParam>,
+    pub params: Vec<(FunctionParam, KeywordData)>,
+    pub last_param: Option<FunctionLastParam>,
 });
 impl NodeDisplay for FunctionParams {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         let mut f = f.wrap_parens();
 
         f.comma_list(&self.params)?;
-
-        if let Some(ref param) = self.rest {
-            if !self.params.is_empty() {
-                f.punctuator(Punctuator::Comma);
-            }
-
-            f.node(param)?;
-        }
-        Ok(())
+        f.node(&self.last_param)
     }
 }
 #[cfg(test)]
@@ -204,22 +203,24 @@ mod tests_function_params {
     }
 }
 
+node_enum!(@node_display pub enum FunctionLastParam {
+    Param(FunctionParam),
+    Rest(FunctionRestParam),
+});
+
 
 node!(pub struct FunctionParam {
     pub decorators: Vec<FunctionParamDecorator>, // experimental
     pub id: BindingPattern,
-    pub init: Option<Box<alias::Expression>>,
+    pub init: Option<general::Initializer>,
 });
 impl NodeDisplay for FunctionParam {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.node_list(&self.decorators)?;
 
         f.node(&self.id)?;
+        f.node(&self.init)?;
 
-        if let Some(ref init) = self.init {
-            f.punctuator(Punctuator::Eq);
-            f.node(init)?;
-        }
         Ok(())
     }
 }

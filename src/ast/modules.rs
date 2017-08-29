@@ -1,5 +1,7 @@
 use std::string;
 
+use ast::{MaybeTokenPosition, KeywordData, KeywordWrappedData};
+
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Keyword, Punctuator, Precedence,
                    LookaheadRestriction};
 
@@ -18,7 +20,6 @@ node!(pub struct ModuleIdentifier {
     pub value: string::String,
     pub raw: Option<string::String>,
 });
-
 impl NodeDisplay for ModuleIdentifier {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.identifier(&self.value, self.raw.as_ref().map(string::String::as_str))
@@ -43,42 +44,55 @@ impl<T: Into<string::String>> From<T> for ModuleIdentifier {
     }
 }
 
-
-node!(pub struct ImportSpecifier {
-    pub local: BindingIdentifier,
-    pub imported: Option<ModuleIdentifier>,
+node_enum!(@node_display pub enum ImportSpecifier {
+    Normal(NormalImportSpecifier),
+    Aliased(AliasedImportSpecifier),
 });
-impl NodeDisplay for ImportSpecifier {
-    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.node(&self.local)?;
 
-        if let Some(ref imported) = self.imported {
-            f.keyword(Keyword::As);
-            f.node(imported)?;
-        }
-        Ok(())
+
+node!(pub struct NormalImportSpecifier {
+    pub local: BindingIdentifier,
+});
+impl NodeDisplay for NormalImportSpecifier {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.node(&self.local)
     }
 }
-impl From<BindingIdentifier> for ImportSpecifier {
-    fn from(b: BindingIdentifier) -> ImportSpecifier {
-        ImportSpecifier {
+impl From<BindingIdentifier> for NormalImportSpecifier {
+    fn from(b: BindingIdentifier) -> NormalImportSpecifier {
+        NormalImportSpecifier {
             local: b,
-            imported: None,
             position: None,
         }
     }
 }
 
+
+node!(pub struct AliasedImportSpecifier {
+    pub imported: ModuleIdentifier,
+    pub token_as: KeywordWrappedData,
+    pub local: BindingIdentifier,
+});
+impl NodeDisplay for AliasedImportSpecifier {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.node(&self.imported)?;
+        f.keyword(Keyword::As, &self.token_as);
+        f.node(&self.local)
+    }
+}
+
 // import foo from "";
 node!(pub struct ImportNamedDeclaration {
+    pub token_import: KeywordData,
     pub default: BindingIdentifier,
+    pub token_from: KeywordData,
     pub source: String,
 });
 impl NodeDisplay for ImportNamedDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.keyword(Keyword::Import);
+        f.keyword(Keyword::Import, &self.token_import);
         f.node(&self.default)?;
-        f.keyword(Keyword::From);
+        f.keyword(Keyword::From, &self.token_from);
         f.node(&self.source)?;
         f.punctuator(Punctuator::Semicolon);
         Ok(())
@@ -105,6 +119,7 @@ mod tests_import_named {
 
 // import foo, * as bar from "";
 node!(pub struct ImportNamedAndNamespaceDeclaration {
+    pub token_import: KeywordData,
     pub default: BindingIdentifier,
     pub namespace: BindingIdentifier,
     pub source: String,
@@ -145,6 +160,7 @@ mod tests_import_named_and_namespace {
 
 // import * as bar from "";
 node!(pub struct ImportNamespaceDeclaration {
+    pub token_import: KeywordData,
     pub namespace: BindingIdentifier,
     pub source: String,
 });
@@ -182,8 +198,10 @@ mod tests_import_namespace {
 // import foo, {bar} from "";
 // import foo, {bar as bar} from "";
 node!(pub struct ImportNamedAndSpecifiersDeclaration {
+    pub token_import: KeywordData,
     pub default: BindingIdentifier,
-    pub specifiers: Vec<ImportSpecifier>,
+    pub specifiers: Vec<(ImportSpecifier, KeywordData)>,
+    pub last_specifier: Option<ImportSpecifier>,
     pub source: String,
 });
 impl NodeDisplay for ImportNamedAndSpecifiersDeclaration {
@@ -191,7 +209,11 @@ impl NodeDisplay for ImportNamedAndSpecifiersDeclaration {
         f.keyword(Keyword::Import);
         f.node(&self.default)?;
         f.punctuator(Punctuator::Comma);
-        f.wrap_curly().comma_list(&self.specifiers)?;
+        {
+            let mut f = f.wrap_curly();
+            f.comma_list(&self.specifiers)?;
+            f.node(&self.last_specifier)?;
+        }
         f.keyword(Keyword::From);
         f.node(&self.source)?;
         f.punctuator(Punctuator::Semicolon);
@@ -242,13 +264,19 @@ mod tests_import_named_and_specifiers {
 // import {bar} from "";
 // import {bar as bar} from "";
 node!(pub struct ImportSpecifiersDeclaration {
-    pub specifiers: Vec<ImportSpecifier>,
+    pub token_import: KeywordData,
+    pub specifiers: Vec<(ImportSpecifier, KeywordData)>,
+    pub last_specifier: ImportSpecifier,
     pub source: String,
 });
 impl NodeDisplay for ImportSpecifiersDeclaration {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Import);
-        f.wrap_curly().comma_list(&self.specifiers)?;
+        {
+            let mut f = f.wrap_curly();
+            f.comma_list(&self.specifiers)?;
+            f.node(&self.last_specifier)?;
+        }
         f.keyword(Keyword::From);
         f.node(&self.source)?;
         f.punctuator(Punctuator::Semicolon);
@@ -298,6 +326,8 @@ mod tests_import_specifiers {
 
 // export default 4;
 node!(pub struct ExportDefaultExpression {
+    pub token_export: KeywordData,
+    pub token_default: KeywordData,
     pub expression: alias::Expression,
 });
 impl NodeDisplay for ExportDefaultExpression {
@@ -319,6 +349,8 @@ impl NodeDisplay for ExportDefaultExpression {
 impl<T: Into<alias::Expression>> From<T> for ExportDefaultExpression {
     fn from(val: T) -> ExportDefaultExpression {
         ExportDefaultExpression {
+            token_export: Default::default(),
+            token_default: Default::default(),
             expression: val.into(),
             position: None,
         }
@@ -360,6 +392,7 @@ mod tests_export_default_expression {
 
 // export class foo {}
 node!(pub struct ExportClassDeclaration {
+    pub token_export: KeywordData,
     pub exported: ClassDeclaration,
 });
 impl NodeDisplay for ExportClassDeclaration {
@@ -373,6 +406,7 @@ impl NodeDisplay for ExportClassDeclaration {
 
 // export function foo() {}
 node!(pub struct ExportFunctionDeclaration {
+    pub token_export: KeywordData,
     pub exported: FunctionDeclaration,
 });
 impl NodeDisplay for ExportFunctionDeclaration {
@@ -386,6 +420,7 @@ impl NodeDisplay for ExportFunctionDeclaration {
 
 // export var foo;
 node!(pub struct ExportVarStatement {
+    pub token_export: KeywordData,
     pub exported: VariableStatement,
 });
 impl NodeDisplay for ExportVarStatement {
@@ -399,6 +434,7 @@ impl NodeDisplay for ExportVarStatement {
 
 // export let foo;
 node!(pub struct ExportLetDeclaration {
+    pub token_export: KeywordData,
     pub exported: LetDeclaration,
 });
 impl NodeDisplay for ExportLetDeclaration {
@@ -412,6 +448,7 @@ impl NodeDisplay for ExportLetDeclaration {
 
 // export const foo;
 node!(pub struct ExportConstDeclaration {
+    pub token_export: KeywordData,
     pub exported: ConstDeclaration,
 });
 impl NodeDisplay for ExportConstDeclaration {
@@ -426,12 +463,20 @@ impl NodeDisplay for ExportConstDeclaration {
 // export {foo};
 // export {foo as bar};
 node!(#[derive(Default)] pub struct ExportLocalBindings {
-    pub specifiers: Vec<LocalExportSpecifier>,
+    pub token_export: KeywordData,
+    pub token_curly_left: MaybeTokenPosition,
+    pub specifiers: Vec<(LocalExportSpecifier, KeywordData)>,
+    pub last_specifier: Option<LocalExportSpecifier>,
+    pub token_curly_right: MaybeTokenPosition,
 });
 impl NodeDisplay for ExportLocalBindings {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Export);
-        f.wrap_curly().comma_list(&self.specifiers)?;
+        {
+            let mut f = f.wrap_curly();
+            f.comma_list(&self.specifiers)?;
+            f.node(&self.last_specifier);
+        }
         f.punctuator(Punctuator::Semicolon);
         Ok(())
     }
@@ -439,7 +484,11 @@ impl NodeDisplay for ExportLocalBindings {
 impl From<Vec<LocalExportSpecifier>> for ExportLocalBindings {
     fn from(v: Vec<LocalExportSpecifier>) -> ExportLocalBindings {
         ExportLocalBindings {
-            specifiers: v,
+            token_export: Default::default(),
+            token_curly_left: Default::default(),
+            specifiers: v.into_iter().map(|s| (s, Default::default())).collect(),
+            last_specifier: Default::default(),
+            token_curly_right: Default::default(),
             position: None,
         }
     }
@@ -467,29 +516,37 @@ mod tests_export_specifiers {
     }
 }
 
-
-node!(pub struct LocalExportSpecifier {
-    pub local: ReferenceIdentifier,
-    pub exported: Option<ModuleIdentifier>,
+node_enum!(@node_display pub enum LocalExportSpecifier {
+    Normal(NormalLocalExportSpecifier),
+    Aliased(AliasedLocalExportSpecifier),
 });
-impl NodeDisplay for LocalExportSpecifier {
-    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.node(&self.local)?;
 
-        if let Some(ref exported) = self.exported {
-            f.keyword(Keyword::As);
-            f.node(exported)?;
-        }
-        Ok(())
+node!(pub struct NormalLocalExportSpecifier {
+    pub local: ReferenceIdentifier,
+});
+impl NodeDisplay for NormalLocalExportSpecifier {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.node(&self.local)
     }
 }
-impl From<ReferenceIdentifier> for LocalExportSpecifier {
-    fn from(b: ReferenceIdentifier) -> LocalExportSpecifier {
-        LocalExportSpecifier {
+impl From<ReferenceIdentifier> for NormalLocalExportSpecifier {
+    fn from(b: ReferenceIdentifier) -> NormalLocalExportSpecifier {
+        NormalLocalExportSpecifier {
             local: b,
-            exported: None,
             position: None,
         }
+    }
+}
+
+node!(pub struct AliasedLocalExportSpecifier {
+    pub local: ReferenceIdentifier,
+    pub exported: ModuleIdentifier,
+});
+impl NodeDisplay for AliasedLocalExportSpecifier {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.node(&self.local)?;
+        f.keyword(Keyword::As);
+        f.node(&self.exported)
     }
 }
 
@@ -497,14 +554,23 @@ impl From<ReferenceIdentifier> for LocalExportSpecifier {
 // export {foo} from "";
 // export {foo as bar} from "";
 node!(pub struct ExportSourceSpecifiers {
-    pub specifiers: Vec<SourceExportSpecifier>,
+    pub token_export: MaybeTokenPosition,
+    pub token_curly_left: MaybeTokenPosition,
+    pub specifiers: Vec<(SourceExportSpecifier, KeywordData)>,
+    pub last_specifier: Option<SourceExportSpecifier>,
+    pub token_curly_right: MaybeTokenPosition,
+    pub token_from: MaybeTokenPosition,
     pub source: String,
 });
 impl NodeDisplay for ExportSourceSpecifiers {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
         f.keyword(Keyword::Export);
 
-        f.wrap_curly().comma_list(&self.specifiers)?;
+        {
+            let mut f = f.wrap_curly();
+            f.comma_list(&self.specifiers)?;
+            f.node(&self.last_specifier)?;
+        }
 
         f.keyword(Keyword::From);
         f.node(&self.source)?;
@@ -537,35 +603,47 @@ mod tests_export_source_specifiers {
     }
 }
 
-
-node!(pub struct SourceExportSpecifier {
-    pub imported: ModuleIdentifier,
-    pub exported: Option<ModuleIdentifier>,
+node_enum!(@node_display pub enum SourceExportSpecifier {
+    Normal(NormalSourceExportSpecifier),
+    Aliased(AliasedSourceExportSpecifier),
 });
-impl NodeDisplay for SourceExportSpecifier {
-    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        f.node(&self.imported)?;
 
-        if let Some(ref exported) = self.exported {
-            f.keyword(Keyword::As);
-            f.node(exported)?;
-        }
-        Ok(())
+
+node!(pub struct NormalSourceExportSpecifier {
+    pub imported: ModuleIdentifier,
+});
+impl NodeDisplay for NormalSourceExportSpecifier {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.node(&self.imported)
     }
 }
-impl From<ModuleIdentifier> for SourceExportSpecifier {
-    fn from(b: ModuleIdentifier) -> SourceExportSpecifier {
-        SourceExportSpecifier {
+impl From<ModuleIdentifier> for NormalSourceExportSpecifier {
+    fn from(b: ModuleIdentifier) -> NormalSourceExportSpecifier {
+        NormalSourceExportSpecifier {
             imported: b,
-            exported: None,
             position: None,
         }
+    }
+}
+
+node!(pub struct AliasedSourceExportSpecifier {
+    pub imported: ModuleIdentifier,
+    pub exported: ModuleIdentifier,
+});
+impl NodeDisplay for AliasedSourceExportSpecifier {
+    fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
+        f.node(&self.imported)?;
+        f.keyword(Keyword::As);
+        f.node(&self.exported)
     }
 }
 
 
 // export * from "";
 node!(pub struct ExportAllSpecifiers {
+    pub token_export: MaybeTokenPosition,
+    pub token_star: MaybeTokenPosition,
+    pub token_from: MaybeTokenPosition,
     pub source: String,
 });
 impl NodeDisplay for ExportAllSpecifiers {
@@ -597,7 +675,9 @@ mod tests_export_source_all {
 
 // export foo from "";
 node!(pub struct ExportNamedSpecifier {
+    pub token_export: MaybeTokenPosition,
     pub default: ModuleIdentifier,
+    pub token_from: MaybeTokenPosition,
     pub source: String,
 });
 impl NodeDisplay for ExportNamedSpecifier {
@@ -630,8 +710,11 @@ mod tests_export_named_default {
 
 // export foo, * as foo from "";
 node!(pub struct ExportNamedAndNamespace {
+    pub token_export: MaybeTokenPosition,
     pub default: ModuleIdentifier,
+    pub token_comma: MaybeTokenPosition,
     pub namespace: ModuleIdentifier,
+    pub token_from: MaybeTokenPosition,
     pub source: String,
 });
 impl NodeDisplay for ExportNamedAndNamespace {
@@ -652,6 +735,9 @@ impl NodeDisplay for ExportNamedAndNamespace {
 
 // export * as foo from "";
 node!(pub struct ExportNamespace {
+    pub token_export: MaybeTokenPosition,
+    pub token_star: MaybeTokenPosition,
+    pub token_as: MaybeTokenPosition,
     pub namespace: ModuleIdentifier,
     pub source: String,
 });
@@ -689,8 +775,14 @@ mod tests_export_namespace {
 // export foo, {foo} from "";
 // export foo, {foo as bar} from "";
 node!(pub struct ExportNamedAndSpecifiers {
+    pub token_export: MaybeTokenPosition,
     pub default: ModuleIdentifier,
-    pub specifiers: Vec<SourceExportSpecifier>,
+    pub token_comma: MaybeTokenPosition,
+    pub token_curly_left: MaybeTokenPosition,
+    pub specifiers: Vec<(SourceExportSpecifier, KeywordData)>,
+    pub last_specifier: Option<SourceExportSpecifier>,
+    pub token_curly_right: MaybeTokenPosition,
+    pub token_from: MaybeTokenPosition,
     pub source: String,
 });
 impl NodeDisplay for ExportNamedAndSpecifiers {
@@ -698,7 +790,11 @@ impl NodeDisplay for ExportNamedAndSpecifiers {
         f.keyword(Keyword::Export);
         f.node(&self.default)?;
         f.punctuator(Punctuator::Comma);
-        f.wrap_curly().comma_list(&self.specifiers)?;
+        {
+            let mut f = f.wrap_curly();
+            f.comma_list(&self.specifiers)?;
+            f.node(&self.last_specifier)?;
+        }
         f.keyword(Keyword::From);
         f.node(&self.source)?;
         f.punctuator(Punctuator::Semicolon);

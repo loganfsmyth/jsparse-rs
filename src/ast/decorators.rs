@@ -1,3 +1,5 @@
+use ast::MaybeTokenPosition;
+
 use ast::display::{NodeDisplay, NodeFormatter, NodeDisplayResult, Punctuator, Precedence};
 
 use ast::general::{ReferenceIdentifier, PropertyIdentifier};
@@ -7,22 +9,20 @@ use ast::expression::CallArguments;
 
 // experimental
 // TODO: Enum fix
-node_enum!(pub enum DecoratorValue {
+node_enum!(@node_display pub enum DecoratorValue {
     Property(DecoratorValueExpression),
     Call(DecoratorCallExpression),
-
-    // Backward-compat for older decorator spec
-    Expression(alias::Expression),
+    Expression(DecoratorExpression), // Backward-compat
 });
-impl NodeDisplay for DecoratorValue {
+
+
+// Backward-compat for older decorator spec
+node!(pub struct DecoratorExpression {
+    pub expression: alias::Expression,
+});
+impl NodeDisplay for DecoratorExpression {
     fn fmt(&self, f: &mut NodeFormatter) -> NodeDisplayResult {
-        match *self {
-            DecoratorValue::Property(ref n) => f.node(n),
-            DecoratorValue::Call(ref n) => f.node(n),
-            DecoratorValue::Expression(ref expr) => {
-                f.require_precedence(Precedence::Normal).node(expr)
-            }
-        }
+        f.require_precedence(Precedence::Normal).node(&self.expression)
     }
 }
 

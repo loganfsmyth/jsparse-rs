@@ -181,7 +181,7 @@ impl From<Statement> for StatementItem {
 }
 impl<T: Into<Expression>> From<T> for StatementItem {
     fn from(v: T) -> StatementItem {
-        StatementItem::Expression(statement::ExpressionStatement::from(v))
+        StatementItem::Expression(statement::ExpressionStatement::from(v.into()))
     }
 }
 
@@ -232,20 +232,86 @@ node_enum!(@node_display pub enum Expression {
     Template(expression::TemplateLiteral),
     Member(expression::MemberExpression),
     SuperMember(expression::SuperMemberExpression),
-    Binary(expression::BinaryExpression),
-    Unary(expression::UnaryExpression),
-    Update(expression::UpdateExpression),
+    // Binary(expression::BinaryExpression),
+    // Unary(expression::UnaryExpression),
+    // Update(expression::UpdateExpression),
     Call(expression::CallExpression),
     New(expression::NewExpression),
     ImportCall(expression::ImportCallExpression),
     SuperCall(expression::SuperCallExpression),
     Conditional(expression::ConditionalExpression),
-    Assign(expression::AssignmentExpression),
-    AssignUpdate(expression::AssignmentUpdateExpression),
+    // Assign(expression::AssignmentExpression),
+    // AssignUpdate(expression::AssignmentUpdateExpression),
     Sequence(expression::SequenceExpression),
     Arrow(functions::ArrowFunctionExpression),
     Do(expression::DoExpression),
     JSX(jsx::Element),
+
+    // BinaryExpression
+    // Add(AddExpression),
+    // Subtract(SubtractExpression),
+    // LeftShift(LeftShiftExpression),
+    // RightShift(RightShiftExpression),
+    // RightShiftSigned(RightShiftSignedExpression),
+    // Divide(DivideExpression),
+    // Multiply(MultiplyExpression),
+    // Modulus(ModulusExpression),
+    // BitAnd(BitAndExpression),
+    // BitOr(BitOrExpression),
+    // BitXor(BitXorExpression),
+    // Power(PowerExpression),
+    // Compare(EqualExpression),
+    // StrictCompare(StrictEqualExpression),
+    // NegateCompare(NegateEqualExpression),
+    // NegateStrictCompare(StrictNegateEqualExpression),
+    // LessThan(LessThanExpression),
+    // LessThanEq(LessThanEqualExpression),
+    // GreaterThan(GreaterThanExpression),
+    // GreaterThanEq(GreaterThanEqualExpression),
+    // In(InExpression),
+    // Instanceof(InstanceofExpression),
+    // And(AndExpression),
+    // Or(OrExpression),
+    // Bind(BindExpression), // experimental
+
+    // AssignmentUpdateExpression
+    // AddAssign(AddAssignExpression),
+    // SubtractAssign(SubtractAssignExpression),
+    // LeftShiftAssign(LeftShiftAssignExpression),
+    // RightShiftAssign(RightShiftAssignExpression),
+    // RightShiftSignedAssign(RightShiftSignedAssignExpression),
+    // DivideAssign(DivideAssignExpression),
+    // MultiplyAssign(MultipleAssignExpression),
+    // ModulusAssign(ModulusAssignExpression),
+    // BitAndAssign(BitAndAssignExpression),
+    // BitOrAssign(BitOrAssignExpression),
+    // BitXorAssign(BitXorAssignExpression),
+    // PowerAssign(PowerAssignExpression),
+
+    // // UpdateExpression
+    // PreIncrement(PreIncrementExpression),
+    // PreDecrement(PreDecrementExpression),
+    // PostIncrement(PostIncrementExpression),
+    // PostDecrement(PostDecrementExpression),
+
+    // // UnaryExpression
+    // Delete(DeleteExpression),
+    // Void(VoidExpression),
+    // Typeof(TypeofExpression),
+    // Positive(PositiveExpression),
+    // Negative(NegativeExpression),
+    // BitNegate(BitNegateExpression),
+    // Negate(NegateExpression),
+    // Await(AwaitExpression),
+    // Yield(YieldExpression),
+    // YieldDelegate(YieldDelegateExpression),
+    // Bind(BindMemberExpression),
+
+    // // MetaProperty
+    // NewTarget(NewTargetExpression),
+    // ImportMeta(ImportMetaExpression), // experimental
+    // FunctionSent(FunctionSentExpression), // experimental
+    // FunctionArguments(FunctionArgumentsExpression), // experimental
 });
 
 // impl<T: Into<general::ReferenceIdentifier>> From<T> for Expression {
