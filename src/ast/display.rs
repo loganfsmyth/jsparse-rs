@@ -2,6 +2,7 @@ use std::fmt;
 use std::fmt::Write;
 
 use ast::{MaybeTokenPosition, KeywordData};
+use ast;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Punctuator {
@@ -433,7 +434,7 @@ impl NodeFormatter {
     // }
 
     /// Prints a given keyword.
-    pub fn keyword(&mut self, t: Keyword, _pos: &KeywordData) {
+    pub fn keyword<T: KeywordData>(&mut self, t: Keyword, _pos: &T) {
         // println!("{:?}", t);
 
         if self.ends_with_keyword {
@@ -736,4 +737,22 @@ impl<T: NodeDisplay> NodeDisplay for Option<T> {
         }
         Ok(())
     }
+}
+
+trait KeywordData {
+  fn leading(&self) {
+
+  }
+
+  fn keyword(&self) {
+
+  }
+
+  fn trailing(&self) {
+
+  }
+}
+
+impl KeywordData for ast::KeywordData {
+
 }
