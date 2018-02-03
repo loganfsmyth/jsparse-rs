@@ -11,6 +11,9 @@ pub struct SliceTokenizer<T> {
     code: T,
 
     offset: usize,
+    line: usize,
+    column: usize,
+    byte_offset: usize,
 
     template_stack: Vec<bool>,
 }
@@ -25,8 +28,25 @@ impl<T> Tokenizer for SliceTokenizer<T>
 where
     T: Borrow<str>
 {
-    fn next_token(&self, _hint: &Hint) -> tokens::Token {
-        unimplemented!("tokenize slice")
+    fn next_token(&mut self, hint: &Hint) -> tokens::Token {
+        let s = &self.code.borrow()[self.byte_offset..];
+
+        let TokenResult(token, size) = read_next(s, hint);
+
+        self.offset += size.chars;
+
+        if let Some((byte_step, _)) = s.char_indices().skip(size.chars).next() {
+            self.byte_offset += byte_step
+        }
+
+        if size.lines == 0 {
+            self.column += size.width;
+        } else {
+            self.line += size.lines;
+            self.column = size.width;
+        }
+
+        token
     }
 }
 
@@ -39,7 +59,10 @@ where
     fn into_tokenizer(self) -> Self::Item {
         SliceTokenizer {
             code: self,
+            byte_offset: 0,
             offset: 0,
+            line: 1,
+            column: 0,
             template_stack: vec![],
         }
     }

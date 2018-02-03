@@ -37,7 +37,7 @@ pub struct Size {
 }
 
 pub trait Tokenizer: Clone {
-    fn next_token(&self, &Hint) -> tokens::Token;
+    fn next_token(&mut self, &Hint) -> tokens::Token;
 }
 
 pub trait IntoTokenizer {
