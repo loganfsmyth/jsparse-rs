@@ -8,32 +8,23 @@ mod tokenizer;
 pub use tokenizer::IntoTokenizer;
 pub use tokenizer::Tokenizer;
 
-// pub mod parser;
-
-#[derive(Debug)]
-pub struct Parser<T> {
-    tok: T
-}
-
-impl<T: Tokenizer> Parser<T>
-{
-    pub fn new<U>(code: U) -> Parser<T>
-    where
-        U: tokenizer::IntoTokenizer<Item = T>
-    {
-        Parser {
-            tok: code.into_tokenizer()
-        }
-    }
-}
+pub mod parser;
 
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// impl parser::Parser for ast::Ast {
+//     type Root = ast::Ast;
+//     type Directive = ();
 
-    #[test]
-    fn it_works() {
-        let p = Parser::new("a_var");
-    }
-}
+//     fn root(directives: Vec<Self::Directive>) -> Self::Root {
+
+//     }
+// }
+
+
+// struct TokenList {
+//     tokens: Vec<tokenizer::tokens::Token>,
+// }
+
+// impl parser::FromParser for TokenList {
+
+// }

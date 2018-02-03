@@ -1,39 +1,25 @@
-mod new;
+mod slice;
 pub mod tokens;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Hint {
   expression: bool,
   template: bool,
   strict: bool
 }
 impl Hint {
-    fn expression(mut self) -> Hint {
-        self.expression = true;
+    fn expression(mut self, expression: bool) -> Hint {
+        self.expression = expression;
         self
     }
-    fn template(mut self) -> Hint {
-        self.template = true;
+    fn template(mut self, template: bool) -> Hint {
+        self.template = template;
         self
     }
-    fn strict(mut self) -> Hint {
-        self.strict = true;
+    fn strict(mut self, strict: bool) -> Hint {
+        self.strict = strict;
         self
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Size {
-    // The number of characters in this token.
-    pub len: usize,
-
-    // The number of _new_ lines created by this token.
-    // \r\n counts as one line terminator.
-    pub lines: usize,
-
-    // The number of characters in the last line that this
-    // token covers.
-    pub width: usize,
 }
 
 pub trait Tokenizer: Clone {
@@ -45,20 +31,4 @@ pub trait IntoTokenizer {
 
     fn into_tokenizer(self) -> Self::Item;
 }
-
-
-// #[derive(Clone)]
-// pub struct IteratorTokenizer<T> {
-//     code: T,
-// }
-
-// impl<T> Tokenizer for IteratorTokenizer<T>
-// where
-//     T: Iterator<Item = char> + Clone
-// {
-//     fn next_token(&self, _hint: &Hint) -> tokens::Token {
-//         unimplemented!("tokenize iterator")
-//     }
-// }
-
 
