@@ -31,4 +31,3 @@ pub trait IntoTokenizer {
 
     fn into_tokenizer(self) -> Self::Item;
 }
-

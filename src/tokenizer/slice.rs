@@ -1052,7 +1052,7 @@ mod tests {
             let s: String = vec![code, " "].into_iter().collect();
 
             assert_eq!(
-                read_next(&s, &Hint::default().template()),
+                read_next(&s, &Hint::default().template(true)),
                 TokenResult(
                     tokens::TemplateToken {
                         format,
@@ -1123,7 +1123,7 @@ mod tests {
             let s: String = vec![code, " "].into_iter().collect();
 
             assert_eq!(
-                read_next(&s, &Hint::default().expression()),
+                read_next(&s, &Hint::default().expression(true)),
                 TokenResult(
                     tokens::RegularExpressionLiteralToken {
                         pattern: pattern.into(),
