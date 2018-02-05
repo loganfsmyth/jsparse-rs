@@ -8,26 +8,43 @@ pub struct Hint {
   strict: bool
 }
 impl Hint {
-    fn expression(mut self, expression: bool) -> Hint {
+    pub fn expression(mut self, expression: bool) -> Hint {
         self.expression = expression;
         self
     }
-    fn template(mut self, template: bool) -> Hint {
+    pub fn template(mut self, template: bool) -> Hint {
         self.template = template;
         self
     }
-    fn strict(mut self, strict: bool) -> Hint {
+    pub fn strict(mut self, strict: bool) -> Hint {
         self.strict = strict;
         self
     }
 }
 
-pub trait Tokenizer: Clone {
-    fn next_token(&mut self, &Hint) -> tokens::Token;
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct Position {
+    // A offset in the byte stream.
+    pub offset: usize,
+
+    // A 1-indexed line number, treating \r\n as a single line.
+    pub line: usize,
+
+    // A 0-indexed column number in code points.
+    pub column: usize,
 }
 
-pub trait IntoTokenizer {
-    type Item: Tokenizer;
+pub struct TokenRange {
+    pub start: Position,
+    pub end: Position,
+}
+
+pub trait Tokenizer<'code>: Clone {
+    fn next_token(&mut self, &Hint) -> (tokens::Token<'code>, TokenRange);
+}
+
+pub trait IntoTokenizer<'code> {
+    type Item: Tokenizer<'code>;
 
     fn into_tokenizer(self) -> Self::Item;
 }

@@ -3,16 +3,12 @@ use tokenizer::tokens;
 use tokenizer::tokens::{PunctuatorToken,
     TemplateFormat, CommentToken, CommentFormat};
 
-use tokenizer::{Hint, IntoTokenizer, Tokenizer};
+use tokenizer::{Hint, IntoTokenizer, Tokenizer, Position, TokenRange};
 
 #[derive(Debug)]
 pub struct SliceTokenizer<T> {
     code: T,
-
-    offset: usize,
-    line: usize,
-    column: usize,
-    byte_offset: usize,
+    position: Position,
 
     template_stack: Vec<bool>,
 }
@@ -23,52 +19,59 @@ impl<T> Clone for SliceTokenizer<T> {
     }
 }
 
-impl<T> Tokenizer for SliceTokenizer<T>
+impl<'code, T> Tokenizer<'code> for SliceTokenizer<T>
 where
-    T: Borrow<str>
+    T: Borrow<str> + 'code
 {
-    fn next_token(&mut self, hint: &Hint) -> tokens::Token {
-        let s = &self.code.borrow()[self.byte_offset..];
+    fn next_token(&mut self, hint: &Hint) -> (tokens::Token<'code>, TokenRange) {
+        let start = self.position;
 
-        let TokenResult(token, size) = read_next(s, hint);
+        let code_s: &'code str = self.code.borrow();
 
-        self.offset += size.chars;
+        let s = &code_s[self.position.offset..];
+
+        let result: TokenResult<'code> = read_next(s, hint);
+        let TokenResult(token, size) = result;
 
         if let Some((byte_step, _)) = s.char_indices().skip(size.chars).next() {
-            self.byte_offset += byte_step
+            self.position.offset += byte_step;
+        } else {
+            self.position.offset = code_s.len();
         }
 
         if size.lines == 0 {
-            self.column += size.width;
+            self.position.column += size.width;
         } else {
-            self.line += size.lines;
-            self.column = size.width;
+            self.position.line += size.lines;
+            self.position.column = size.width;
         }
 
-        token
+        let range = TokenRange {
+            start,
+            end: self.position,
+        };
+
+        (token, range)
     }
 }
 
-impl<T> IntoTokenizer for T
+impl<'code, T> IntoTokenizer<'code> for T
 where
-    T: Borrow<str>
+    T: Borrow<str> + 'code
 {
     type Item = SliceTokenizer<T>;
 
     fn into_tokenizer(self) -> Self::Item {
         SliceTokenizer {
             code: self,
-            byte_offset: 0,
-            offset: 0,
-            line: 1,
-            column: 0,
+            position: Default::default(),
             template_stack: vec![],
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TokenResult<'a>(tokens::Token<'a>, TokenSize);
+pub struct TokenResult<'code>(tokens::Token<'code>, TokenSize);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TokenSize {
@@ -689,7 +692,11 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
         b'\x0A' | b'\x0D' => {
             return TokenResult(
                 tokens::LineTerminatorToken {}.into(),
-                single_size(1),
+                TokenSize {
+                    chars: 1,
+                    lines: 1,
+                    width: 0,
+                },
             );
         }
 
@@ -705,7 +712,11 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                     '\u{2028}' | '\u{2029}' if i == 0 => {
                         return TokenResult(
                             tokens::LineTerminatorToken {}.into(),
-                            single_size(1),
+                            TokenSize {
+                                chars: 1,
+                                lines: 1,
+                                width: 0,
+                            },
                         );
                     }
                     _ => {}
@@ -1005,8 +1016,8 @@ mod tests {
                     tokens::LineTerminatorToken {}.into(),
                     TokenSize {
                         chars: 1,
-                        lines: 0,
-                        width: 1,
+                        lines: 1,
+                        width: 0,
                     },
                 ),
             );
