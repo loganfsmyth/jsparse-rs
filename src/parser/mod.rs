@@ -61,8 +61,12 @@ where
         }
     }
 
-    pub fn with_flag<'p>(&'p mut self, flag: Flags, val: bool) -> ParserProxy<'p, 'code, T> {
-        ParserProxy::new(self.p, flag, val)
+    pub fn with<'p>(&'p mut self, flag: Flags) -> ParserProxy<'p, 'code, T> {
+        ParserProxy::new(self.p, flag, true)
+    }
+
+    pub fn without<'p>(&'p mut self, flag: Flags) -> ParserProxy<'p, 'code, T> {
+        ParserProxy::new(self.p, flag, false)
     }
 }
 impl<'parser, 'code, T> Deref for ParserProxy<'parser, 'code, T>
@@ -124,7 +128,7 @@ where
     hint: Hint,
     flags: GrammarFlags,
     flags_stack: Vec<GrammarFlags>,
-    token: Option<tokens::Token<'code>>,
+    token: Option<LookaheadResult<'code>>,
     lookahead: Option<LookaheadResult<'code>>,
 }
 
@@ -133,8 +137,39 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         self.hint.expression(true);
     }
 
-    pub fn semicolon(&mut self) {
+    pub fn unexpected(&self) -> utils::InnerResult<()> {
+        Err(utils::ParseError::UnexpectedToken.into())
+    }
 
+    pub fn semicolon(&mut self) -> utils::InnerResult<()> {
+        self.semicolon_inner(false)
+    }
+    pub fn semicolon_dowhile(&mut self) -> utils::InnerResult<()> {
+        self.semicolon_inner(true)
+    }
+    fn semicolon_inner(&mut self, was_do_while: bool) -> utils::InnerResult<()> {
+        let exists = {
+            let (line, token) = self.token_and_line();
+
+            if let tokens::Token::Punctuator(tokens::PunctuatorToken::Semicolon) = *token {
+                true
+            } else if let tokens::Token::Punctuator(tokens::PunctuatorToken::CurlyClose) = *token {
+                false
+            } else if let tokens::Token::EOF(tokens::EOFToken { }) = *token {
+                false
+            } else if was_do_while || line {
+                false
+            } else {
+                return Err(utils::ParseError::UnexpectedToken.into())
+            }
+        };
+
+        if exists {
+            self.token = None;
+        } else {
+            self.hint.expression(true);
+        }
+        Ok(())
     }
 
     pub fn with<'parser>(&'parser mut self, flags: Flags) -> ParserProxy<'parser, 'code, T> {
@@ -180,20 +215,27 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     }
 
     pub fn token(&mut self) -> &tokens::Token {
+        self.token_and_line().1
+    }
+
+    fn token_and_line(&mut self) -> (bool, &tokens::Token) {
         if let None = self.token {
             if let Some(ahead) = self.lookahead.take() {
-                self.token = Some(ahead.token);
+                self.token = Some(ahead);
                 self.lookahead = None;
             } else {
                 // TODO
                 let hint = self.hint;
-                let token = self.read_token(&hint).1;
-                self.token = Some(token);
+                let (line, token) = self.read_token(&hint);
+                self.token = Some(LookaheadResult {
+                    line,
+                    token,
+                });
             }
         }
 
         match self.token {
-            Some(ref t) => t,
+            Some(LookaheadResult { line, ref token }) => (line, token),
             _ => unreachable!(),
         }
     }
