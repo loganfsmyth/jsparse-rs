@@ -98,7 +98,7 @@ pub struct Parser<'code, T: 'code> {
 
 
 
-struct LookaheadResult<'code> {
+pub struct LookaheadResult<'code> {
     line: bool,
     token: tokens::Token<'code>,
 }
@@ -137,11 +137,13 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
 
     pub fn token(&mut self) -> &tokens::Token {
         if let None = self.token {
-            if let Some(ahead) = self.lookahead {
+            if let Some(ahead) = self.lookahead.take() {
                 self.token = Some(ahead.token);
                 self.lookahead = None;
             } else {
-                let token = self.read_token(&self.hint).1;
+                // TODO
+                let hint = self.hint;
+                let token = self.read_token(&hint).1;
                 self.token = Some(token);
             }
         }
@@ -168,7 +170,8 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             return None;
         };
 
-        let (line, token) = self.read_token(&self.hint.expression(expect_expression));
+        let hint = self.hint.expression(expect_expression);
+        let (line, token) = self.read_token(&hint);
 
         self.lookahead = Some(LookaheadResult { line, token });
 

@@ -6,23 +6,20 @@ use tokenizer::tokens::{PunctuatorToken,
 use tokenizer::{Hint, IntoTokenizer, Tokenizer, Position, TokenRange};
 
 #[derive(Debug)]
-pub struct SliceTokenizer<T> {
-    code: T,
+pub struct SliceTokenizer<'code> {
+    code: &'code str,
     position: Position,
 
     template_stack: Vec<bool>,
 }
 
-impl<T> Clone for SliceTokenizer<T> {
+impl<'code> Clone for SliceTokenizer<'code> {
     fn clone(&self) -> Self {
         unimplemented!()
     }
 }
 
-impl<'code, T> Tokenizer<'code> for SliceTokenizer<T>
-where
-    T: Borrow<str> + 'code
-{
+impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
     fn next_token(&mut self, hint: &Hint) -> (tokens::Token<'code>, TokenRange) {
         let start = self.position;
 
@@ -55,11 +52,8 @@ where
     }
 }
 
-impl<'code, T> IntoTokenizer<'code> for T
-where
-    T: Borrow<str> + 'code
-{
-    type Item = SliceTokenizer<T>;
+impl<'code> IntoTokenizer<'code> for &'code str {
+    type Item = SliceTokenizer<'code>;
 
     fn into_tokenizer(self) -> Self::Item {
         SliceTokenizer {
