@@ -60,14 +60,13 @@ pub struct Parser<'code, T: 'code> {
     lookahead: Option<LookaheadResult<'code>>,
 }
 
-struct ParserProxy<'parser, P: 'parser> {
-    p: &'parser mut P,
+pub struct ParserProxy<'parser, 'code: 'parser, T: 'code> {
+    p: &'parser mut Parser<'code, T>,
     flag: Flags,
     val: bool,
 }
-impl<'parser, 'code, T> ParserProxy<'parser, Parser<'code, T>>
-{
-    fn new(p: &mut Parser<'code, T>, flag: Flags, val: bool) -> ParserProxy<'parser, Parser<'code, T>> {
+impl<'parser, 'code, T> ParserProxy<'parser, 'code, T> {
+    fn new(p: &'parser mut Parser<'code, T>, flag: Flags, val: bool) -> ParserProxy<'parser, 'code, T> {
         ParserProxy {
             p,
             flag,
@@ -75,27 +74,27 @@ impl<'parser, 'code, T> ParserProxy<'parser, Parser<'code, T>>
         }
     }
 
-    pub fn with_flag(&mut self, flag: Flags, val: bool) -> ParserProxy<'parser, Parser<'code, T>> {
+    pub fn with_flag<'p>(&'p mut self, flag: Flags, val: bool) -> ParserProxy<'p, 'code, T> {
         ParserProxy::new(self.p, flag, val)
     }
 }
-impl<'parser, 'code, T> Deref for ParserProxy<'parser, Parser<'code, T>> {
+impl<'parser, 'code, T> Deref for ParserProxy<'parser, 'code, T> {
     type Target = Parser<'code, T>;
 
-    fn deref<'a>(&'a self) -> &'a Parser<T> {
+    fn deref(&self) -> &Parser<'code, T> {
         self.p
     }
 }
-impl<'parser, 'code, T> DerefMut for ParserProxy<'parser, Parser<'code, T>> {
-    fn deref_mut(&mut self) -> &mut Parser<T> {
+impl<'parser, 'code, T> DerefMut for ParserProxy<'parser, 'code, T> {
+    fn deref_mut(&mut self) -> &mut Parser<'code, T> {
         self.p
     }
 }
-// impl<'parser, 'code, T> Drop for ParserProxy<'parser, T> {
-//     fn drop(&mut self) {
+impl<'parser, 'code, T> Drop for ParserProxy<'parser, 'code, T> {
+    fn drop(&mut self) {
 
-//     }
-// }
+    }
+}
 
 
 
@@ -113,7 +112,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
 
     }
 
-    pub fn with_flag<'parser>(&'parser mut self, flag: Flags, val: bool) -> ParserProxy<'parser, Parser<'code, T>> {
+    pub fn with_flag<'parser>(&'parser mut self, flag: Flags, val: bool) -> ParserProxy<'parser, 'code, T> {
         ParserProxy::new(self, flag, val)
     }
 
