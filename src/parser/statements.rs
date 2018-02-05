@@ -1,7 +1,11 @@
-use parser::Parser;
+use tokenizer::Tokenizer;
+use parser::{Parser, Flags};
 use parser::utils::{InnerResult, InnerError};
 
-impl<'a, T> Parser<'a, T> {
+impl<'code, T> Parser<'code, T>
+where
+    T: Tokenizer<'code>
+{
     pub fn parse_statement(&mut self) -> InnerResult<()> {
         self.expect_expression();
 
@@ -37,7 +41,7 @@ impl<'a, T> Parser<'a, T> {
     }
 
     pub fn parse_expression_statement(&mut self) -> InnerResult<()> {
-        self.with_in(true).parse_expression()?;
+        self.with(Flags::In).parse_expression()?;
 
         self.semicolon();
 

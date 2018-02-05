@@ -1,7 +1,11 @@
+use tokenizer::Tokenizer;
 use parser::Parser;
 use parser::utils::{InnerResult, InnerError};
 
-impl<'a, T> Parser<'a, T> {
+impl<'code, T> Parser<'code, T>
+where
+    T: Tokenizer<'code>
+{
     pub fn parse_script(&mut self) {
         let mut body = vec![];
         while let Ok(item) = self.parse_script_item() {

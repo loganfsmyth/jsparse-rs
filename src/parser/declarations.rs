@@ -1,7 +1,11 @@
+use tokenizer::Tokenizer;
 use parser::Parser;
 use parser::utils::{InnerResult, InnerError};
 
-impl<'a, T> Parser<'a, T> {
+impl<'code, T> Parser<'code, T>
+where
+    T: Tokenizer<'code>
+{
     pub fn parse_declaration(&mut self) -> InnerResult<()> {
         try_sequence!(
             self.parse_function_declaration(),
