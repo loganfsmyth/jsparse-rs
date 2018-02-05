@@ -60,38 +60,39 @@ pub struct Parser<'code, T: 'code> {
     lookahead: Option<LookaheadResult<'code>>,
 }
 
-// struct ParserProxy<'code, 'parser: 'code, T> {
-//     p: &'parser mut Parser<'code, T>,
-//     flag: Flags,
-//     val: bool,
-// }
-// impl<'a, T> ParserProxy<'a, T> {
-//     fn new<'b>(p: &mut Parser<'b>, flag: Flags, val: bool) -> ParserProxy<'b> {
-//         ParserProxy {
-//             p,
-//             flag,
-//             val,
-//         }
-//     }
+struct ParserProxy<'parser, P: 'parser> {
+    p: &'parser mut P,
+    flag: Flags,
+    val: bool,
+}
+impl<'parser, 'code, T> ParserProxy<'parser, Parser<'code, T>>
+{
+    fn new(p: &mut Parser<'code, T>, flag: Flags, val: bool) -> ParserProxy<'parser, Parser<'code, T>> {
+        ParserProxy {
+            p,
+            flag,
+            val,
+        }
+    }
 
-//     pub fn with_flag(&mut self, flag: Flags, val: bool) -> ParserProxy<'a> {
-//         ParserProxy::new(self.p, flag, val)
-//     }
-// }
-// impl<'a, T> Deref for ParserProxy<'a, T> {
-//     type Target = Parser<'a, T>;
+    pub fn with_flag(&mut self, flag: Flags, val: bool) -> ParserProxy<'parser, Parser<'code, T>> {
+        ParserProxy::new(self.p, flag, val)
+    }
+}
+impl<'parser, 'code, T> Deref for ParserProxy<'parser, Parser<'code, T>> {
+    type Target = Parser<'code, T>;
 
-//     fn deref(&self) -> &Parser {
-//         self.p
-//     }
-// }
-// impl<'a, T> DerefMut for ParserProxy<'a, T> {
-//     fn deref_mut(&mut self) -> &mut Parser {
-//         self.p
-//     }
-// }
-// impl<'a, T> Drop for ParserProxy<'a, T> {
-//     fn drop(&mut self) -> &mut Parser {
+    fn deref<'a>(&'a self) -> &'a Parser<T> {
+        self.p
+    }
+}
+impl<'parser, 'code, T> DerefMut for ParserProxy<'parser, Parser<'code, T>> {
+    fn deref_mut(&mut self) -> &mut Parser<T> {
+        self.p
+    }
+}
+// impl<'parser, 'code, T> Drop for ParserProxy<'parser, T> {
+//     fn drop(&mut self) {
 
 //     }
 // }
@@ -112,9 +113,9 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
 
     }
 
-    // pub fn with_flag<'parser>(&'parser mut self, flag: Flags, val: bool) -> ParserProxy<'code, 'parser, T> {
-    //     ParserProxy::new(self, flag, val)
-    // }
+    pub fn with_flag<'parser>(&'parser mut self, flag: Flags, val: bool) -> ParserProxy<'parser, Parser<'code, T>> {
+        ParserProxy::new(self, flag, val)
+    }
 
     fn read_token(&mut self, hint: &Hint) -> (bool, tokens::Token<'code>) {
         let mut line = false;
