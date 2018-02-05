@@ -1,6 +1,10 @@
 use std::result;
 
 pub type Result<T> = result::Result<T, ParseError>;
+pub type InnerResult<T> = result::Result<T, InnerError>;
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParseError {
     UnexpectedToken,
 }
@@ -10,7 +14,8 @@ impl From<ParseError> for InnerError {
     }
 }
 
-pub type InnerResult<T> = result::Result<T, InnerError>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InnerError {
     NotFound,
     Parse(ParseError),

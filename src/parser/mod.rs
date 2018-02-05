@@ -35,38 +35,26 @@ impl FromTokenizer for () {
             token: None,
         };
 
-        // p.parse_module();
+        p.parse_module().unwrap();
     }
 }
 
-pub struct ParserProxy<'parser, 'code: 'parser, T: 'code>
-where
-    T: Tokenizer<'code>
+pub struct ParserProxy<'parser, 'code: 'parser, T: Tokenizer<'code> + 'code>(&'parser mut Parser<'code, T>);
+
+impl<'parser, 'code, T: Tokenizer<'code>> ParserProxy<'parser, 'code, T>
 {
-    p: &'parser mut Parser<'code, T>,
-    flag: Flags,
-    val: bool,
-}
-impl<'parser, 'code, T> ParserProxy<'parser, 'code, T>
-where
-    T: Tokenizer<'code>
-{
-    fn new(p: &'parser mut Parser<'code, T>, flag: Flags, val: bool) -> ParserProxy<'parser, 'code, T> {
+    fn new(p: &'parser mut Parser<'code, T>, flag: Flag, val: bool) -> ParserProxy<'parser, 'code, T> {
         p.push_flags(flag, val);
 
-        ParserProxy {
-            p,
-            flag,
-            val,
-        }
+        ParserProxy(p)
     }
 
-    pub fn with<'p>(&'p mut self, flag: Flags) -> ParserProxy<'p, 'code, T> {
-        ParserProxy::new(self.p, flag, true)
+    pub fn with<'p>(&'p mut self, flag: Flag) -> ParserProxy<'p, 'code, T> {
+        ParserProxy::new(self.0, flag, true)
     }
 
-    pub fn without<'p>(&'p mut self, flag: Flags) -> ParserProxy<'p, 'code, T> {
-        ParserProxy::new(self.p, flag, false)
+    pub fn without<'p>(&'p mut self, flag: Flag) -> ParserProxy<'p, 'code, T> {
+        ParserProxy::new(self.0, flag, false)
     }
 }
 impl<'parser, 'code, T> Deref for ParserProxy<'parser, 'code, T>
@@ -76,7 +64,7 @@ where
     type Target = Parser<'code, T>;
 
     fn deref(&self) -> &Parser<'code, T> {
-        self.p
+        self.0
     }
 }
 impl<'parser, 'code, T> DerefMut for ParserProxy<'parser, 'code, T>
@@ -84,7 +72,7 @@ where
     T: Tokenizer<'code>
 {
     fn deref_mut(&mut self) -> &mut Parser<'code, T> {
-        self.p
+        self.0
     }
 }
 impl<'parser, 'code, T> Drop for ParserProxy<'parser, 'code, T>
@@ -92,10 +80,11 @@ where
     T: Tokenizer<'code>
 {
     fn drop(&mut self) {
-        self.p.pop_flags();
+        self.0.pop_flags();
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct LookaheadResult<'code> {
     line: bool,
     token: tokens::Token<'code>,
@@ -103,12 +92,13 @@ pub struct LookaheadResult<'code> {
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Flags {
+pub enum Flag {
     In,
     Yield,
     Await,
     Return,
     Default,
+    Strict,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -118,6 +108,7 @@ struct GrammarFlags {
     allow_await: bool,
     allow_return: bool,
     allow_default: bool,
+    is_strict: bool,
 }
 
 pub struct Parser<'code, T: 'code>
@@ -155,7 +146,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
                 true
             } else if let tokens::Token::Punctuator(tokens::PunctuatorToken::CurlyClose) = *token {
                 false
-            } else if let tokens::Token::EOF(tokens::EOFToken { }) = *token {
+            } else if let tokens::Token::EOF(_) = *token {
                 false
             } else if was_do_while || line {
                 false
@@ -172,23 +163,24 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         Ok(())
     }
 
-    pub fn with<'parser>(&'parser mut self, flags: Flags) -> ParserProxy<'parser, 'code, T> {
+    pub fn with<'parser>(&'parser mut self, flags: Flag) -> ParserProxy<'parser, 'code, T> {
         ParserProxy::new(self, flags, true)
     }
 
-    pub fn without<'parser>(&'parser mut self, flags: Flags) -> ParserProxy<'parser, 'code, T> {
+    pub fn without<'parser>(&'parser mut self, flags: Flag) -> ParserProxy<'parser, 'code, T> {
         ParserProxy::new(self, flags, true)
     }
 
-    fn push_flags(&mut self, flags: Flags, val: bool) {
+    fn push_flags(&mut self, flags: Flag, val: bool) {
         self.flags_stack.push(self.flags);
 
         match flags {
-            Flags::In => { self.flags.allow_in = val; }
-            Flags::Yield => { self.flags.allow_yield = val; }
-            Flags::Await => { self.flags.allow_await = val; }
-            Flags::Return => { self.flags.allow_return = val; }
-            Flags::Default => { self.flags.allow_default = val; }
+            Flag::In => { self.flags.allow_in = val; }
+            Flag::Yield => { self.flags.allow_yield = val; }
+            Flag::Await => { self.flags.allow_await = val; }
+            Flag::Return => { self.flags.allow_return = val; }
+            Flag::Default => { self.flags.allow_default = val; }
+            Flag::Strict => { self.flags.is_strict = val; }
         }
     }
     fn pop_flags(&mut self) {
@@ -209,7 +201,10 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
                         line = true;
                     }
                 }
-                t => break (line, t),
+                t => {
+                    println!("{:?}", (line, t.clone()));
+                    break (line, t);
+                },
             }
         }
     }
@@ -245,13 +240,9 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             return Some(lookahead);
         }
 
+        let flags = self.flags;
         let expect_expression = if let tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) = *self.token() {
-            match &**name {
-                "case" | "throw" | "try" | "do" | "return" | "new" | "typeof" | "delete" | "void" | "await" | "yield" => {
-                    true
-                }
-                _ => false,
-            }
+            !is_binding_identifier(&flags, name)
         } else {
             return None;
         };
@@ -269,11 +260,14 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     }
 
     pub fn try_punc(&mut self, punc: tokens::PunctuatorToken) -> utils::InnerResult<()> {
-        if true {
-            Ok(())
-        } else {
-            Err(utils::InnerError::NotFound)
+        match *self.token() {
+            tokens::Token::Punctuator(punc) => {}
+            _ => {
+                return Err(utils::InnerError::NotFound);
+            }
         }
+        self.token = None;
+        Ok(())
     }
 
     pub fn eat_punc(&mut self, punc: tokens::PunctuatorToken) -> utils::InnerResult<()> {
@@ -284,12 +278,85 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         }
     }
 
-    pub fn try_identifier(&mut self, keyword: &str) -> utils::InnerResult<()> {
-        if true {
-            Ok(())
-        } else {
-            Err(utils::ParseError::UnexpectedToken.into())
+    pub fn try_numeric(&mut self) -> utils::InnerResult<()> {
+        match *self.token() {
+            tokens::Token::NumericLiteral(tokens::NumericLiteralToken { .. }) => {}
+            _ => {
+                return Err(utils::InnerError::NotFound);
+            }
         }
+        self.token = None;
+        Ok(())
+    }
+
+    pub fn try_string(&mut self) -> utils::InnerResult<()> {
+        match *self.token() {
+            tokens::Token::StringLiteral(tokens::StringLiteralToken { .. }) => {}
+            _ => {
+                return Err(utils::InnerError::NotFound);
+            }
+        }
+        self.token = None;
+        Ok(())
+    }
+
+    pub fn try_regex(&mut self) -> utils::InnerResult<()> {
+        match *self.token() {
+            tokens::Token::RegularExpressionLiteral(tokens::RegularExpressionLiteralToken { .. }) => {}
+            _ => {
+                return Err(utils::InnerError::NotFound);
+            }
+        }
+        self.token = None;
+        Ok(())
+    }
+
+    pub fn try_template(&mut self) -> utils::InnerResult<()> {
+        match *self.token() {
+            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::NoSubstitution, .. }) => {}
+            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Head, .. }) => {}
+            _ => {
+                return Err(utils::InnerError::NotFound);
+            }
+        }
+        self.token = None;
+        Ok(())
+    }
+
+    pub fn try_template_tail(&mut self) -> utils::InnerResult<()> {
+        match *self.token() {
+            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Middle, .. }) => {}
+            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Tail, .. }) => {}
+            _ => {
+                return Err(utils::InnerError::NotFound);
+            }
+        }
+        self.token = None;
+        Ok(())
+    }
+
+    pub fn try_nonreserved_identifier(&mut self) -> utils::InnerResult<()> {
+        let flags = self.flags;
+
+        match *self.token() {
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if is_binding_identifier(&flags, name) =>  {}
+            _ => {
+                return Err(utils::InnerError::NotFound);
+            }
+        }
+        self.token = None;
+        Ok(())
+    }
+
+    pub fn try_identifier(&mut self, keyword: &str) -> utils::InnerResult<()> {
+        match *self.token() {
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == keyword =>  {}
+            _ => {
+                return Err(utils::InnerError::NotFound);
+            }
+        }
+        self.token = None;
+        Ok(())
     }
 
     pub fn eat_identifier(&mut self, keyword: &str) -> utils::InnerResult<()> {
@@ -298,5 +365,63 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         } else {
             Err(utils::ParseError::UnexpectedToken.into())
         }
+    }
+
+    pub fn eat_eof(&mut self) -> utils::Result<()> {
+        match *self.token() {
+            tokens::Token::EOF(_) => {
+                Ok(())
+            }
+            _ => {
+                Err(utils::ParseError::UnexpectedToken)
+            }
+        }
+    }
+}
+
+fn is_binding_identifier(flags: &GrammarFlags, s: &str) -> bool {
+    match s {
+        // Conditional keywords
+        "yield" if !flags.allow_yield => false,
+        "await" if !flags.allow_await => false,
+
+        // Keywords
+        "break" | "case" | "catch" | "class" | "const" | "continue" | "debugger" | "default" | "delete" |
+        "do" | "else" | "export" | "extends" | "finally" | "for" | "function" | "if" | "import" | "in" |
+        "instanceof" | "new" | "return" | "super" | "switch" | "this" | "throw" | "try" | "typeof" |
+        "var" | "void" | "while" | "with" | "yield" => false,
+
+        // Strict Keywords
+        "let" | "static" if flags.is_strict => false,
+
+        // Future Keywords
+        "enum" => false,
+
+        // Future Strict Keywords
+        "implements" | "package" | "protected" | "interface" | "private" | "public" if flags.is_strict => false,
+
+        // Literals
+        "null" | "true" | "false" => false,
+
+        _ => true,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_parses() {
+        let mut p = Parser {
+            tok: "this;".into_tokenizer(),
+            hint: Default::default(),
+            flags: Default::default(),
+            flags_stack: vec![],
+            lookahead: None,
+            token: None,
+        };
+
+        p.parse_module().unwrap();
     }
 }

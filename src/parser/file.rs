@@ -1,22 +1,45 @@
 use tokenizer::Tokenizer;
 use parser::Parser;
-use parser::utils::{InnerResult, InnerError};
+use parser::utils::{InnerResult, InnerError, Result, ParseError};
 
 impl<'code, T> Parser<'code, T>
 where
     T: Tokenizer<'code>
 {
-    pub fn parse_script(&mut self) {
+    pub fn parse_script(&mut self) -> Result<()> {
         let mut body = vec![];
-        while let Ok(item) = self.parse_script_item() {
-            body.push(item);
+        loop {
+            match self.parse_script_item() {
+                Ok(item) => body.push(item),
+                Err(InnerError::NotFound) => {
+                    break;
+                }
+                Err(InnerError::Parse(e)) => {
+                    return Err(e);
+                }
+
+            }
         }
+
+        self.eat_eof()?;
+        Ok(())
     }
-    pub fn parse_module(&mut self) {
+    pub fn parse_module(&mut self) -> Result<()> {
         let mut body = vec![];
-        while let Ok(item) = self.parse_module_item() {
-            body.push(item);
+        loop {
+            match self.parse_module_item() {
+                Ok(item) => body.push(item),
+                Err(InnerError::NotFound) => {
+                    break;
+                }
+                Err(InnerError::Parse(e)) => {
+                    return Err(e);
+                }
+            }
         }
+
+        self.eat_eof()?;
+        Ok(())
     }
 
     fn parse_script_item(&mut self) -> InnerResult<()> {

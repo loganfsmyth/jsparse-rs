@@ -1,5 +1,5 @@
-use tokenizer::Tokenizer;
-use parser::{Parser, Flags};
+use tokenizer::{Tokenizer, tokens};
+use parser::{Parser, Flag};
 use parser::utils::{InnerResult, InnerError};
 
 impl<'code, T> Parser<'code, T>
@@ -28,12 +28,15 @@ where
     }
 
     pub fn parse_block_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        self.try_punc(tokens::PunctuatorToken::CurlyOpen)?;
+
+        Ok(())
     }
 
     pub fn parse_variable_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("var")?;
+
+        Ok(())
     }
 
     pub fn parse_empty_statement(&mut self) -> InnerResult<()> {
@@ -41,39 +44,79 @@ where
     }
 
     pub fn parse_expression_statement(&mut self) -> InnerResult<()> {
-        self.with(Flags::In).parse_expression()?;
+        self.with(Flag::In).parse_expression()?;
 
-        self.semicolon();
+        self.semicolon()?;
 
         Ok(())
     }
 
     pub fn parse_if_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("if")?;
+
+        Ok(())
     }
 
     pub fn parse_breakable_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        try_sequence!(
+            self.parse_iteration_statement(),
+            self.parse_switch_statement(),
+        )
+    }
+
+    pub fn parse_iteration_statement(&mut self) -> InnerResult<()> {
+        try_sequence!(
+            self.parse_do_while_statement(),
+            self.parse_while_statement(),
+            self.parse_for_statement(),
+        )
+    }
+
+    pub fn parse_do_while_statement(&mut self) -> InnerResult<()> {
+        self.try_identifier("do")?;
+
+        Ok(())
+    }
+
+    pub fn parse_while_statement(&mut self) -> InnerResult<()> {
+        self.try_identifier("while")?;
+
+        Ok(())
+    }
+
+    pub fn parse_for_statement(&mut self) -> InnerResult<()> {
+        self.try_identifier("for")?;
+
+        Ok(())
+    }
+
+    pub fn parse_switch_statement(&mut self) -> InnerResult<()> {
+        self.try_identifier("switch")?;
+
+        Ok(())
     }
 
     pub fn parse_continue_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("continue")?;
+
+        Ok(())
     }
     pub fn parse_break_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("break")?;
+
+        Ok(())
     }
 
     pub fn parse_return_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("return")?;
+
+        Ok(())
     }
 
     pub fn parse_with_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("with")?;
+
+        Ok(())
     }
 
     pub fn parse_labelled_statement(&mut self) -> InnerResult<()> {
@@ -81,17 +124,20 @@ where
     }
 
     pub fn parse_throw_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("throw")?;
+
+        Ok(())
     }
 
     pub fn parse_try_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("try")?;
+
+        Ok(())
     }
 
     pub fn parse_debugger_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("debugger")?;
+
+        Ok(())
     }
 }

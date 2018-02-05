@@ -1,4 +1,4 @@
-use tokenizer::Tokenizer;
+use tokenizer::{Tokenizer, tokens};
 use parser::Parser;
 use parser::utils::{InnerResult, InnerError};
 
@@ -87,24 +87,67 @@ where
         Ok(())
     }
     fn parse_identifier_reference_expression(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        self.try_nonreserved_identifier()?;
+
+        Ok(())
     }
     fn parse_literal_expression(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        try_sequence!(
+            self.parse_null_expression(),
+            self.parse_true_expression(),
+            self.parse_false_expression(),
+            self.parse_numeric_expression(),
+            self.parse_string_expression(),
+        )
+    }
+    fn parse_null_expression(&mut self) -> InnerResult<()> {
+        self.try_identifier("null")?;
+
+        Ok(())
+    }
+    fn parse_true_expression(&mut self) -> InnerResult<()> {
+        self.try_identifier("true")?;
+
+        Ok(())
+    }
+    fn parse_false_expression(&mut self) -> InnerResult<()> {
+        self.try_identifier("false")?;
+
+        Ok(())
+    }
+    fn parse_numeric_expression(&mut self) -> InnerResult<()> {
+        self.try_numeric()?;
+
+        Ok(())
+    }
+    fn parse_string_expression(&mut self) -> InnerResult<()> {
+        self.try_string()?;
+
+        Ok(())
     }
     fn parse_array_literal_expression(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        self.try_punc(tokens::PunctuatorToken::SquareOpen)?;
+
+        Ok(())
     }
     fn parse_object_literal_expression(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        self.try_punc(tokens::PunctuatorToken::CurlyOpen)?;
+
+        Ok(())
     }
     fn parse_regular_expression_literal_expression(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        self.try_regex()?;
+
+        Ok(())
     }
     fn parse_template_literal_expression(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        self.try_template()?;
+
+        Ok(())
     }
     fn parse_cover_parenthesized_expression(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        self.try_punc(tokens::PunctuatorToken::ParenOpen)?;
+
+        Ok(())
     }
 }

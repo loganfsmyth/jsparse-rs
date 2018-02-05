@@ -421,7 +421,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
 
                 let mut flag_end = end + 1;
                 for (i, c) in (&code[flag_end..]).char_indices() {
-                    println!("{:?}", (i, c));
+                    // println!("{:?}", (i, c));
                     match c {
                         'a'...'z' => {
                             flag_end = (end + 1) + (i + 1);
@@ -632,7 +632,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
         b'1'...b'9' => {
             let (mut val, mut offset) = parse_int_literal(bytes);
 
-            println!("+{}+", val);
+            // println!("+{}+", val);
 
             if offset < len && bytes[offset] == b'.' {
                 let (frac, num) = parse_decimal_digits(&bytes[offset + 1..]);

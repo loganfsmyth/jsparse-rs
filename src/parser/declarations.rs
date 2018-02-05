@@ -16,12 +16,14 @@ where
     }
 
     pub fn parse_let_declaration(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("let")?;
+
+        Ok(())
     }
 
     pub fn parse_const_declaration(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
         self.try_identifier("const")?;
+
+        Ok(())
     }
 }

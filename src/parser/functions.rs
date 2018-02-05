@@ -7,9 +7,13 @@ where
     T: Tokenizer<'code>
 {
     pub fn parse_function_declaration(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        self.try_identifier("function")?;
+
+        Ok(())
     }
     pub fn parse_function_expression(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+        self.try_identifier("function")?;
+
+        Ok(())
     }
 }
