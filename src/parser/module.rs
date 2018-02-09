@@ -8,14 +8,14 @@ where
 {
     pub fn parse_import_declaration(&mut self) -> InnerResult<()>  {
         return Err(InnerError::NotFound);
-        self.try_identifier("import")?;
+        self.try_keyword("import")?;
 
         Ok(())
     }
 
     pub fn parse_export_declaration(&mut self) -> InnerResult<()>  {
         return Err(InnerError::NotFound);
-        self.try_identifier("export")?;
+        self.try_keyword("export")?;
 
         Ok(())
     }

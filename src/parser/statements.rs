@@ -34,7 +34,7 @@ where
     }
 
     pub fn parse_variable_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("var")?;
+        self.try_keyword("var")?;
 
         Ok(())
     }
@@ -52,7 +52,7 @@ where
     }
 
     pub fn parse_if_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("if")?;
+        self.try_keyword("if")?;
 
         Ok(())
     }
@@ -73,48 +73,48 @@ where
     }
 
     pub fn parse_do_while_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("do")?;
+        self.try_keyword("do")?;
 
         Ok(())
     }
 
     pub fn parse_while_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("while")?;
+        self.try_keyword("while")?;
 
         Ok(())
     }
 
     pub fn parse_for_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("for")?;
+        self.try_keyword("for")?;
 
         Ok(())
     }
 
     pub fn parse_switch_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("switch")?;
+        self.try_keyword("switch")?;
 
         Ok(())
     }
 
     pub fn parse_continue_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("continue")?;
+        self.try_keyword("continue")?;
 
         Ok(())
     }
     pub fn parse_break_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("break")?;
+        self.try_keyword("break")?;
 
         Ok(())
     }
 
     pub fn parse_return_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("return")?;
+        self.try_keyword("return")?;
 
         Ok(())
     }
 
     pub fn parse_with_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("with")?;
+        self.try_keyword("with")?;
 
         Ok(())
     }
@@ -124,19 +124,19 @@ where
     }
 
     pub fn parse_throw_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("throw")?;
+        self.try_keyword("throw")?;
 
         Ok(())
     }
 
     pub fn parse_try_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("try")?;
+        self.try_keyword("try")?;
 
         Ok(())
     }
 
     pub fn parse_debugger_statement(&mut self) -> InnerResult<()> {
-        self.try_identifier("debugger")?;
+        self.try_keyword("debugger")?;
 
         Ok(())
     }

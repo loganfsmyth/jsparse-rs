@@ -3,11 +3,28 @@ mod utils;
 
 mod file;
 mod module;
-mod expressions;
+// mod expressions;
 mod declarations;
 mod statements;
 mod classes;
 mod functions;
+
+impl<'code, T> Parser<'code, T>
+where
+    T: Tokenizer<'code>
+{
+    pub fn parse_expression(&mut self) -> utils::InnerResult<()> {
+        self.parse_assignment_expression()
+    }
+    pub fn parse_assignment_expression(&mut self) -> utils::InnerResult<()> {
+        self.parse_left_hand_side_expression()
+    }
+    pub fn parse_left_hand_side_expression(&mut self) -> utils::InnerResult<()> {
+        self.try_keyword("this")
+    }
+}
+
+
 
 use std::ops::{Deref, DerefMut};
 use tokenizer::{IntoTokenizer, Tokenizer, Hint, tokens};
@@ -98,6 +115,7 @@ pub enum Flag {
     Await,
     Return,
     Default,
+    Module,
     Strict,
 }
 
@@ -108,6 +126,7 @@ struct GrammarFlags {
     allow_await: bool,
     allow_return: bool,
     allow_default: bool,
+    is_module: bool,
     is_strict: bool,
 }
 
@@ -180,6 +199,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             Flag::Await => { self.flags.allow_await = val; }
             Flag::Return => { self.flags.allow_return = val; }
             Flag::Default => { self.flags.allow_default = val; }
+            Flag::Module => { self.flags.is_module = val; }
             Flag::Strict => { self.flags.is_strict = val; }
         }
     }
@@ -259,7 +279,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         }
     }
 
-    pub fn try_punc(&mut self, punc: tokens::PunctuatorToken) -> utils::InnerResult<()> {
+    pub fn try_punc(&mut self, punc: tokens::PunctuatorToken) -> utils::InnerResult<tokens::PunctuatorToken> {
         match *self.token() {
             tokens::Token::Punctuator(punc) => {}
             _ => {
@@ -267,7 +287,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             }
         }
         self.token = None;
-        Ok(())
+        Ok(punc)
     }
 
     pub fn eat_punc(&mut self, punc: tokens::PunctuatorToken) -> utils::InnerResult<()> {
@@ -348,7 +368,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         Ok(())
     }
 
-    pub fn try_identifier(&mut self, keyword: &str) -> utils::InnerResult<()> {
+    pub fn try_keyword(&mut self, keyword: &str) -> utils::InnerResult<()> {
         match *self.token() {
             tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == keyword =>  {}
             _ => {
@@ -359,13 +379,18 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         Ok(())
     }
 
-    pub fn eat_identifier(&mut self, keyword: &str) -> utils::InnerResult<()> {
-        if true {
-            Ok(())
-        } else {
-            Err(utils::ParseError::UnexpectedToken.into())
-        }
-    }
+    // pub fn try_identifier(&mut self) -> utils::InnerResult<()> {
+    //     match *self.token() {
+    //         v @ tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) =>  {
+
+    //         }
+    //         _ => {
+    //             return Err(utils::InnerError::NotFound);
+    //         }
+    //     }
+    //     self.token = None;
+    //     Ok(())
+    // }
 
     pub fn eat_eof(&mut self) -> utils::Result<()> {
         match *self.token() {
@@ -380,6 +405,9 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
 }
 
 fn is_binding_identifier(flags: &GrammarFlags, s: &str) -> bool {
+    // TODO: In strict mode specifically, 'arguments' and 'eval' aren't allowed as binding names,
+    // just labels and references.
+
     match s {
         // Conditional keywords
         "yield" if !flags.allow_yield => false,
