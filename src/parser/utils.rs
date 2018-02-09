@@ -39,7 +39,21 @@ macro_rules! try_sequence {
     () => {
         Err(InnerError::NotFound)
     };
-    ($t:tt) => ({
-        compile_error!("Unknown try sequence");
-    });
+}
+
+#[macro_export]
+macro_rules! eat {
+    ($e:expr) => (
+        match $e {
+            ::std::result::Result::Ok(val) => {
+                ::std::result::Result::Ok(val)
+            }
+            ::std::result::Result::Err(InnerError::NotFound) => {
+                ::std::result::Result::Err($crate::parser::utils::ParseError::UnexpectedToken)
+            }
+            ::std::result::Result::Err(InnerError::Parse(e)) => {
+                ::std::result::Result::Err(From::from(e))
+            }
+        }
+    );
 }

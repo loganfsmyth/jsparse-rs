@@ -7,12 +7,12 @@ where
     T: Tokenizer<'code>
 {
     pub fn parse_class_declaration(&mut self) -> InnerResult<()> {
-        self.try_keyword("class")?;
+        self.keyword("class")?;
 
         Ok(())
     }
     pub fn parse_class_expression(&mut self) -> InnerResult<()> {
-        self.try_keyword("class")?;
+        self.keyword("class")?;
 
         Ok(())
     }

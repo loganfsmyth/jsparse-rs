@@ -16,13 +16,13 @@ where
     }
 
     pub fn parse_let_declaration(&mut self) -> InnerResult<()> {
-        self.try_keyword("let")?;
+        self.keyword("let")?;
 
         Ok(())
     }
 
     pub fn parse_const_declaration(&mut self) -> InnerResult<()> {
-        self.try_keyword("const")?;
+        self.keyword("const")?;
 
         Ok(())
     }

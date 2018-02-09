@@ -21,7 +21,7 @@ where
             }
         }
 
-        self.eat_eof()?;
+        eat!(self.eof())?;
         Ok(())
     }
     pub fn parse_module(&mut self) -> Result<()> {
@@ -38,7 +38,7 @@ where
             }
         }
 
-        self.eat_eof()?;
+        eat!(self.eof())?;
         Ok(())
     }
 

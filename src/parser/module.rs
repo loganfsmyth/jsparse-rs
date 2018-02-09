@@ -7,15 +7,13 @@ where
     T: Tokenizer<'code>
 {
     pub fn parse_import_declaration(&mut self) -> InnerResult<()>  {
-        return Err(InnerError::NotFound);
-        self.try_keyword("import")?;
+        self.keyword("import")?;
 
         Ok(())
     }
 
     pub fn parse_export_declaration(&mut self) -> InnerResult<()>  {
-        return Err(InnerError::NotFound);
-        self.try_keyword("export")?;
+        self.keyword("export")?;
 
         Ok(())
     }

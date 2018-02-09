@@ -22,19 +22,19 @@ where
             self.parse_with_statement(),
             self.parse_labelled_statement(),
             self.parse_throw_statement(),
-            self.parse_try_statement(),
+            self.parse_statement(),
             self.parse_debugger_statement(),
         )
     }
 
     pub fn parse_block_statement(&mut self) -> InnerResult<()> {
-        self.try_punc(tokens::PunctuatorToken::CurlyOpen)?;
+        self.punc(tokens::PunctuatorToken::CurlyOpen)?;
 
         Ok(())
     }
 
     pub fn parse_variable_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("var")?;
+        self.keyword("var")?;
 
         Ok(())
     }
@@ -52,7 +52,7 @@ where
     }
 
     pub fn parse_if_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("if")?;
+        self.keyword("if")?;
 
         Ok(())
     }
@@ -73,48 +73,48 @@ where
     }
 
     pub fn parse_do_while_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("do")?;
+        self.keyword("do")?;
 
         Ok(())
     }
 
     pub fn parse_while_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("while")?;
+        self.keyword("while")?;
 
         Ok(())
     }
 
     pub fn parse_for_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("for")?;
+        self.keyword("for")?;
 
         Ok(())
     }
 
     pub fn parse_switch_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("switch")?;
+        self.keyword("switch")?;
 
         Ok(())
     }
 
     pub fn parse_continue_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("continue")?;
+        self.keyword("continue")?;
 
         Ok(())
     }
     pub fn parse_break_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("break")?;
+        self.keyword("break")?;
 
         Ok(())
     }
 
     pub fn parse_return_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("return")?;
+        self.keyword("return")?;
 
         Ok(())
     }
 
     pub fn parse_with_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("with")?;
+        self.keyword("with")?;
 
         Ok(())
     }
@@ -124,19 +124,19 @@ where
     }
 
     pub fn parse_throw_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("throw")?;
+        self.keyword("throw")?;
 
         Ok(())
     }
 
     pub fn parse_try_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("try")?;
+        self.keyword("try")?;
 
         Ok(())
     }
 
     pub fn parse_debugger_statement(&mut self) -> InnerResult<()> {
-        self.try_keyword("debugger")?;
+        self.keyword("debugger")?;
 
         Ok(())
     }

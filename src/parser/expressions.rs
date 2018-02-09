@@ -13,7 +13,7 @@ where
     pub fn parse_expression(&mut self) -> InnerResult<()> {
         self.parse_assignment_expression()?;
 
-        while let Ok(_) = self.try_punc(tokens::PunctuatorToken::Comma) {
+        while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
             self.parse_assignment_expression()?
         }
 
@@ -34,20 +34,20 @@ where
 
         use tokens::PunctuatorToken::*;
         let result = try_sequence!(
-            self.try_punc(Arrow),
-            self.try_punc(Eq),
-            self.try_punc(StarEq),
-            self.try_punc(SlashEq),
-            self.try_punc(PercentEq),
-            self.try_punc(PlusEq),
-            self.try_punc(MinusEq),
-            self.try_punc(LAngleAngleEq),
-            self.try_punc(RAngleAngleEq),
-            self.try_punc(RAngleAngleAngleEq),
-            self.try_punc(AmpEq),
-            self.try_punc(CaretEq),
-            self.try_punc(BarEq),
-            self.try_punc(StarStarEq),
+            self.punc(Arrow),
+            self.punc(Eq),
+            self.punc(StarEq),
+            self.punc(SlashEq),
+            self.punc(PercentEq),
+            self.punc(PlusEq),
+            self.punc(MinusEq),
+            self.punc(LAngleAngleEq),
+            self.punc(RAngleAngleEq),
+            self.punc(RAngleAngleAngleEq),
+            self.punc(AmpEq),
+            self.punc(CaretEq),
+            self.punc(BarEq),
+            self.punc(StarStarEq),
         );
 
         match result {
@@ -86,17 +86,17 @@ where
     }
 
     fn parse_yield_expression(&mut self) -> InnerResult<()> {
-        self.try_keyword("yield")?;
+        self.keyword("yield")?;
         Ok(())
     }
     fn parse_conditional_expression(&mut self) -> InnerResult<()> {
         let test = self.parse_logical_or_expression()?;
 
-        if let Ok(_) = self.try_punc(tokens::PunctuatorToken::Question) {
+        if let Ok(_) = self.punc(tokens::PunctuatorToken::Question) {
             // TODO: Throw if NotFound
             self.with(Flag::In).parse_assignment_expression()?;
 
-            self.try_punc(tokens::PunctuatorToken::Colon)?;
+            self.punc(tokens::PunctuatorToken::Colon)?;
 
             self.parse_assignment_expression()?;
         } else {
@@ -106,7 +106,7 @@ where
     fn parse_logical_or_expression(&mut self) -> InnerResult<()> {
         self.parse_logical_and_expression()?;
 
-        while let Ok(_) = self.try_punc(tokens::PunctuatorToken::BarBar) {
+        while let Ok(_) = self.punc(tokens::PunctuatorToken::BarBar) {
             // TODO: Throw if NotFound
             self.parse_logical_and_expression()?;
         }
@@ -116,7 +116,7 @@ where
     fn parse_logical_and_expression(&mut self) -> InnerResult<()> {
         self.parse_bitwise_or_expression()?;
 
-        while let Ok(_) = self.try_punc(tokens::PunctuatorToken::AmpAmp) {
+        while let Ok(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
             // TODO: Throw if NotFound
             self.parse_bitwise_or_expression()?;
         }
@@ -126,7 +126,7 @@ where
     fn parse_bitwise_or_expression(&mut self) -> InnerResult<()> {
         self.parse_bitwise_xor_expression()?;
 
-        while let Ok(_) = self.try_punc(tokens::PunctuatorToken::Bar) {
+        while let Ok(_) = self.punc(tokens::PunctuatorToken::Bar) {
             // TODO: Throw if NotFound
             self.parse_bitwise_xor_expression()?;
         }
@@ -136,7 +136,7 @@ where
     fn parse_bitwise_xor_expression(&mut self) -> InnerResult<()> {
         self.parse_bitwise_and_expression()?;
 
-        while let Ok(_) = self.try_punc(tokens::PunctuatorToken::Caret) {
+        while let Ok(_) = self.punc(tokens::PunctuatorToken::Caret) {
             // TODO: Throw if NotFound
             self.parse_bitwise_and_expression()?;
         }
@@ -146,7 +146,7 @@ where
     fn parse_bitwise_and_expression(&mut self) -> InnerResult<()> {
         self.parse_equality_expression()?;
 
-        while let Ok(_) = self.try_punc(tokens::PunctuatorToken::Amp) {
+        while let Ok(_) = self.punc(tokens::PunctuatorToken::Amp) {
             // TODO: Throw if NotFound
             self.parse_equality_expression()?;
         }
@@ -157,10 +157,10 @@ where
         self.parse_relational_expression()?;
 
         while let Ok(_) = try_sequence!(
-            self.try_punc(tokens::PunctuatorToken::EqEq),
-            self.try_punc(tokens::PunctuatorToken::EqEqEq),
-            self.try_punc(tokens::PunctuatorToken::ExclamEq),
-            self.try_punc(tokens::PunctuatorToken::ExclamEqEq),
+            self.punc(tokens::PunctuatorToken::EqEq),
+            self.punc(tokens::PunctuatorToken::EqEqEq),
+            self.punc(tokens::PunctuatorToken::ExclamEq),
+            self.punc(tokens::PunctuatorToken::ExclamEqEq),
         ) {
             // TODO: Throw if NotFound
             self.parse_relational_expression()?;
@@ -172,12 +172,12 @@ where
         self.parse_shift_expression()?;
 
         while let Ok(_) = try_sequence!(
-            self.try_punc(tokens::PunctuatorToken::LAngle),
-            self.try_punc(tokens::PunctuatorToken::LAngleEq),
-            self.try_punc(tokens::PunctuatorToken::RAngle),
-            self.try_punc(tokens::PunctuatorToken::RAngleEq),
-            self.try_keyword("instanceof"),
-            if self.flags.allow_in { self.try_keyword("in") } else { Err(InnerError::NotFound) },
+            self.punc(tokens::PunctuatorToken::LAngle),
+            self.punc(tokens::PunctuatorToken::LAngleEq),
+            self.punc(tokens::PunctuatorToken::RAngle),
+            self.punc(tokens::PunctuatorToken::RAngleEq),
+            self.keyword("instanceof"),
+            if self.flags.allow_in { self.keyword("in") } else { Err(InnerError::NotFound) },
         ) {
             // TODO: Throw if NotFound
             self.parse_shift_expression()?;
@@ -189,9 +189,9 @@ where
         self.parse_additive_expression()?;
 
         while let Ok(_) = try_sequence!(
-            self.try_punc(tokens::PunctuatorToken::LAngleAngle),
-            self.try_punc(tokens::PunctuatorToken::RAngleAngle),
-            self.try_punc(tokens::PunctuatorToken::RAngleAngle),
+            self.punc(tokens::PunctuatorToken::LAngleAngle),
+            self.punc(tokens::PunctuatorToken::RAngleAngle),
+            self.punc(tokens::PunctuatorToken::RAngleAngle),
         ) {
             // TODO: Throw if NotFound
             self.parse_additive_expression()?;
@@ -203,8 +203,8 @@ where
         self.parse_multiplicative_expression()?;
 
         while let Ok(_) = try_sequence!(
-            self.try_punc(tokens::PunctuatorToken::Plus),
-            self.try_punc(tokens::PunctuatorToken::Minus),
+            self.punc(tokens::PunctuatorToken::Plus),
+            self.punc(tokens::PunctuatorToken::Minus),
         ) {
             // TODO: Throw if NotFound
             self.parse_multiplicative_expression()?;
@@ -216,9 +216,9 @@ where
         self.parse_exponential_expression()?;
 
         while let Ok(_) = try_sequence!(
-            self.try_punc(tokens::PunctuatorToken::Star),
-            self.try_punc(tokens::PunctuatorToken::Slash),
-            self.try_punc(tokens::PunctuatorToken::Percent),
+            self.punc(tokens::PunctuatorToken::Star),
+            self.punc(tokens::PunctuatorToken::Slash),
+            self.punc(tokens::PunctuatorToken::Percent),
         ) {
             // TODO: Throw if NotFound
             self.parse_exponential_expression()?;
@@ -230,7 +230,7 @@ where
         let expr = self.parse_unary_expression()?;
 
         if is_update_expression(expr) {
-            if let Ok(_) = self.try_punc(tokens::PunctuatorToken::StarStar) {
+            if let Ok(_) = self.punc(tokens::PunctuatorToken::StarStar) {
                 // TODO: Throw if NotFound
                 self.parse_exponential_expression()?;
             }
@@ -252,7 +252,7 @@ where
         )
     }
     fn parse_delete_expression(&mut self) -> InnerResult<()> {
-        self.try_keyword("delete")?;
+        self.keyword("delete")?;
 
         // TODO: NotFound
         self.parse_unary_expression()?;
@@ -260,7 +260,7 @@ where
         Ok(())
     }
     fn parse_void_expression(&mut self) -> InnerResult<()> {
-        self.try_keyword("void")?;
+        self.keyword("void")?;
 
         // TODO: NotFound
         self.parse_unary_expression()?;
@@ -268,7 +268,7 @@ where
         Ok(())
     }
     fn parse_typeof_expression(&mut self) -> InnerResult<()> {
-        self.try_keyword("typeof")?;
+        self.keyword("typeof")?;
 
         // TODO: NotFound
         self.parse_unary_expression()?;
@@ -276,7 +276,7 @@ where
         Ok(())
     }
     fn parse_plus_expression(&mut self) -> InnerResult<()> {
-        self.try_punc(tokens::PunctuatorToken::Plus)?;
+        self.punc(tokens::PunctuatorToken::Plus)?;
 
         // TODO: NotFound
         self.parse_unary_expression()?;
@@ -284,7 +284,7 @@ where
         Ok(())
     }
     fn parse_minus_expression(&mut self) -> InnerResult<()> {
-        self.try_punc(tokens::PunctuatorToken::Minus)?;
+        self.punc(tokens::PunctuatorToken::Minus)?;
 
         // TODO: NotFound
         self.parse_unary_expression()?;
@@ -292,7 +292,7 @@ where
         Ok(())
     }
     fn parse_tilde_expression(&mut self) -> InnerResult<()> {
-        self.try_punc(tokens::PunctuatorToken::Tilde)?;
+        self.punc(tokens::PunctuatorToken::Tilde)?;
 
         // TODO: NotFound
         self.parse_unary_expression()?;
@@ -300,7 +300,7 @@ where
         Ok(())
     }
     fn parse_exclam_expression(&mut self) -> InnerResult<()> {
-        self.try_punc(tokens::PunctuatorToken::Exclam)?;
+        self.punc(tokens::PunctuatorToken::Exclam)?;
 
         // TODO: NotFound
         self.parse_unary_expression()?;
@@ -312,7 +312,7 @@ where
             return Err(InnerError::NotFound);
         }
 
-        self.try_keyword("await")?;
+        self.keyword("await")?;
 
         // TODO: NotFound
         self.parse_unary_expression()?;
@@ -321,8 +321,8 @@ where
     }
     fn parse_update_expression(&mut self) -> InnerResult<()> {
         let op = try_sequence!(
-            self.try_punc(tokens::PunctuatorToken::PlusPlus),
-            self.try_punc(tokens::PunctuatorToken::MinusMinus),
+            self.punc(tokens::PunctuatorToken::PlusPlus),
+            self.punc(tokens::PunctuatorToken::MinusMinus),
         );
 
         match op {
@@ -333,8 +333,8 @@ where
                 self.parse_left_hand_expression(true)?;
 
                 try_sequence!(
-                    self.try_punc(tokens::PunctuatorToken::PlusPlus),
-                    self.try_punc(tokens::PunctuatorToken::MinusMinus),
+                    self.punc(tokens::PunctuatorToken::PlusPlus),
+                    self.punc(tokens::PunctuatorToken::MinusMinus),
                 );
             }
             Err(e) => return Err(e),
@@ -342,7 +342,7 @@ where
 
     }
     fn parse_left_hand_expression(&mut self, allow_call: bool) -> InnerResult<()> {
-        if let Ok(_) = self.try_keyword("new") {
+        if let Ok(_) = self.keyword("new") {
             self.parse_left_hand_expression(false)
         } else {
             try_sequence!(
@@ -353,10 +353,10 @@ where
         }
 
         loop {
-            if let Ok(_) = self.try_punc(tokens::PunctuatorToken::SquareOpen) {
+            if let Ok(_) = self.punc(tokens::PunctuatorToken::SquareOpen) {
                 self.with(Flag::In).parse_expression()?;
                 self.eat_punc(tokens::PunctuatorToken::SquareClose)?;
-            } else if let Ok(_) = self.try_punc(tokens::PunctuatorToken::Period) {
+            } else if let Ok(_) = self.punc(tokens::PunctuatorToken::Period) {
                 self.with(Flag::In).parse_identifier()?;
             } else {
                 // TODO: skip if super`foo`
@@ -411,12 +411,12 @@ where
     }
 
     fn parse_this_expression(&mut self) -> InnerResult<()> {
-        self.try_keyword("this")?;
+        self.keyword("this")?;
 
         Ok(())
     }
     fn parse_identifier_reference_expression(&mut self) -> InnerResult<()> {
-        self.try_nonreserved_identifier()?;
+        self.nonreserved_identifier()?;
 
         Ok(())
     }
@@ -430,55 +430,55 @@ where
         )
     }
     fn parse_null_expression(&mut self) -> InnerResult<()> {
-        self.try_keyword("null")?;
+        self.keyword("null")?;
 
         Ok(())
     }
     fn parse_true_expression(&mut self) -> InnerResult<()> {
-        self.try_keyword("true")?;
+        self.keyword("true")?;
 
         Ok(())
     }
     fn parse_false_expression(&mut self) -> InnerResult<()> {
-        self.try_keyword("false")?;
+        self.keyword("false")?;
 
         Ok(())
     }
     fn parse_numeric_expression(&mut self) -> InnerResult<()> {
-        self.try_numeric()?;
+        self.numeric()?;
 
         Ok(())
     }
     fn parse_string_expression(&mut self) -> InnerResult<()> {
-        self.try_string()?;
+        self.string()?;
 
         Ok(())
     }
     fn parse_array_literal_expression(&mut self) -> InnerResult<()> {
-        self.try_punc(tokens::PunctuatorToken::SquareOpen)?;
+        self.punc(tokens::PunctuatorToken::SquareOpen)?;
 
         Ok(())
     }
     fn parse_object_literal_expression(&mut self) -> InnerResult<()> {
-        self.try_punc(tokens::PunctuatorToken::CurlyOpen)?;
+        self.punc(tokens::PunctuatorToken::CurlyOpen)?;
 
         Ok(())
     }
     fn parse_regular_expression_literal_expression(&mut self) -> InnerResult<()> {
-        self.try_regex()?;
+        self.regex()?;
 
         Ok(())
     }
     fn parse_template_literal_expression(&mut self) -> InnerResult<()> {
-        self.try_template()?;
+        self.template()?;
 
         Ok(())
     }
     fn parse_cover_parenthesized_expression(&mut self) -> InnerResult<()> {
-        self.try_punc(tokens::PunctuatorToken::ParenOpen)?;
+        self.punc(tokens::PunctuatorToken::ParenOpen)?;
 
 
-        self.try_punc(tokens::PunctuatorToken::ParenClose)?;
+        self.punc(tokens::PunctuatorToken::ParenClose)?;
 
         Ok(())
     }

@@ -20,7 +20,8 @@ where
         self.parse_left_hand_side_expression()
     }
     pub fn parse_left_hand_side_expression(&mut self) -> utils::InnerResult<()> {
-        self.try_keyword("this")
+        self.keyword("this")?;
+        Ok(())
     }
 }
 
@@ -229,7 +230,24 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         }
     }
 
-    pub fn token(&mut self) -> &tokens::Token {
+    fn try_token<V, F: FnOnce(tokens::Token<'code>) -> Result<V, tokens::Token<'code>>>(
+        &mut self,
+        handler: F,
+    ) -> utils::InnerResult<V> {
+        self.token_and_line();
+
+        let LookaheadResult { line, token } = self.token.take().unwrap();
+
+        match handler(token) {
+            Err(result) => {
+                self.token = LookaheadResult { line, token: result }.into();
+                Err(utils::InnerError::NotFound)
+            }
+            Ok(v) => Ok(v),
+        }
+    }
+
+    fn token(&mut self) -> &tokens::Token {
         self.token_and_line().1
     }
 
@@ -279,128 +297,122 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         }
     }
 
-    pub fn try_punc(&mut self, punc: tokens::PunctuatorToken) -> utils::InnerResult<tokens::PunctuatorToken> {
-        match *self.token() {
-            tokens::Token::Punctuator(punc) => {}
-            _ => {
-                return Err(utils::InnerError::NotFound);
+    pub fn punc(&mut self, punc: tokens::PunctuatorToken) -> utils::InnerResult<tokens::PunctuatorToken> {
+        self.try_token(|t| {
+            match t {
+                tokens::Token::Punctuator(p) => {
+                    if p == punc {
+                        Ok(p)
+                    } else {
+                        Err(p.into())
+                    }
+                }
+                v => Err(v),
             }
-        }
-        self.token = None;
-        Ok(punc)
+        })
     }
 
-    pub fn eat_punc(&mut self, punc: tokens::PunctuatorToken) -> utils::InnerResult<()> {
-        if true {
-            Ok(())
-        } else {
-            Err(utils::InnerError::NotFound)
-        }
-    }
-
-    pub fn try_numeric(&mut self) -> utils::InnerResult<()> {
-        match *self.token() {
-            tokens::Token::NumericLiteral(tokens::NumericLiteralToken { .. }) => {}
-            _ => {
-                return Err(utils::InnerError::NotFound);
+    pub fn numeric(&mut self) -> utils::InnerResult<tokens::NumericLiteralToken> {
+        self.try_token(|t| {
+            match t {
+                tokens::Token::NumericLiteral(n) => {
+                    Ok(n)
+                }
+                v => Err(v),
             }
-        }
-        self.token = None;
-        Ok(())
+        })
     }
 
-    pub fn try_string(&mut self) -> utils::InnerResult<()> {
-        match *self.token() {
-            tokens::Token::StringLiteral(tokens::StringLiteralToken { .. }) => {}
-            _ => {
-                return Err(utils::InnerError::NotFound);
+    pub fn string(&mut self) -> utils::InnerResult<tokens::StringLiteralToken> {
+        self.try_token(|t| {
+            match t {
+                tokens::Token::StringLiteral(n) => {
+                    Ok(n)
+                }
+                v => Err(v),
             }
-        }
-        self.token = None;
-        Ok(())
+        })
     }
 
-    pub fn try_regex(&mut self) -> utils::InnerResult<()> {
-        match *self.token() {
-            tokens::Token::RegularExpressionLiteral(tokens::RegularExpressionLiteralToken { .. }) => {}
-            _ => {
-                return Err(utils::InnerError::NotFound);
+    pub fn regex(&mut self) -> utils::InnerResult<tokens::RegularExpressionLiteralToken> {
+        self.try_token(|t| {
+            match t {
+                tokens::Token::RegularExpressionLiteral(r) => {
+                    Ok(r)
+                }
+                v => Err(v),
             }
-        }
-        self.token = None;
-        Ok(())
+        })
     }
 
-    pub fn try_template(&mut self) -> utils::InnerResult<()> {
-        match *self.token() {
-            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::NoSubstitution, .. }) => {}
-            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Head, .. }) => {}
-            _ => {
-                return Err(utils::InnerError::NotFound);
+    pub fn template(&mut self) -> utils::InnerResult<tokens::TemplateToken> {
+        self.try_token(|t| {
+            match t {
+                tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::NoSubstitution, .. }) |
+                tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::Head, .. }) => {
+                    Ok(t)
+                }
+                v => {
+                    Err(v)
+                }
             }
-        }
-        self.token = None;
-        Ok(())
+        })
     }
-
-    pub fn try_template_tail(&mut self) -> utils::InnerResult<()> {
-        match *self.token() {
-            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Middle, .. }) => {}
-            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Tail, .. }) => {}
-            _ => {
-                return Err(utils::InnerError::NotFound);
+    pub fn template_tail(&mut self) -> utils::InnerResult<tokens::TemplateToken> {
+        self.try_token(|t| {
+            match t {
+                tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::Middle, .. }) |
+                tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::Tail, .. }) => {
+                    Ok(t)
+                }
+                v => {
+                    Err(v)
+                }
             }
-        }
-        self.token = None;
-        Ok(())
+        })
     }
 
-    pub fn try_nonreserved_identifier(&mut self) -> utils::InnerResult<()> {
+    pub fn nonreserved_identifier(&mut self, keyword: &str) -> utils::InnerResult<tokens::IdentifierNameToken> {
         let flags = self.flags;
 
-        match *self.token() {
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if is_binding_identifier(&flags, name) =>  {}
-            _ => {
-                return Err(utils::InnerError::NotFound);
+        self.try_token(|t| {
+            match t {
+                tokens::Token::IdentifierName(v) => {
+                    if is_binding_identifier(&flags, &v.name) {
+                        Ok(v)
+                    } else {
+                        Err(v.into())
+                    }
+                }
+                v => Err(v),
             }
-        }
-        self.token = None;
-        Ok(())
+        })
     }
 
-    pub fn try_keyword(&mut self, keyword: &str) -> utils::InnerResult<()> {
-        match *self.token() {
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == keyword =>  {}
-            _ => {
-                return Err(utils::InnerError::NotFound);
+    pub fn keyword(&mut self, keyword: &str) -> utils::InnerResult<tokens::IdentifierNameToken> {
+        self.try_token(|t| {
+            match t {
+                tokens::Token::IdentifierName(v) => {
+                    if v.name == keyword {
+                        Ok(v)
+                    } else {
+                        Err(v.into())
+                    }
+                }
+                v => Err(v),
             }
-        }
-        self.token = None;
-        Ok(())
+        })
     }
 
-    // pub fn try_identifier(&mut self) -> utils::InnerResult<()> {
-    //     match *self.token() {
-    //         v @ tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) =>  {
-
-    //         }
-    //         _ => {
-    //             return Err(utils::InnerError::NotFound);
-    //         }
-    //     }
-    //     self.token = None;
-    //     Ok(())
-    // }
-
-    pub fn eat_eof(&mut self) -> utils::Result<()> {
-        match *self.token() {
-            tokens::Token::EOF(_) => {
-                Ok(())
+    pub fn eof(&mut self) -> utils::InnerResult<tokens::EOFToken> {
+        self.try_token(|t| {
+            match t {
+                tokens::Token::EOF(v) => {
+                    Ok(v)
+                }
+                v => Err(v),
             }
-            _ => {
-                Err(utils::ParseError::UnexpectedToken)
-            }
-        }
+        })
     }
 }
 
