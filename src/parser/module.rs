@@ -1,20 +1,20 @@
 use tokenizer::Tokenizer;
 use parser::Parser;
-use parser::utils::{InnerResult, InnerError};
+use parser::utils::OptResult;
 
 impl<'code, T> Parser<'code, T>
 where
     T: Tokenizer<'code>
 {
-    pub fn parse_import_declaration(&mut self) -> InnerResult<()>  {
-        self.keyword("import")?;
+    pub fn parse_import_declaration(&mut self) -> OptResult<()>  {
+        try_token!(self.keyword("import"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_export_declaration(&mut self) -> InnerResult<()>  {
-        self.keyword("export")?;
+    pub fn parse_export_declaration(&mut self) -> OptResult<()>  {
+        try_token!(self.keyword("export"));
 
-        Ok(())
+        Ok(Some(()))
     }
 }

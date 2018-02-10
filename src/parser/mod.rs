@@ -9,19 +9,22 @@ mod statements;
 mod classes;
 mod functions;
 
+use failure;
+use failure::Fail;
+
 impl<'code, T> Parser<'code, T>
 where
     T: Tokenizer<'code>
 {
-    pub fn parse_expression(&mut self) -> utils::InnerResult<()> {
+    pub fn parse_expression(&mut self) -> utils::OptResult<()> {
         self.parse_assignment_expression()
     }
-    pub fn parse_assignment_expression(&mut self) -> utils::InnerResult<()> {
+    pub fn parse_assignment_expression(&mut self) -> utils::OptResult<()> {
         self.parse_left_hand_side_expression()
     }
-    pub fn parse_left_hand_side_expression(&mut self) -> utils::InnerResult<()> {
-        self.keyword("this")?;
-        Ok(())
+    pub fn parse_left_hand_side_expression(&mut self) -> utils::OptResult<()> {
+        try_token!(self.keyword("this"));
+        Ok(Some(()))
     }
 }
 
@@ -53,7 +56,7 @@ impl FromTokenizer for () {
             token: None,
         };
 
-        p.parse_module().unwrap();
+        p.parse_module().unwrap()
     }
 }
 
@@ -129,6 +132,7 @@ struct GrammarFlags {
     allow_default: bool,
     is_module: bool,
     is_strict: bool,
+    // TODO: Where to handle directives?
 }
 
 pub struct Parser<'code, T: 'code>
@@ -148,17 +152,17 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         self.hint.expression(true);
     }
 
-    pub fn unexpected(&self) -> utils::InnerResult<()> {
-        Err(utils::ParseError::UnexpectedToken.into())
+    pub fn unexpected(&self) -> utils::OptResult<()> {
+        Err(utils::ParseError {}.into())
     }
 
-    pub fn semicolon(&mut self) -> utils::InnerResult<()> {
+    pub fn semicolon(&mut self) -> Option<()> {
         self.semicolon_inner(false)
     }
-    pub fn semicolon_dowhile(&mut self) -> utils::InnerResult<()> {
+    pub fn semicolon_dowhile(&mut self) -> Option<()> {
         self.semicolon_inner(true)
     }
-    fn semicolon_inner(&mut self, was_do_while: bool) -> utils::InnerResult<()> {
+    fn semicolon_inner(&mut self, was_do_while: bool) -> Option<()> {
         let exists = {
             let (line, token) = self.token_and_line();
 
@@ -171,7 +175,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             } else if was_do_while || line {
                 false
             } else {
-                return Err(utils::ParseError::UnexpectedToken.into())
+                return None;
             }
         };
 
@@ -180,7 +184,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         } else {
             self.hint.expression(true);
         }
-        Ok(())
+        Some(())
     }
 
     pub fn with<'parser>(&'parser mut self, flags: Flag) -> ParserProxy<'parser, 'code, T> {
@@ -233,17 +237,17 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     fn try_token<V, F: FnOnce(tokens::Token<'code>) -> Result<V, tokens::Token<'code>>>(
         &mut self,
         handler: F,
-    ) -> utils::InnerResult<V> {
+    ) -> Option<V> {
         self.token_and_line();
 
         let LookaheadResult { line, token } = self.token.take().unwrap();
 
         match handler(token) {
+            Ok(v) => Some(v),
             Err(result) => {
                 self.token = LookaheadResult { line, token: result }.into();
-                Err(utils::InnerError::NotFound)
+                None
             }
-            Ok(v) => Ok(v),
         }
     }
 
@@ -297,7 +301,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         }
     }
 
-    pub fn punc(&mut self, punc: tokens::PunctuatorToken) -> utils::InnerResult<tokens::PunctuatorToken> {
+    pub fn punc(&mut self, punc: tokens::PunctuatorToken) -> Option<tokens::PunctuatorToken> {
         self.try_token(|t| {
             match t {
                 tokens::Token::Punctuator(p) => {
@@ -312,7 +316,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn numeric(&mut self) -> utils::InnerResult<tokens::NumericLiteralToken> {
+    pub fn numeric(&mut self) -> Option<tokens::NumericLiteralToken> {
         self.try_token(|t| {
             match t {
                 tokens::Token::NumericLiteral(n) => {
@@ -323,7 +327,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn string(&mut self) -> utils::InnerResult<tokens::StringLiteralToken<'code>> {
+    pub fn string(&mut self) -> Option<tokens::StringLiteralToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::StringLiteral(n) => {
@@ -334,7 +338,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn regex(&mut self) -> utils::InnerResult<tokens::RegularExpressionLiteralToken<'code>> {
+    pub fn regex(&mut self) -> Option<tokens::RegularExpressionLiteralToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::RegularExpressionLiteral(r) => {
@@ -345,7 +349,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn template(&mut self) -> utils::InnerResult<tokens::TemplateToken<'code>> {
+    pub fn template(&mut self) -> Option<tokens::TemplateToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::NoSubstitution, .. }) |
@@ -358,7 +362,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             }
         })
     }
-    pub fn template_tail(&mut self) -> utils::InnerResult<tokens::TemplateToken<'code>> {
+    pub fn template_tail(&mut self) -> Option<tokens::TemplateToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::Middle, .. }) |
@@ -372,7 +376,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn binding_identifier(&mut self) -> utils::InnerResult<tokens::IdentifierNameToken<'code>> {
+    pub fn binding_identifier(&mut self) -> Option<tokens::IdentifierNameToken<'code>> {
         let flags = self.flags;
 
         self.try_token(|t| {
@@ -389,15 +393,15 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn reference_identifier(&mut self) -> utils::InnerResult<tokens::IdentifierNameToken<'code>> {
+    pub fn reference_identifier(&mut self) -> Option<tokens::IdentifierNameToken<'code>> {
         self.binding_identifier()
     }
 
-    pub fn label_identifier(&mut self) -> utils::InnerResult<tokens::IdentifierNameToken<'code>> {
+    pub fn label_identifier(&mut self) -> Option<tokens::IdentifierNameToken<'code>> {
         self.binding_identifier()
     }
 
-    pub fn keyword(&mut self, keyword: &str) -> utils::InnerResult<tokens::IdentifierNameToken<'code>> {
+    pub fn keyword(&mut self, keyword: &str) -> Option<tokens::IdentifierNameToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::IdentifierName(v) => {
@@ -412,7 +416,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn eof(&mut self) -> utils::InnerResult<tokens::EOFToken> {
+    pub fn eof(&mut self) -> Option<tokens::EOFToken> {
         self.try_token(|t| {
             match t {
                 tokens::Token::EOF(v) => {

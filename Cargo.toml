@@ -5,6 +5,9 @@ authors = ["Logan Smyth <loganfsmyth@gmail.com>"]
 
 [dependencies]
 ucd = "0.1.1"
+failure = "0.1.1"
+
+
 # custom_derive = "0.1.7"
 # enum_derive = "0.1.7"
 

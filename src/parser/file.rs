@@ -1,6 +1,6 @@
 use tokenizer::Tokenizer;
 use parser::Parser;
-use parser::utils::{InnerResult, InnerError, Result, ParseError};
+use parser::utils::{OptResult, Result, ParseError};
 
 impl<'code, T> Parser<'code, T>
 where
@@ -9,42 +9,29 @@ where
     pub fn parse_script(&mut self) -> Result<()> {
         let mut body = vec![];
         loop {
-            match self.parse_script_item() {
-                Ok(item) => body.push(item),
-                Err(InnerError::NotFound) => {
-                    break;
-                }
-                Err(InnerError::Parse(e)) => {
-                    return Err(e);
-                }
-
+            match self.parse_script_item()? {
+                Some(item) => body.push(item),
+                None => { break; }
             }
         }
 
-        eat!(self.eof());
+        eat_token!(self.eof());
         Ok(())
     }
     pub fn parse_module(&mut self) -> Result<()> {
         let mut body = vec![];
         loop {
-            match self.parse_module_item() {
-                Ok(item) => {
-                    body.push(item);
-                }
-                Err(InnerError::NotFound) => {
-                    break;
-                }
-                Err(InnerError::Parse(e)) => {
-                    return Err(e);
-                }
+            match self.parse_module_item()? {
+                Some(item) => body.push(item),
+                None => { break; }
             }
         }
 
-        eat!(self.eof());
+        eat_token!(self.eof());
         Ok(())
     }
 
-    fn parse_script_item(&mut self) -> InnerResult<()> {
+    fn parse_script_item(&mut self) -> OptResult<()> {
         self.expect_expression();
 
         try_sequence!(
@@ -53,7 +40,7 @@ where
         )
     }
 
-    fn parse_module_item(&mut self) -> InnerResult<()> {
+    fn parse_module_item(&mut self) -> OptResult<()> {
         self.expect_expression();
 
         try_sequence!(

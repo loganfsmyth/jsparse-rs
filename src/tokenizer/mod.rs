@@ -3,9 +3,9 @@ pub mod tokens;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Hint {
-  expression: bool,
-  template: bool,
-  strict: bool
+    expression: bool,
+    template: bool,
+    strict: bool,
 }
 impl Hint {
     pub fn expression(mut self, expression: bool) -> Hint {

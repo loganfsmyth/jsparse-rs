@@ -1,12 +1,12 @@
 use tokenizer::Tokenizer;
 use parser::Parser;
-use parser::utils::{InnerResult, InnerError};
+use parser::utils::OptResult;
 
 impl<'code, T> Parser<'code, T>
 where
     T: Tokenizer<'code>
 {
-    pub fn parse_declaration(&mut self) -> InnerResult<()> {
+    pub fn parse_declaration(&mut self) -> OptResult<()> {
         try_sequence!(
             self.parse_function_declaration(),
             self.parse_class_declaration(),
@@ -15,15 +15,15 @@ where
         )
     }
 
-    pub fn parse_let_declaration(&mut self) -> InnerResult<()> {
-        self.keyword("let")?;
+    pub fn parse_let_declaration(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("let"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_const_declaration(&mut self) -> InnerResult<()> {
-        self.keyword("const")?;
+    pub fn parse_const_declaration(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("const"));
 
-        Ok(())
+        Ok(Some(()))
     }
 }

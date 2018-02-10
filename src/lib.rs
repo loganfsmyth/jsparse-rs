@@ -1,5 +1,7 @@
 extern crate ucd;
 
+#[macro_use] extern crate failure;
+
 // #[macro_use]
 // pub mod ast;
 

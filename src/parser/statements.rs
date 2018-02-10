@@ -1,12 +1,12 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag};
-use parser::utils::{InnerResult, InnerError};
+use parser::utils::OptResult;
 
 impl<'code, T> Parser<'code, T>
 where
     T: Tokenizer<'code>
 {
-    pub fn parse_statement(&mut self) -> InnerResult<()> {
+    pub fn parse_statement(&mut self) -> OptResult<()> {
         self.expect_expression();
 
         try_sequence!(
@@ -27,44 +27,44 @@ where
         )
     }
 
-    pub fn parse_block_statement(&mut self) -> InnerResult<()> {
-        self.punc(tokens::PunctuatorToken::CurlyOpen)?;
+    pub fn parse_block_statement(&mut self) -> OptResult<()> {
+        try_token!(self.punc(tokens::PunctuatorToken::CurlyOpen));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_variable_statement(&mut self) -> InnerResult<()> {
-        self.keyword("var")?;
+    pub fn parse_variable_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("var"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_empty_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+    pub fn parse_empty_statement(&mut self) -> OptResult<()> {
+        Ok(None)
     }
 
-    pub fn parse_expression_statement(&mut self) -> InnerResult<()> {
-        self.with(Flag::In).parse_expression()?;
+    pub fn parse_expression_statement(&mut self) -> OptResult<()> {
+        try_fn!(self.with(Flag::In).parse_expression());
 
-        self.semicolon()?;
+        try_token!(self.semicolon());
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_if_statement(&mut self) -> InnerResult<()> {
-        self.keyword("if")?;
+    pub fn parse_if_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("if"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_breakable_statement(&mut self) -> InnerResult<()> {
+    pub fn parse_breakable_statement(&mut self) -> OptResult<()> {
         try_sequence!(
             self.parse_iteration_statement(),
             self.parse_switch_statement(),
         )
     }
 
-    pub fn parse_iteration_statement(&mut self) -> InnerResult<()> {
+    pub fn parse_iteration_statement(&mut self) -> OptResult<()> {
         try_sequence!(
             self.parse_do_while_statement(),
             self.parse_while_statement(),
@@ -72,72 +72,72 @@ where
         )
     }
 
-    pub fn parse_do_while_statement(&mut self) -> InnerResult<()> {
-        self.keyword("do")?;
+    pub fn parse_do_while_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("do"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_while_statement(&mut self) -> InnerResult<()> {
-        self.keyword("while")?;
+    pub fn parse_while_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("while"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_for_statement(&mut self) -> InnerResult<()> {
-        self.keyword("for")?;
+    pub fn parse_for_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("for"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_switch_statement(&mut self) -> InnerResult<()> {
-        self.keyword("switch")?;
+    pub fn parse_switch_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("switch"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_continue_statement(&mut self) -> InnerResult<()> {
-        self.keyword("continue")?;
+    pub fn parse_continue_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("continue"));
 
-        Ok(())
+        Ok(Some(()))
     }
-    pub fn parse_break_statement(&mut self) -> InnerResult<()> {
-        self.keyword("break")?;
+    pub fn parse_break_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("break"));
 
-        Ok(())
-    }
-
-    pub fn parse_return_statement(&mut self) -> InnerResult<()> {
-        self.keyword("return")?;
-
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_with_statement(&mut self) -> InnerResult<()> {
-        self.keyword("with")?;
+    pub fn parse_return_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("return"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_labelled_statement(&mut self) -> InnerResult<()> {
-        return Err(InnerError::NotFound);
+    pub fn parse_with_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("with"));
+
+        Ok(Some(()))
     }
 
-    pub fn parse_throw_statement(&mut self) -> InnerResult<()> {
-        self.keyword("throw")?;
-
-        Ok(())
+    pub fn parse_labelled_statement(&mut self) -> OptResult<()> {
+        Ok(None)
     }
 
-    pub fn parse_try_statement(&mut self) -> InnerResult<()> {
-        self.keyword("try")?;
+    pub fn parse_throw_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("throw"));
 
-        Ok(())
+        Ok(Some(()))
     }
 
-    pub fn parse_debugger_statement(&mut self) -> InnerResult<()> {
-        self.keyword("debugger")?;
+    pub fn parse_try_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("try"));
 
-        Ok(())
+        Ok(Some(()))
+    }
+
+    pub fn parse_debugger_statement(&mut self) -> OptResult<()> {
+        try_token!(self.keyword("debugger"));
+
+        Ok(Some(()))
     }
 }
