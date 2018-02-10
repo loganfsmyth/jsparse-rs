@@ -46,13 +46,30 @@ macro_rules! eat {
     ($e:expr) => (
         match $e {
             ::std::result::Result::Ok(val) => {
-                ::std::result::Result::Ok(val)
+                val
             }
             ::std::result::Result::Err(InnerError::NotFound) => {
-                ::std::result::Result::Err($crate::parser::utils::ParseError::UnexpectedToken)
+                return ::std::result::Result::Err(From::from($crate::parser::utils::ParseError::UnexpectedToken));
             }
             ::std::result::Result::Err(InnerError::Parse(e)) => {
-                ::std::result::Result::Err(From::from(e))
+                return ::std::result::Result::Err(From::from(e));
+            }
+        }
+    );
+}
+
+#[macro_export]
+macro_rules! try {
+    ($e:expr) => (
+        match $e {
+            ::std::result::Result::Ok(val) => {
+                Some(val)
+            }
+            ::std::result::Result::Err(InnerError::NotFound) => {
+                None
+            }
+            ::std::result::Result::Err(InnerError::Parse(e)) => {
+                return ::std::result::Result::Err(From::from(e));
             }
         }
     );

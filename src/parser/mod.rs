@@ -30,7 +30,7 @@ where
 use std::ops::{Deref, DerefMut};
 use tokenizer::{IntoTokenizer, Tokenizer, Hint, tokens};
 
-fn parse_root<'code, T: 'code, P>(t: T) -> P
+pub fn parse_root<'code, T: 'code, P>(t: T) -> P
 where
     T: IntoTokenizer<'code>,
     P: FromTokenizer
@@ -323,7 +323,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn string(&mut self) -> utils::InnerResult<tokens::StringLiteralToken> {
+    pub fn string(&mut self) -> utils::InnerResult<tokens::StringLiteralToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::StringLiteral(n) => {
@@ -334,7 +334,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn regex(&mut self) -> utils::InnerResult<tokens::RegularExpressionLiteralToken> {
+    pub fn regex(&mut self) -> utils::InnerResult<tokens::RegularExpressionLiteralToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::RegularExpressionLiteral(r) => {
@@ -345,7 +345,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn template(&mut self) -> utils::InnerResult<tokens::TemplateToken> {
+    pub fn template(&mut self) -> utils::InnerResult<tokens::TemplateToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::NoSubstitution, .. }) |
@@ -358,7 +358,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             }
         })
     }
-    pub fn template_tail(&mut self) -> utils::InnerResult<tokens::TemplateToken> {
+    pub fn template_tail(&mut self) -> utils::InnerResult<tokens::TemplateToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::Middle, .. }) |
@@ -372,7 +372,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn nonreserved_identifier(&mut self, keyword: &str) -> utils::InnerResult<tokens::IdentifierNameToken> {
+    pub fn binding_identifier(&mut self) -> utils::InnerResult<tokens::IdentifierNameToken<'code>> {
         let flags = self.flags;
 
         self.try_token(|t| {
@@ -389,7 +389,15 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn keyword(&mut self, keyword: &str) -> utils::InnerResult<tokens::IdentifierNameToken> {
+    pub fn reference_identifier(&mut self) -> utils::InnerResult<tokens::IdentifierNameToken<'code>> {
+        self.binding_identifier()
+    }
+
+    pub fn label_identifier(&mut self) -> utils::InnerResult<tokens::IdentifierNameToken<'code>> {
+        self.binding_identifier()
+    }
+
+    pub fn keyword(&mut self, keyword: &str) -> utils::InnerResult<tokens::IdentifierNameToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::IdentifierName(v) => {

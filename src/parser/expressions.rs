@@ -416,7 +416,7 @@ where
         Ok(())
     }
     fn parse_identifier_reference_expression(&mut self) -> InnerResult<()> {
-        self.nonreserved_identifier()?;
+        self.reference_identifier()?;
 
         Ok(())
     }

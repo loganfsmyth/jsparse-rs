@@ -22,7 +22,7 @@ where
             self.parse_with_statement(),
             self.parse_labelled_statement(),
             self.parse_throw_statement(),
-            self.parse_statement(),
+            self.parse_try_statement(),
             self.parse_debugger_statement(),
         )
     }

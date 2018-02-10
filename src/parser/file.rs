@@ -21,14 +21,16 @@ where
             }
         }
 
-        eat!(self.eof())?;
+        eat!(self.eof());
         Ok(())
     }
     pub fn parse_module(&mut self) -> Result<()> {
         let mut body = vec![];
         loop {
             match self.parse_module_item() {
-                Ok(item) => body.push(item),
+                Ok(item) => {
+                    body.push(item);
+                }
                 Err(InnerError::NotFound) => {
                     break;
                 }
@@ -38,7 +40,7 @@ where
             }
         }
 
-        eat!(self.eof())?;
+        eat!(self.eof());
         Ok(())
     }
 
