@@ -16,6 +16,7 @@ impl<'code, T> Parser<'code, T>
 where
     T: Tokenizer<'code>
 {
+    // TODO: Whereever these are called needs to call `self.expect_expression()`.
     pub fn parse_expression(&mut self) -> utils::OptResult<()> {
         self.parse_assignment_expression()
     }
@@ -135,6 +136,7 @@ struct GrammarFlags {
     // TODO: Where to handle directives?
 }
 
+#[derive(Debug)]
 pub struct Parser<'code, T: 'code>
 where
     T: Tokenizer<'code>
@@ -277,6 +279,14 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         }
     }
 
+    pub fn no_line_terminator(&mut self) -> bool {
+        !self.token_and_line().0
+    }
+
+    pub fn is_binding_identifier(&self, name: &str) -> bool {
+        is_binding_identifier(&self.flags, name)
+    }
+
     pub fn ident_lookahead(&mut self) -> Option<&LookaheadResult> {
         if let Some(ref lookahead) = self.lookahead {
             return Some(lookahead);
@@ -410,6 +420,17 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
                     } else {
                         Err(v.into())
                     }
+                }
+                v => Err(v),
+            }
+        })
+    }
+
+    pub fn identifier(&mut self) -> Option<tokens::IdentifierNameToken<'code>> {
+        self.try_token(|t| {
+            match t {
+                tokens::Token::IdentifierName(v) => {
+                    Ok(v)
                 }
                 v => Err(v),
             }

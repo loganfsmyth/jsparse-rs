@@ -39,7 +39,7 @@ pub struct TokenRange {
     pub end: Position,
 }
 
-pub trait Tokenizer<'code>: Clone {
+pub trait Tokenizer<'code>: Clone + ::std::fmt::Debug {
     fn next_token(&mut self, &Hint) -> (tokens::Token<'code>, TokenRange);
 }
 
