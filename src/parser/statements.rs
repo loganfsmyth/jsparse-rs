@@ -34,7 +34,7 @@ where
         )
     }
 
-    fn parse_block_statement(&mut self) -> OptResult<()> {
+    pub fn parse_block_statement(&mut self) -> OptResult<()> {
         try_token!(self.punc(tokens::PunctuatorToken::CurlyOpen));
 
         let mut body = vec![];
@@ -167,7 +167,7 @@ where
         Ok(Some(()))
     }
 
-    fn parse_binding_rest_element(&mut self) -> OptResult<()> {
+    pub fn parse_binding_rest_element(&mut self) -> OptResult<()> {
         try_token!(self.punc(tokens::PunctuatorToken::Ellipsis));
 
         if let None = self.parse_binding_pattern()? {

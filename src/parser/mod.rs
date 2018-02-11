@@ -122,6 +122,7 @@ pub enum Flag {
     Default,
     Module,
     Strict,
+    Noop,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -208,6 +209,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             Flag::Default => { self.flags.allow_default = val; }
             Flag::Module => { self.flags.is_module = val; }
             Flag::Strict => { self.flags.is_strict = val; }
+            Flag::Noop => { /* useful if you want to consistently pass a ParserProxy */}
         }
     }
     fn pop_flags(&mut self) {
