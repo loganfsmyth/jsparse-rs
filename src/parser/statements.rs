@@ -90,10 +90,10 @@ where
     pub fn parse_variable_statement(&mut self) -> OptResult<()> {
         try_token!(self.keyword("var"));
 
-        eat_fn!(self.with(Flag::In).parse_var_declarator());
+        eat_fn!(self.with(Flag::In).parse_var_declarator()?);
 
         while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
-            eat_fn!(self.with(Flag::In).parse_var_declarator());
+            eat_fn!(self.with(Flag::In).parse_var_declarator()?);
         }
 
         eat_token!(self.semicolon());
@@ -103,7 +103,7 @@ where
 
     pub fn parse_var_declarator(&mut self) -> OptResult<()> {
         if let Some(_) = self.parse_binding_pattern()? {
-            eat_fn!(self.parse_initializer());
+            eat_fn!(self.parse_initializer()?);
         } else {
             eat_token!(self.binding_identifier());
             self.parse_initializer();
@@ -147,7 +147,7 @@ where
         let _name = try_fn!(self.parse_property_name());
 
         if let Some(_) = self.punc(tokens::PunctuatorToken::Colon) {
-            eat_fn!(self.parse_binding_element());
+            eat_fn!(self.parse_binding_element()?);
         } else {
             self.with(Flag::In).parse_initializer();
         }
@@ -228,7 +228,7 @@ where
         try_token!(self.punc(tokens::PunctuatorToken::Eq));
 
         self.expect_expression();
-        eat_fn!(self.parse_assignment_expression());
+        eat_fn!(self.parse_assignment_expression()?);
 
         Ok(Some(()))
     }
@@ -255,14 +255,14 @@ where
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
         self.expect_expression();
-        eat_fn!(self.with(Flag::In).parse_expression());
+        eat_fn!(self.with(Flag::In).parse_expression()?);
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-        eat_fn!(self.parse_statement());
+        eat_fn!(self.parse_statement()?);
 
         if let Some(_) = self.keyword("else") {
-            eat_fn!(self.parse_statement());
+            eat_fn!(self.parse_statement()?);
         }
 
         Ok(Some(()))
@@ -286,13 +286,13 @@ where
     fn parse_do_while_statement(&mut self) -> OptResult<()> {
         try_token!(self.keyword("do"));
 
-        eat_fn!(self.parse_statement());
+        eat_fn!(self.parse_statement()?);
 
         eat_token!(self.keyword("while"));
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
         self.expect_expression();
-        eat_fn!(self.with(Flag::In).parse_expression());
+        eat_fn!(self.with(Flag::In).parse_expression()?);
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
         eat_token!(self.semicolon_dowhile());
@@ -305,10 +305,10 @@ where
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
         self.expect_expression();
-        eat_fn!(self.with(Flag::In).parse_expression());
+        eat_fn!(self.with(Flag::In).parse_expression()?);
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-        eat_fn!(self.parse_statement());
+        eat_fn!(self.parse_statement()?);
 
         Ok(Some(()))
     }
@@ -340,7 +340,7 @@ where
             if !pattern || initialized {
                 while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
                     multiple = true;
-                    eat_fn!(self.without(Flag::In).parse_var_declarator());
+                    eat_fn!(self.without(Flag::In).parse_var_declarator()?);
                 }
             }
 
@@ -365,7 +365,7 @@ where
             if !pattern || initialized {
                 while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
                     multiple = true;
-                    eat_fn!(self.without(Flag::In).parse_lexical_declarator(true));
+                    eat_fn!(self.without(Flag::In).parse_lexical_declarator(true)?);
                 }
             }
 
@@ -404,7 +404,7 @@ where
                     if !pattern || initialized {
                         while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
                             multiple = true;
-                            eat_fn!(self.without(Flag::In).parse_lexical_declarator(true));
+                            eat_fn!(self.without(Flag::In).parse_lexical_declarator(true)?);
                         }
                     }
 
@@ -470,10 +470,10 @@ where
         if !found && maybe_x {
             if let Some(_) = self.keyword("in") {
                 self.expect_expression();
-                eat_fn!(self.with(Flag::In).parse_assignment_expression());
+                eat_fn!(self.with(Flag::In).parse_assignment_expression()?);
             } else if let Some(_) = self.keyword("of") {
                 self.expect_expression();
-                eat_fn!(self.with(Flag::In).parse_assignment_expression());
+                eat_fn!(self.with(Flag::In).parse_assignment_expression()?);
             } else {
                 bail!("Invalid for loop");
             }
@@ -526,7 +526,7 @@ enum ForInit {
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
         self.expect_expression();
-        eat_fn!(self.with(Flag::In).parse_expression());
+        eat_fn!(self.with(Flag::In).parse_expression()?);
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
 
@@ -571,7 +571,7 @@ enum ForInit {
     fn parse_case_clause(&mut self) -> OptResult<()> {
         try_token!(self.keyword("case"));
         self.expect_expression();
-        eat_fn!(self.with(Flag::In).parse_expression());
+        eat_fn!(self.with(Flag::In).parse_expression()?);
         eat_token!(self.punc(tokens::PunctuatorToken::Colon));
 
         let mut body = vec![];
@@ -625,10 +625,10 @@ enum ForInit {
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
         self.expect_expression();
-        eat_fn!(self.with(Flag::In).parse_expression());
+        eat_fn!(self.with(Flag::In).parse_expression()?);
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-        eat_fn!(self.parse_statement());
+        eat_fn!(self.parse_statement()?);
 
         Ok(Some(()))
     }
@@ -646,7 +646,7 @@ enum ForInit {
         if is_label {
             eat_token!(self.identifier());
             eat_token!(self.punc(tokens::PunctuatorToken::Colon));
-            eat_fn!(self.parse_statement());
+            eat_fn!(self.parse_statement()?);
             Ok(Some(()))
         } else {
             Ok(None)
@@ -659,7 +659,7 @@ enum ForInit {
 
         if self.no_line_terminator() {
             self.expect_expression();
-            eat_fn!(self.with(Flag::In).parse_expression());
+            eat_fn!(self.with(Flag::In).parse_expression()?);
         }
 
         Ok(Some(()))
@@ -668,7 +668,7 @@ enum ForInit {
     fn parse_try_statement(&mut self) -> OptResult<()> {
         try_token!(self.keyword("try"));
 
-        eat_fn!(self.parse_block_statement());
+        eat_fn!(self.parse_block_statement()?);
 
         if let Some(_) = self.keyword("catch") {
             eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
@@ -679,11 +679,11 @@ enum ForInit {
 
             eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-            eat_fn!(self.parse_block_statement());
+            eat_fn!(self.parse_block_statement()?);
         }
 
         if let Some(_) = self.keyword("finally") {
-            eat_fn!(self.parse_block_statement());
+            eat_fn!(self.parse_block_statement()?);
         }
 
         Ok(Some(()))

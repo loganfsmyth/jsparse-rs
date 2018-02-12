@@ -18,10 +18,10 @@ where
     pub fn parse_let_declaration(&mut self) -> OptResult<()> {
         try_token!(self.keyword("let"));
 
-        eat_fn!(self.parse_lexical_declarator(false));
+        eat_fn!(self.parse_lexical_declarator(false)?);
 
         while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
-            eat_fn!(self.parse_lexical_declarator(false));
+            eat_fn!(self.parse_lexical_declarator(false)?);
         }
         eat_token!(self.semicolon());
 
@@ -31,10 +31,10 @@ where
     pub fn parse_const_declaration(&mut self) -> OptResult<()> {
         try_token!(self.keyword("const"));
 
-        eat_fn!(self.parse_lexical_declarator(true));
+        eat_fn!(self.parse_lexical_declarator(true)?);
 
         while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
-            eat_fn!(self.parse_lexical_declarator(true));
+            eat_fn!(self.parse_lexical_declarator(true)?);
         }
         eat_token!(self.semicolon());
 
@@ -43,12 +43,12 @@ where
 
     pub fn parse_lexical_declarator(&mut self, initializer_required: bool) -> OptResult<()> {
         if let Some(_) = self.parse_binding_pattern()? {
-            eat_fn!(self.parse_initializer());
+            eat_fn!(self.parse_initializer()?);
         } else {
             eat_token!(self.binding_identifier());
 
             if initializer_required {
-                eat_fn!(self.parse_initializer());
+                eat_fn!(self.parse_initializer()?);
             } else {
                 self.parse_initializer();
             }

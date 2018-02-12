@@ -72,14 +72,11 @@ macro_rules! try_token {
 macro_rules! eat_fn {
     ($e:expr) => (
         match $e {
-            ::std::result::Result::Ok(Some(val)) => {
+            Some(val) => {
                 val
             }
-            ::std::result::Result::Ok(None) => {
+            None => {
                 return ::std::result::Result::Err(From::from($crate::parser::utils::ParseError {}));
-            }
-            ::std::result::Result::Err(e) => {
-                return ::std::result::Result::Err(From::from(e));
             }
         }
     );

@@ -68,7 +68,7 @@ where
             } else if let Some(_) = parser.parse_class_declaration()? {
 
             } else {
-                eat_fn!(parser.with(Flag::In).parse_expression());
+                eat_fn!(parser.with(Flag::In).parse_expression()?);
                 eat_token!(parser.semicolon());
             }
         } else {

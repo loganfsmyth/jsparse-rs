@@ -36,20 +36,20 @@ where
         if maybe_async {
             let mut parser = self.without(Flag::Yield);
 
-            eat_fn!(parser.parse_function_params());
-            eat_fn!(parser.with(Flag::Await).parse_function_body());
+            eat_fn!(parser.parse_function_params()?);
+            eat_fn!(parser.with(Flag::Await).parse_function_body()?);
         } else if let Some(_) = star {
             let mut parser = self.without(Flag::Await);
             let mut parser = parser.with(Flag::Yield);
 
-            eat_fn!(parser.parse_function_params());
-            eat_fn!(parser.parse_function_body());
+            eat_fn!(parser.parse_function_params()?);
+            eat_fn!(parser.parse_function_body()?);
         } else {
             let mut parser = self.without(Flag::Await);
             let mut parser = parser.without(Flag::Yield);
 
-            eat_fn!(parser.parse_function_params());
-            eat_fn!(parser.parse_function_body());
+            eat_fn!(parser.parse_function_params()?);
+            eat_fn!(parser.parse_function_body()?);
         }
 
         Ok(Some(()))
@@ -81,20 +81,20 @@ where
         if maybe_async {
             let mut parser = self.without(Flag::Yield);
 
-            eat_fn!(parser.parse_function_params());
-            eat_fn!(parser.with(Flag::Await).parse_function_body());
+            eat_fn!(parser.parse_function_params()?);
+            eat_fn!(parser.with(Flag::Await).parse_function_body()?);
         } else if let Some(_) = star {
             let mut parser = self.without(Flag::Await);
             let mut parser = parser.with(Flag::Yield);
 
-            eat_fn!(parser.parse_function_params());
-            eat_fn!(parser.parse_function_body());
+            eat_fn!(parser.parse_function_params()?);
+            eat_fn!(parser.parse_function_body()?);
         } else {
             let mut parser = self.without(Flag::Await);
             let mut parser = parser.without(Flag::Yield);
 
-            eat_fn!(parser.parse_function_params());
-            eat_fn!(parser.parse_function_body());
+            eat_fn!(parser.parse_function_params()?);
+            eat_fn!(parser.parse_function_body()?);
         }
 
         Ok(Some(()))
