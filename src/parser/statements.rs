@@ -43,31 +43,29 @@ where
     pub fn parse_statement(&mut self) -> OptResult<()> {
         self.expect_expression();
 
-        let result = try_sequence!(
-            self.parse_block_statement(),
-            self.parse_variable_statement(),
-            self.parse_empty_statement(),
-            self.parse_expression_statement(),
-            self.parse_if_statement(),
-            self.parse_breakable_statement(),
-            self.parse_continue_statement(),
-            self.parse_break_statement(),
-            self.parse_return_statement(),
-            self.parse_with_statement(),
-            self.parse_labelled_statement(),
-            self.parse_throw_statement(),
-            self.parse_try_statement(),
-            self.parse_debugger_statement(),
-        );
-
-        result
+        Ok(try_sequence!(
+            self.parse_block_statement()?,
+            self.parse_variable_statement()?,
+            self.parse_empty_statement()?,
+            self.parse_expression_statement()?,
+            self.parse_if_statement()?,
+            self.parse_breakable_statement()?,
+            self.parse_continue_statement()?,
+            self.parse_break_statement()?,
+            self.parse_return_statement()?,
+            self.parse_with_statement()?,
+            self.parse_labelled_statement()?,
+            self.parse_throw_statement()?,
+            self.parse_try_statement()?,
+            self.parse_debugger_statement()?,
+        ))
     }
 
     fn parse_statement_list_item(&mut self) -> OptResult<()> {
-        try_sequence!(
-            self.parse_statement(),
-            self.parse_declaration(),
-        )
+        Ok(try_sequence!(
+            self.parse_statement()?,
+            self.parse_declaration()?,
+        ))
     }
 
     pub fn parse_block_statement(&mut self) -> OptResult<()> {
@@ -112,10 +110,10 @@ where
     }
 
     pub fn parse_binding_pattern(&mut self) -> OptResult<()> {
-        try_sequence!(
-            self.parse_object_binding_pattern(),
-            self.parse_array_binding_pattern(),
-        )
+        Ok(try_sequence!(
+            self.parse_object_binding_pattern()?,
+            self.parse_array_binding_pattern()?,
+        ))
     }
 
     pub fn parse_object_binding_pattern(&mut self) -> OptResult<()> {
@@ -144,7 +142,7 @@ where
     // foo: {bar} = 4
     // "foo": bar = 4
     fn parse_binding_property(&mut self) -> OptResult<()> {
-        let _name = try_fn!(self.parse_property_name());
+        let _name = try_fn!(self.parse_property_name()?);
 
         if let Some(_) = self.punc(tokens::PunctuatorToken::Colon) {
             eat_fn!(self.parse_binding_element()?);
@@ -156,10 +154,10 @@ where
     }
 
     pub fn parse_property_name(&mut self) -> OptResult<()> {
-        try_sequence!(
-            self.parse_literal_property_name(),
-            self.parse_computed_property_name(),
-        )
+        Ok(try_sequence!(
+            self.parse_literal_property_name()?,
+            self.parse_computed_property_name()?,
+        ))
     }
 
     fn parse_literal_property_name(&mut self) -> OptResult<()> {
@@ -242,7 +240,7 @@ where
     fn parse_expression_statement(&mut self) -> OptResult<()> {
         let result = self.with(Flag::In).parse_expression();
 
-        try_fn!(result);
+        try_fn!(result?);
 
         eat_token!(self.semicolon());
 
@@ -269,18 +267,18 @@ where
     }
 
     fn parse_breakable_statement(&mut self) -> OptResult<()> {
-        try_sequence!(
-            self.parse_iteration_statement(),
-            self.parse_switch_statement(),
-        )
+        Ok(try_sequence!(
+            self.parse_iteration_statement()?,
+            self.parse_switch_statement()?,
+        ))
     }
 
     fn parse_iteration_statement(&mut self) -> OptResult<()> {
-        try_sequence!(
-            self.parse_do_while_statement(),
-            self.parse_while_statement(),
-            self.parse_for_statement(),
-        )
+        Ok(try_sequence!(
+            self.parse_do_while_statement()?,
+            self.parse_while_statement()?,
+            self.parse_for_statement()?,
+        ))
     }
 
     fn parse_do_while_statement(&mut self) -> OptResult<()> {

@@ -53,7 +53,7 @@ where
             return Ok(Some(()));
         }
 
-        let head = try_fn!(self.parse_method_head(true));
+        let head = try_fn!(self.parse_method_head(true)?);
 
         eat_fn!(self.parse_method_tail(head)?);
 
@@ -154,19 +154,19 @@ where
                 if head.async {
                     let mut parser = self.without(Flag::Yield);
 
-                    try_fn!(parser.parse_function_params());
+                    try_fn!(parser.parse_function_params()?);
                     eat_fn!(parser.with(Flag::Await).parse_function_body()?);
                 } else if head.generator {
                     let mut parser = self.without(Flag::Await);
                     let mut parser = parser.with(Flag::Yield);
 
-                    try_fn!(parser.parse_function_params());
+                    try_fn!(parser.parse_function_params()?);
                     eat_fn!(parser.parse_function_body()?);
                 } else {
                     let mut parser = self.without(Flag::Await);
                     let mut parser = parser.without(Flag::Yield);
 
-                    try_fn!(parser.parse_function_params());
+                    try_fn!(parser.parse_function_params()?);
                     eat_fn!(parser.parse_function_body()?);
                 }
             }

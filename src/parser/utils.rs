@@ -21,19 +21,16 @@ impl fmt::Display for ParseError {
 macro_rules! try_sequence {
     ($e:expr, $($t:tt)*) => (
         match $e {
-            ::std::result::Result::Ok(None) => {
+            None => {
                 try_sequence!($($t)*)
             }
-            ::std::result::Result::Ok(Some(val)) => {
-                ::std::result::Result::Ok(Some(val))
-            }
-            ::std::result::Result::Err(e) => {
-                ::std::result::Result::Err(From::from(e))
+            Some(val) => {
+                Some(val)
             }
         }
     );
     () => {
-        ::std::result::Result::Ok(None)
+        None
     };
 }
 
@@ -71,14 +68,7 @@ macro_rules! try_token {
 #[macro_export]
 macro_rules! eat_fn {
     ($e:expr) => (
-        match $e {
-            Some(val) => {
-                val
-            }
-            None => {
-                return ::std::result::Result::Err(From::from($crate::parser::utils::ParseError {}));
-            }
-        }
+        eat_token!($e)
     );
 }
 
@@ -86,16 +76,6 @@ macro_rules! eat_fn {
 #[macro_export]
 macro_rules! try_fn {
     ($e:expr) => (
-        match $e {
-            ::std::result::Result::Ok(Some(v)) => {
-                v
-            }
-            ::std::result::Result::Ok(None) => {
-                return ::std::result::Result::Ok(None)
-            }
-            ::std::result::Result::Err(e) => {
-                return ::std::result::Result::Err(From::from(e));
-            }
-        }
+        try_token!($e)
     );
 }

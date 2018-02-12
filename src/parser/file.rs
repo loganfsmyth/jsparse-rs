@@ -34,19 +34,19 @@ where
     fn parse_script_item(&mut self) -> OptResult<()> {
         self.expect_expression();
 
-        try_sequence!(
-            self.parse_statement(),
-            self.parse_declaration(),
-        )
+        Ok(try_sequence!(
+            self.parse_statement()?,
+            self.parse_declaration()?,
+        ))
     }
 
     fn parse_module_item(&mut self) -> OptResult<()> {
         self.expect_expression();
 
-        try_sequence!(
-            self.parse_script_item(),
-            self.parse_import_declaration(),
-            self.parse_export_declaration(),
-        )
+        Ok(try_sequence!(
+            self.parse_script_item()?,
+            self.parse_import_declaration()?,
+            self.parse_export_declaration()?,
+        ))
     }
 }
