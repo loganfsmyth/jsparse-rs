@@ -163,10 +163,6 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         self.hint.expression(true);
     }
 
-    pub fn unexpected(&self) -> utils::OptResult<()> {
-        Err(utils::ParseError {}.into())
-    }
-
     pub fn semicolon(&mut self) -> TokenResult<()> {
         self.semicolon_inner(false)
     }
@@ -186,7 +182,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             } else if was_do_while || line {
                 false
             } else {
-                return Err(utils::NotFound);
+                return TokenResult::None;
             }
         };
 
@@ -195,7 +191,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         } else {
             self.hint.expression(true);
         }
-        Ok(())
+        TokenResult::Some(())
     }
 
     pub fn with<'parser>(&'parser mut self, flag: Flag) -> ParserProxy<'parser, 'code, T> {
@@ -266,10 +262,10 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         let LookaheadResult { line, token } = self.token.take().unwrap();
 
         match handler(token) {
-            Ok(v) => Ok(v),
+            Ok(v) => TokenResult::Some(v),
             Err(result) => {
                 self.token = LookaheadResult { line, token: result }.into();
-                Err(utils::NotFound)
+                TokenResult::None
             }
         }
     }

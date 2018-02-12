@@ -1,6 +1,6 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::Parser;
-use parser::utils::OptResult;
+use parser::utils::{OptResult, TokenResult};
 
 impl<'code, T> Parser<'code, T>
 where
@@ -20,12 +20,12 @@ where
 
         eat_value!(self.parse_lexical_declarator(false)?);
 
-        while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
+        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
             eat_value!(self.parse_lexical_declarator(false)?);
         }
         eat_value!(self.semicolon());
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     pub fn parse_const_declaration(&mut self) -> OptResult<()> {
@@ -33,16 +33,16 @@ where
 
         eat_value!(self.parse_lexical_declarator(true)?);
 
-        while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
+        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
             eat_value!(self.parse_lexical_declarator(true)?);
         }
         eat_value!(self.semicolon());
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     pub fn parse_lexical_declarator(&mut self, initializer_required: bool) -> OptResult<()> {
-        if let Ok(_) = self.parse_binding_pattern()? {
+        if let TokenResult::Some(_) = self.parse_binding_pattern()? {
             eat_value!(self.parse_initializer()?);
         } else {
             eat_value!(self.binding_identifier());
@@ -53,6 +53,6 @@ where
                 opt_value!(self.parse_initializer()?);
             }
         }
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 }

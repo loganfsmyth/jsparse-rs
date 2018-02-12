@@ -1,6 +1,6 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag};
-use parser::utils::{OptResult};
+use parser::utils::{OptResult, TokenResult};
 use parser::utils;
 
 impl<'code, T> Parser<'code, T>
@@ -20,12 +20,12 @@ where
 
         eat_value!(self.parse_class_body()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     pub fn parse_class_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("class"));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_class_heritage(&mut self) -> OptResult<()> {
@@ -34,50 +34,50 @@ where
         self.expect_expression();
         eat_value!(self.parse_left_hand_side_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_class_body(&mut self) -> OptResult<()> {
         let mut parser = self.without(Flag::Template);
         eat_value!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
 
-        while let Ok(_) = parser.parse_class_item()? {
+        while let TokenResult::Some(_) = parser.parse_class_item()? {
         }
 
         eat_value!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_class_item(&mut self) -> OptResult<()> {
-        if let Ok(_) = self.punc(tokens::PunctuatorToken::Semicolon) {
-            return Ok(Ok(()));
+        if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Semicolon) {
+            return Ok(TokenResult::Some(()));
         }
 
         let head = try_value!(self.parse_method_head(true)?);
 
         eat_value!(self.parse_method_tail(head)?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     pub fn parse_method_head(&mut self, allow_static: bool) -> OptResult<MethodHead> {
         let mut stat = if allow_static {
-            self.keyword("static")
+            opt_value!(self.keyword("static"))
         } else {
-            Err(utils::NotFound)
+            None
         };
 
-        let mut kind = if let Ok(_) = self.keyword("get") {
+        let mut kind = if let TokenResult::Some(_) = self.keyword("get") {
             MethodKind::Get
-        } else if let Ok(_) = self.keyword("set") {
+        } else if let TokenResult::Some(_) = self.keyword("set") {
             MethodKind::Set
         } else {
             MethodKind::None
         };
 
         let async = if let MethodKind::None = kind {
-            if let Ok(_) = self.keyword("async") {
+            if let TokenResult::Some(_) = self.keyword("async") {
                 true
             } else {
                 false
@@ -87,14 +87,14 @@ where
         };
 
         let star = if async {
-            Err(utils::NotFound)
+            None
         } else {
-            self.punc(tokens::PunctuatorToken::Star)
+            opt_value!(self.punc(tokens::PunctuatorToken::Star))
         };
 
         let is_ident = false;
         let name = if async && self.no_line_terminator() {
-            if let Ok(_) = self.parse_property_name()? {
+            if let TokenResult::Some(_) = self.parse_property_name()? {
                 // async fn method
             } else {
                 // method named  "async"
@@ -103,29 +103,29 @@ where
             if async {
                 // has lineterminator
                 // method named  "async"
-            } else if let Ok(_) = self.parse_property_name()? {
+            } else if let TokenResult::Some(_) = self.parse_property_name()? {
 
             } else {
                 match (stat, &kind, &star) {
-                    (_, _, &Ok(_)) => bail!("expected method name"),
+                    (_, _, &Some(_)) => bail!("expected method name"),
                     (_, &MethodKind::Get, _) => {
                         kind = MethodKind::None;
                     }
                     (_, &MethodKind::Set, _) => {
                         kind = MethodKind::None;
                     },
-                    (Ok(_), _, _) => {
-                        stat = Err(utils::NotFound);
+                    (Some(_), _, _) => {
+                        stat = None;
                     }
-                    _ => return Ok(Err(utils::NotFound)),
+                    _ => return Ok(TokenResult::None),
                 }
             }
         };
 
-        Ok(Ok(MethodHead {
+        Ok(TokenResult::Some(MethodHead {
             kind,
             is_ident,
-            generator: star.is_ok(),
+            generator: star.is_some(),
             async,
         }))
     }
@@ -143,7 +143,7 @@ where
             MethodKind::Set => {
                 try_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
-                if let Err(utils::NotFound) = self.parse_binding_pattern()? {
+                if let TokenResult::None = self.parse_binding_pattern()? {
                     eat_value!(self.binding_identifier());
                 }
 
@@ -173,7 +173,7 @@ where
             }
         };
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 }
 

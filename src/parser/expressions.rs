@@ -1,6 +1,6 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag};
-use parser::utils::{OptResult};
+use parser::utils::{OptResult, TokenResult};
 use parser::utils;
 
 use failure;
@@ -14,20 +14,17 @@ where
     }
 
     pub fn parse_expression(&mut self) -> OptResult<()> {
-        // println!("woot: {:?}", failure::err_msg("HERE"));
-
         try_value!(self.parse_assignment_expression()?);
 
-        while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
+        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
             eat_value!(self.parse_assignment_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     pub fn parse_assignment_expression(&mut self) -> OptResult<()> {
-        match self.parse_yield_expression()? {
-            Ok(expr) => return Ok(Ok(expr)),
-            _ => {}
+        if let TokenResult::Some(_) = self.parse_yield_expression()? {
+            return Ok(TokenResult::Some(()));
         }
 
         // Alternatively this can kick off the cover lookahead here then skip reify
@@ -53,7 +50,7 @@ where
             self.punc(StarStarEq),
         );
 
-        if let Ok(p) = result {
+        if let TokenResult::Some(p) = result {
             match p {
                 Arrow => {
                     // TODO: No LineTerminator allowed before arrow.
@@ -70,10 +67,10 @@ where
             eat_value!(self.reify_expression(left)?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn reify_expression(&mut self, left: ()) -> OptResult<()> {
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn reify_arrow(&mut self, left: ()) -> OptResult<()> {
         Ok(try_sequence!(
@@ -84,7 +81,7 @@ where
     fn reify_assignment(&mut self, left: (), op: tokens::PunctuatorToken) -> OptResult<()> {
         eat_value!(self.parse_assignment_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_yield_expression(&mut self) -> OptResult<()> {
@@ -96,72 +93,72 @@ where
             opt_value!(self.parse_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_conditional_expression(&mut self) -> OptResult<()> {
         let test = try_value!(self.parse_logical_or_expression()?);
 
-        if let Ok(_) = self.punc(tokens::PunctuatorToken::Question) {
+        if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Question) {
             eat_value!(self.with(Flag::In).parse_assignment_expression()?);
 
             eat_value!(self.punc(tokens::PunctuatorToken::Colon));
 
             eat_value!(self.parse_assignment_expression()?);
 
-            Ok(Ok(()))
+            Ok(TokenResult::Some(()))
         } else {
-            Ok(Ok(test))
+            Ok(TokenResult::Some(test))
         }
     }
     fn parse_logical_or_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_logical_and_expression()?);
 
-        while let Ok(_) = self.punc(tokens::PunctuatorToken::BarBar) {
+        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::BarBar) {
             eat_value!(self.parse_logical_and_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_logical_and_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_bitwise_or_expression()?);
 
-        while let Ok(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
+        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
             eat_value!(self.parse_bitwise_or_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_bitwise_or_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_bitwise_xor_expression()?);
 
-        while let Ok(_) = self.punc(tokens::PunctuatorToken::Bar) {
+        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Bar) {
             eat_value!(self.parse_bitwise_xor_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_bitwise_xor_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_bitwise_and_expression()?);
 
-        while let Ok(_) = self.punc(tokens::PunctuatorToken::Caret) {
+        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Caret) {
             eat_value!(self.parse_bitwise_and_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_bitwise_and_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_equality_expression()?);
 
-        while let Ok(_) = self.punc(tokens::PunctuatorToken::Amp) {
+        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Amp) {
             eat_value!(self.parse_equality_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_equality_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_relational_expression()?);
 
-        while let Ok(_) = try_sequence!(
+        while let TokenResult::Some(_) = try_sequence!(
             self.punc(tokens::PunctuatorToken::EqEq),
             self.punc(tokens::PunctuatorToken::EqEqEq),
             self.punc(tokens::PunctuatorToken::ExclamEq),
@@ -170,28 +167,28 @@ where
             eat_value!(self.parse_relational_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_relational_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_shift_expression()?);
 
-        while let Ok(_) = try_sequence!(
+        while let TokenResult::Some(_) = try_sequence!(
             self.punc(tokens::PunctuatorToken::LAngle).map(tokens::Token::Punctuator),
             self.punc(tokens::PunctuatorToken::LAngleEq).map(tokens::Token::Punctuator),
             self.punc(tokens::PunctuatorToken::RAngle).map(tokens::Token::Punctuator),
             self.punc(tokens::PunctuatorToken::RAngleEq).map(tokens::Token::Punctuator),
             self.keyword("instanceof").map(tokens::Token::IdentifierName),
-            if self.flags.allow_in { self.keyword("in").map(tokens::Token::IdentifierName) } else { Err(utils::NotFound) },
+            if self.flags.allow_in { self.keyword("in").map(tokens::Token::IdentifierName) } else { TokenResult::None },
         ) {
             eat_value!(self.parse_shift_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_shift_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_additive_expression()?);
 
-        while let Ok(_) = try_sequence!(
+        while let TokenResult::Some(_) = try_sequence!(
             self.punc(tokens::PunctuatorToken::LAngleAngle),
             self.punc(tokens::PunctuatorToken::RAngleAngle),
             self.punc(tokens::PunctuatorToken::RAngleAngle),
@@ -199,24 +196,24 @@ where
             eat_value!(self.parse_additive_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_additive_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_multiplicative_expression()?);
 
-        while let Ok(_) = try_sequence!(
+        while let TokenResult::Some(_) = try_sequence!(
             self.punc(tokens::PunctuatorToken::Plus),
             self.punc(tokens::PunctuatorToken::Minus),
         ) {
             eat_value!(self.parse_multiplicative_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_multiplicative_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_exponential_expression()?);
 
-        while let Ok(_) = try_sequence!(
+        while let TokenResult::Some(_) = try_sequence!(
             self.punc(tokens::PunctuatorToken::Star),
             self.punc(tokens::PunctuatorToken::Slash),
             self.punc(tokens::PunctuatorToken::Percent),
@@ -224,19 +221,19 @@ where
             eat_value!(self.parse_exponential_expression()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_exponential_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_unary_expression()?);
 
         // TODO:
         // if is_update_expression(expr) {
-            if let Ok(_) = self.punc(tokens::PunctuatorToken::StarStar) {
+            if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::StarStar) {
                 eat_value!(self.parse_exponential_expression()?);
             }
         // }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_unary_expression(&mut self) -> OptResult<()> {
         Ok(try_sequence!(
@@ -256,65 +253,65 @@ where
 
         eat_value!(self.parse_unary_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_void_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("void"));
 
         eat_value!(self.parse_unary_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_typeof_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("typeof"));
 
         eat_value!(self.parse_unary_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_plus_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::Plus));
 
         eat_value!(self.parse_unary_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_minus_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::Minus));
 
         eat_value!(self.parse_unary_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_tilde_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::Tilde));
 
         eat_value!(self.parse_unary_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_exclam_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::Exclam));
 
         eat_value!(self.parse_unary_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_await_expression(&mut self) -> OptResult<()> {
         if !self.flags.allow_await {
-            return Ok(Err(utils::NotFound));
+            return Ok(TokenResult::None);
         }
 
         try_value!(self.keyword("await"));
 
         eat_value!(self.parse_unary_expression()?);
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_update_expression(&mut self) -> OptResult<()> {
-        let op = if let Ok(_) = self.punc(tokens::PunctuatorToken::PlusPlus) {
+        let op = if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::PlusPlus) {
             true
-        } else if let Ok(_) = self.punc(tokens::PunctuatorToken::MinusMinus) {
+        } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::MinusMinus) {
             true
         } else {
             false
@@ -326,43 +323,43 @@ where
             try_value!(self.parse_left_hand_expression(true)?);
 
             if self.no_line_terminator() {
-                if let Ok(_) = self.punc(tokens::PunctuatorToken::PlusPlus) {
+                if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::PlusPlus) {
 
-                } else if let Ok(_) = self.punc(tokens::PunctuatorToken::MinusMinus) {
+                } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::MinusMinus) {
 
                 }
             }
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_left_hand_expression(&mut self, allow_call: bool) -> OptResult<()> {
-        if let Ok(_) = self.keyword("new") {
+        if let TokenResult::Some(_) = self.keyword("new") {
             eat_value!(self.parse_left_hand_expression(false)?);
         } else {
-            if let Err(utils::NotFound) = try_sequence!(
+            if let TokenResult::None = try_sequence!(
                 self.parse_primary_expression()?,
                 self.parse_meta_property_expression()?,
                 self.parse_super_expression()?,
             ) {
-                return Ok(Err(utils::NotFound));
+                return Ok(TokenResult::None);
             }
         }
 
         println!("starting member");
 
         loop {
-            if let Ok(_) = self.punc(tokens::PunctuatorToken::SquareOpen) {
+            if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::SquareOpen) {
                 eat_value!(self.with(Flag::In).parse_expression()?);
                 eat_value!(self.punc(tokens::PunctuatorToken::SquareClose));
-            } else if let Ok(_) = self.punc(tokens::PunctuatorToken::Period) {
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Period) {
                 eat_value!(self.with(Flag::In).reference_identifier());
             } else {
                 // TODO: skip if super`foo`
-                if let Ok(_) = self.parse_template_literal_expression()? {
+                if let TokenResult::Some(_) = self.parse_template_literal_expression()? {
 
                 } else if allow_call {
-                    if let Ok(_) = self.parse_call_arguments()? {
+                    if let TokenResult::Some(_) = self.parse_call_arguments()? {
                         println!("got args");
                     } else {
                         break;
@@ -373,7 +370,7 @@ where
             }
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_call_arguments(&mut self) -> OptResult<()> {
@@ -382,13 +379,13 @@ where
         try_value!(parser.punc(tokens::PunctuatorToken::ParenOpen));
 
         loop {
-            if let Ok(_) = parser.punc(tokens::PunctuatorToken::Ellipsis) {
+            if let TokenResult::Some(_) = parser.punc(tokens::PunctuatorToken::Ellipsis) {
                 eat_value!(parser.parse_assignment_expression()?);
                 break;
             }
 
-            if let Ok(_) = parser.parse_assignment_expression()? {
-                if let Ok(_) = parser.punc(tokens::PunctuatorToken::Comma) {
+            if let TokenResult::Some(_) = parser.parse_assignment_expression()? {
+                if let TokenResult::Some(_) = parser.punc(tokens::PunctuatorToken::Comma) {
                 } else {
                     break;
                 }
@@ -399,7 +396,7 @@ where
 
         eat_value!(parser.punc(tokens::PunctuatorToken::ParenClose));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_meta_property_expression(&mut self) -> OptResult<()> {
@@ -407,12 +404,12 @@ where
         eat_value!(self.punc(tokens::PunctuatorToken::Period));
         eat_value!(self.keyword("target"));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_super_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("super"));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_primary_expression(&mut self) -> OptResult<()> {
@@ -433,12 +430,12 @@ where
     fn parse_this_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("this"));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_identifier_reference_expression(&mut self) -> OptResult<()> {
         try_value!(self.reference_identifier());
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_literal_expression(&mut self) -> OptResult<()> {
         Ok(try_sequence!(
@@ -452,60 +449,60 @@ where
     fn parse_null_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("null"));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_true_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("true"));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_false_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("false"));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_numeric_expression(&mut self) -> OptResult<()> {
         try_value!(self.numeric());
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_string_expression(&mut self) -> OptResult<()> {
         try_value!(self.string());
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_array_literal_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::SquareOpen));
 
         loop {
-            if let Ok(_) = self.parse_array_item()? {
+            if let TokenResult::Some(_) = self.parse_array_item()? {
             }
 
-            if let Err(utils::NotFound) = self.punc(tokens::PunctuatorToken::Comma) {
+            if let TokenResult::None = self.punc(tokens::PunctuatorToken::Comma) {
                 break;
             }
         }
 
         eat_value!(self.punc(tokens::PunctuatorToken::SquareClose));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_object_literal_expression(&mut self) -> OptResult<()> {
         let mut parser = self.without(Flag::Template);
         try_value!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
 
         loop {
-            if let Ok(_) = parser.parse_object_property()? {
+            if let TokenResult::Some(_) = parser.parse_object_property()? {
             }
 
-            if let Err(utils::NotFound) = parser.punc(tokens::PunctuatorToken::Comma) {
+            if let TokenResult::None = parser.punc(tokens::PunctuatorToken::Comma) {
                 break;
             }
         }
 
         eat_value!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_object_property(&mut self) -> OptResult<()> {
@@ -513,7 +510,7 @@ where
         // TODO: Disallow static
         let head = try_value!(self.parse_method_head(true)?);
 
-        if let Ok(_) = self.punc(tokens::PunctuatorToken::Colon) {
+        if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Colon) {
             eat_value!(self.parse_assignment_expression()?);
         } else {
             eat_value!(self.parse_method_tail(head)?);
@@ -521,20 +518,20 @@ where
         }
 
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_array_item(&mut self) -> OptResult<()> {
-        if let Ok(_) = self.punc(tokens::PunctuatorToken::Ellipsis) {
+        if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Ellipsis) {
             eat_value!(self.parse_assignment_expression()?);
-        } else if let Ok(_) = self.parse_assignment_expression()? {
+        } else if let TokenResult::Some(_) = self.parse_assignment_expression()? {
         }
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_regular_expression_literal_expression(&mut self) -> OptResult<()> {
         try_value!(self.regex());
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_template_literal_expression(&mut self) -> OptResult<()> {
         let tok = try_value!(self.template());
@@ -551,7 +548,7 @@ where
             }
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     fn parse_cover_parenthesized_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
@@ -560,6 +557,6 @@ where
 
         eat_value!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 }

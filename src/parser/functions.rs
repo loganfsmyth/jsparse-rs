@@ -1,6 +1,6 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag, LookaheadResult};
-use parser::utils::{OptResult};
+use parser::utils::{OptResult, TokenResult};
 use parser::utils;
 
 impl<'code, T> Parser<'code, T>
@@ -53,7 +53,7 @@ where
             eat_value!(parser.parse_function_body()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     pub fn parse_function_expression(&mut self) -> OptResult<()> {
@@ -70,7 +70,7 @@ where
             try_value!(self.keyword("async"));
             eat_value!(self.keyword("function"));
 
-            Err(utils::NotFound)
+            TokenResult::None
         } else {
             try_value!(self.keyword("function"));
 
@@ -84,7 +84,7 @@ where
 
             eat_value!(parser.parse_function_params()?);
             eat_value!(parser.with(Flag::Await).parse_function_body()?);
-        } else if let Ok(_) = star {
+        } else if let TokenResult::Some(_) = star {
             let mut parser = self.without(Flag::Await);
             let mut parser = parser.with(Flag::Yield);
 
@@ -98,33 +98,33 @@ where
             eat_value!(parser.parse_function_body()?);
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     pub fn parse_function_params(&mut self) -> OptResult<()> {
         eat_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
         loop {
-            if let Ok(_) = self.parse_binding_rest_element()? {
+            if let TokenResult::Some(_) = self.parse_binding_rest_element()? {
                 break;
             }
 
-            if let Ok(_) = self.parse_binding_pattern()? {
+            if let TokenResult::Some(_) = self.parse_binding_pattern()? {
                 opt_value!(self.parse_initializer()?);
-            } else if let Ok(_) = self.binding_identifier() {
+            } else if let TokenResult::Some(_) = self.binding_identifier() {
                 opt_value!(self.parse_initializer()?);
             } else {
                 break;
             }
 
-            if let Err(utils::NotFound) = self.punc(tokens::PunctuatorToken::Comma) {
+            if let TokenResult::None = self.punc(tokens::PunctuatorToken::Comma) {
                 break;
             }
         }
 
         eat_value!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
     pub fn parse_function_body(&mut self) -> OptResult<()> {
         self.parse_block_statement()

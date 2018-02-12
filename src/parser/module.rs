@@ -1,6 +1,6 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag};
-use parser::utils::OptResult;
+use parser::utils::{OptResult, TokenResult};
 use parser::utils;
 
 impl<'code, T> Parser<'code, T>
@@ -10,24 +10,24 @@ where
     pub fn parse_import_declaration(&mut self) -> OptResult<()>  {
         try_value!(self.keyword("import"));
 
-        if let Ok(s) = self.string() {
+        if let TokenResult::Some(s) = self.string() {
 
         } else {
-            let try_names = if let Ok(def) = self.binding_identifier() {
-                self.punc(tokens::PunctuatorToken::Comma).is_ok()
+            let try_names = if let TokenResult::Some(def) = self.binding_identifier() {
+                opt_value!(self.punc(tokens::PunctuatorToken::Comma)).is_some()
             } else {
                 true
             };
 
             if try_names {
-                if let Ok(_) = self.punc(tokens::PunctuatorToken::Star) {
+                if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Star) {
                     eat_value!(self.keyword("as"));
                     eat_value!(self.binding_identifier());
                 } else {
                     eat_value!(self.punc(tokens::PunctuatorToken::CurlyOpen));
 
-                    while let Ok(_) = self.parse_import_specifier()? {
-                        if let Err(utils::NotFound) = self.punc(tokens::PunctuatorToken::Comma) {
+                    while let TokenResult::Some(_) = self.parse_import_specifier()? {
+                        if let TokenResult::None = self.punc(tokens::PunctuatorToken::Comma) {
                             break;
                         }
                     }
@@ -42,58 +42,58 @@ where
 
         eat_value!(self.semicolon());
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_import_specifier(&mut self) -> OptResult<()> {
         try_value!(self.identifier());
 
-        if let Ok(_) = self.keyword("as") {
+        if let TokenResult::Some(_) = self.keyword("as") {
             // TODO: Validate BindingIdentifier
             eat_value!(self.identifier());
         } else {
             // TODO: Validate first is BindingIdentifier
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     pub fn parse_export_declaration(&mut self) -> OptResult<()>  {
         try_value!(self.keyword("export"));
 
-        if let Ok(_) = self.keyword("default") {
+        if let TokenResult::Some(_) = self.keyword("default") {
             let mut parser = self.with(Flag::Default);
 
-            if let Ok(_) = parser.parse_function_declaration()? {
+            if let TokenResult::Some(_) = parser.parse_function_declaration()? {
 
-            } else if let Ok(_) = parser.parse_class_declaration()? {
+            } else if let TokenResult::Some(_) = parser.parse_class_declaration()? {
 
             } else {
                 eat_value!(parser.with(Flag::In).parse_expression()?);
                 eat_value!(parser.semicolon());
             }
         } else {
-            if let Ok(_) = self.parse_variable_statement()? {
+            if let TokenResult::Some(_) = self.parse_variable_statement()? {
 
-            } else if let Ok(_) = self.parse_let_declaration()? {
+            } else if let TokenResult::Some(_) = self.parse_let_declaration()? {
 
-            } else if let Ok(_) = self.parse_const_declaration()? {
+            } else if let TokenResult::Some(_) = self.parse_const_declaration()? {
 
-            } else if let Ok(_) = self.punc(tokens::PunctuatorToken::Star) {
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Star) {
                 eat_value!(self.keyword("from"));
                 eat_value!(self.string());
             } else {
                 eat_value!(self.punc(tokens::PunctuatorToken::CurlyOpen));
 
-                while let Ok(_) = self.parse_export_specifier()? {
-                    if let Err(utils::NotFound) = self.punc(tokens::PunctuatorToken::Comma) {
+                while let TokenResult::Some(_) = self.parse_export_specifier()? {
+                    if let TokenResult::None = self.punc(tokens::PunctuatorToken::Comma) {
                         break;
                     }
                 }
 
                 eat_value!(self.punc(tokens::PunctuatorToken::CurlyClose));
 
-                if let Ok(_) = self.keyword("from") {
+                if let TokenResult::Some(_) = self.keyword("from") {
                     eat_value!(self.string());
                 } else {
                     // TODO: Validate BindingIdentifier for local specifiers
@@ -103,17 +103,17 @@ where
             eat_value!(self.semicolon());
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_export_specifier(&mut self) -> OptResult<()> {
         try_value!(self.identifier());
 
-        if let Ok(_) = self.keyword("as") {
+        if let TokenResult::Some(_) = self.keyword("as") {
             eat_value!(self.identifier());
         }
 
-        Ok(Ok(()))
+        Ok(TokenResult::Some(()))
     }
 }
 

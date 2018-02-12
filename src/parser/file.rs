@@ -1,6 +1,6 @@
 use tokenizer::Tokenizer;
 use parser::Parser;
-use parser::utils::{OptResult, Result, ParseError};
+use parser::utils::{OptResult, Result, ParseError, TokenResult};
 use parser::utils;
 
 impl<'code, T> Parser<'code, T>
@@ -8,24 +8,14 @@ where
     T: Tokenizer<'code>
 {
     pub fn parse_script(&mut self) -> Result<()> {
-        let mut body = vec![];
-        loop {
-            match self.parse_script_item()? {
-                Ok(item) => body.push(item),
-                Err(utils::NotFound) => { break; }
-            }
+        while let TokenResult::Some(_) = self.parse_script_item()? {
         }
 
         eat_value!(self.eof());
         Ok(())
     }
     pub fn parse_module(&mut self) -> Result<()> {
-        let mut body = vec![];
-        loop {
-            match self.parse_module_item()? {
-                Ok(item) => body.push(item),
-                Err(utils::NotFound) => { break; }
-            }
+        while let TokenResult::Some(_) = self.parse_module_item()? {
         }
 
         eat_value!(self.eof());
