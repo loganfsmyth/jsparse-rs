@@ -41,7 +41,7 @@ where
         Ok(Some(()))
     }
 
-    fn parse_lexical_declarator(&mut self, initializer_required: bool) -> OptResult<()> {
+    pub fn parse_lexical_declarator(&mut self, initializer_required: bool) -> OptResult<()> {
         if let Some(_) = self.parse_binding_pattern()? {
             eat_fn!(self.parse_initializer());
         } else {

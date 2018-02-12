@@ -2,6 +2,40 @@ use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag, LookaheadResult};
 use parser::utils::OptResult;
 
+enum ForInit {
+    // Can occur in any type of for-init.
+    SingleVar,
+    SingleLet,
+    SingleConst,
+
+    // Allowed in for and for..in
+    SingleInitializedVar,
+
+    // Allowed in for
+    SingleInitializedLet,
+    SingleInitializedConst,
+
+    // Allowed in for
+    MultiVar,
+    MultiLet,
+    MultiConst,
+
+    // allowed in any for-init
+    LeftHandExpression,
+
+    // allowed in for
+    Expression,
+    None,
+}
+
+#[derive(Debug)]
+enum LoopType {
+    Any,
+    For,
+    ForAndForIn,
+    ForX
+}
+
 impl<'code, T> Parser<'code, T>
 where
     T: Tokenizer<'code>
@@ -273,17 +307,204 @@ where
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
-        eat_token!(self.punc(tokens::PunctuatorToken::Semicolon));
-        eat_token!(self.punc(tokens::PunctuatorToken::Semicolon));
+        let (kind, pattern, initialized, multiple, bracket, left_hand) = if let Some(_) = self.keyword("var") {
+            let mut pattern = false;
+            let mut initialized = false;
+            if let Some(_) = self.parse_binding_pattern()? {
+                pattern = true;
 
-        // TODO
+                if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                    initialized = true;
+                }
+            } else {
+                eat_token!(self.binding_identifier());
+                if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                    initialized = true;
+                }
+            }
+
+            let mut multiple = false;
+            if !pattern || initialized {
+                while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+                    multiple = true;
+                    eat_fn!(self.without(Flag::In).parse_var_declarator());
+                }
+            }
+
+            ("var", pattern, initialized, multiple, false, false)
+        } else if let Some(_) = self.keyword("const") {
+            let mut pattern = false;
+            let mut initialized = false;
+            if let Some(_) = self.parse_binding_pattern()? {
+                pattern = true;
+
+                if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                    initialized = true;
+                }
+            } else {
+                eat_token!(self.binding_identifier());
+                if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                    initialized = true;
+                }
+            }
+
+            let mut multiple = false;
+            if !pattern || initialized {
+                while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+                    multiple = true;
+                    eat_fn!(self.without(Flag::In).parse_lexical_declarator(true));
+                }
+            }
+
+            ("const", pattern, initialized, multiple, false, false)
+        } else {
+            let (maybe_decl, bracket) = if let Some(&LookaheadResult { line, ref token }) = self.ident_lookahead() {
+                match *token {
+                    tokens::Token::IdentifierName(_) => (true, false),
+                    tokens::Token::Punctuator(tokens::PunctuatorToken::SquareOpen) => (true, true),
+                    tokens::Token::Punctuator(tokens::PunctuatorToken::CurlyOpen) => (true, false),
+                    _ => (false, false),
+                }
+            } else {
+                (false, false)
+            };
+
+
+            let decl = if maybe_decl {
+                if let Some(_) = self.keyword("let") {
+                    let mut pattern = false;
+                    let mut initialized = false;
+                    if let Some(_) = self.parse_binding_pattern()? {
+                        pattern = true;
+
+                        if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                            initialized = true;
+                        }
+                    } else {
+                        eat_token!(self.binding_identifier());
+                        if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                            initialized = true;
+                        }
+                    }
+
+                    let mut multiple = false;
+                    if !pattern || initialized {
+                        while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+                            multiple = true;
+                            eat_fn!(self.without(Flag::In).parse_lexical_declarator(true));
+                        }
+                    }
+
+                    Some(("let", pattern, initialized, multiple, bracket, false))
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            if let Some(decl) = decl {
+                decl
+            } else {
+                // TODO: What to do here? If this is a LeftHandSideExpression,
+                // the for can be any type, otherwise it _must_ be 'ForStatement'
+                self.without(Flag::In).parse_expression()?;
+                ("expression", false, false, false, false, false)
+            }
+        };
+
+        let (maybe_for, maybe_x) = match kind {
+            "var" | "let" => {
+                let maybe_for = !pattern || initialized;
+                let maybe_x = !multiple && !initialized;
+
+                (maybe_for, maybe_x)
+            }
+            "const" => {
+                let maybe_for = initialized;
+                let maybe_x = !multiple && !initialized;
+
+                (maybe_for, maybe_x)
+            }
+            "expression" => {
+                if left_hand {
+                    // for/in/of
+                    (true, true)
+                } else {
+                    // for
+                    (true, false)
+                }
+            }
+            _ => unreachable!(),
+        };
+
+        println!("{:?}", (maybe_for, maybe_x));
+
+        let found = if maybe_for {
+            if let Some(_) = self.punc(tokens::PunctuatorToken::Semicolon) {
+                self.parse_expression()?;
+                eat_token!(self.punc(tokens::PunctuatorToken::Semicolon));
+                self.parse_expression()?;
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        if !found && maybe_x {
+            if let Some(_) = self.keyword("in") {
+                eat_fn!(self.with(Flag::In).parse_assignment_expression());
+            } else if let Some(_) = self.keyword("of") {
+                eat_fn!(self.with(Flag::In).parse_assignment_expression());
+            } else {
+                bail!("Invalid for loop");
+            }
+        }
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
 
         Ok(Some(()))
     }
+/*
 
+enum LoopType {
+    Any,
+    For,
+    ForAndForIn,
+    ForX
+}
+
+enum ForInit {
+    // Can occur in any type of for-init.
+    SingleVar,
+    SingleLet,
+    SingleConst,
+
+    // Allowed in for and for..in
+    SingleInitializedVar,
+
+    // Allowed in for
+    SingleInitializedLet,
+    SingleInitializedConst,
+
+    // Allowed in for
+    MultiVar,
+    MultiLet,
+    MultiConst,
+
+    // allowed in any for-init
+    LeftHandExpression,
+
+    // allowed in for
+    Expression,
+    None,
+}
+
+
+*/
     fn parse_switch_statement(&mut self) -> OptResult<()> {
         try_token!(self.keyword("switch"));
 
