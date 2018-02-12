@@ -131,8 +131,6 @@ where
     }
 
     pub fn parse_method_tail(&mut self, head: MethodHead) -> OptResult<()> {
-        println!("{:?}", head);
-
         match head.kind {
             MethodKind::Get => {
                 try_value!(self.punc(tokens::PunctuatorToken::ParenOpen));

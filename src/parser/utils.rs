@@ -4,12 +4,8 @@ use std::error;
 use failure::Fail;
 use failure::Error;
 
-pub struct NotFound;
-
 pub type Result<T> = result::Result<T, Error>;
 pub type OptResult<T> = Result<TokenResult<T>>;
-
-// pub type TokenResult<T> = result::Result<T, NotFound>;
 
 #[deny(unused_must_use)]
 pub enum TokenResult<T> {
@@ -28,8 +24,6 @@ impl<T> TokenResult<T> {
         }
     }
 }
-
-// impl From<TokenResult> for O
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Fail)]

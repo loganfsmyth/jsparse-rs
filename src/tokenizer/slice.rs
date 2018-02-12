@@ -23,7 +23,6 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
     fn next_token(&mut self, hint: &Hint) -> (tokens::Token<'code>, TokenRange) {
         let start = self.position;
 
-        println!("line {} column {}", self.position.line, self.position.column);
 
         let code_s: &'code str = self.code.borrow();
 
@@ -31,6 +30,9 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
 
         let result: TokenResult<'code> = read_next(s, hint);
         let TokenResult(token, size) = result;
+
+        println!("line {} column {}: {:#?}", self.position.line, self.position.column, token);
+
 
         if let Some((byte_step, _)) = s.char_indices().skip(size.chars).next() {
             self.position.offset += byte_step;
@@ -628,11 +630,12 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                 _ => {
                     let (_, num) = parse_exponent(bytes);
 
-                    number(0f64, code[index..num].into())
+                    number(0f64, code[index..index + num + 1].into())
                 }
             }
         }
         b'1'...b'9' => {
+            // println!("+start+");
             let (mut val, mut offset) = parse_int_literal(bytes);
 
             // println!("+{}+", val);
@@ -751,7 +754,7 @@ fn parse_int_literal(bytes: &[u8]) -> (f64, usize) {
     while i < bytes.len() {
         match bytes[i] {
             b'0' => {
-                i = 1;
+                // i = 1;
 
                 if value == 0f64 {
                     break;

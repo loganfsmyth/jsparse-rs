@@ -160,7 +160,7 @@ where
 
 impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     pub fn expect_expression(&mut self) {
-        self.hint.expression(true);
+        self.hint = self.hint.expression(true);
     }
 
     pub fn semicolon(&mut self) -> TokenResult<()> {
@@ -209,7 +209,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     fn push_flags(&mut self, flag: Flag, val: bool) {
         self.flags_stack.push(self.flags);
 
-        println!("pushed {:?} as {:?}", flag, val);
+        // println!("pushed {:?} as {:?}", flag, val);
 
         match flag {
             Flag::In => { self.flags.allow_in = val; }
@@ -246,7 +246,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
                     }
                 }
                 t => {
-                    println!("{:?}", (line, t.clone()));
+                    // println!("{:?}", (line, t.clone()));
                     break (line, t);
                 },
             }

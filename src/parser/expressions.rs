@@ -81,6 +81,8 @@ where
         ))
     }
     fn reify_assignment(&mut self, left: (), op: tokens::PunctuatorToken) -> OptResult<()> {
+        self.expect_expression();
+
         eat_value!(self.parse_assignment_expression()?);
 
         Ok(TokenResult::Some(()))
@@ -343,21 +345,21 @@ where
             }
         }
 
-        println!("starting member");
+        // println!("starting member");
 
         loop {
             if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::SquareOpen) {
                 eat_value!(self.with(Flag::In).parse_expression()?);
                 eat_value!(self.punc(tokens::PunctuatorToken::SquareClose));
             } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Period) {
-                eat_value!(self.with(Flag::In).reference_identifier());
+                eat_value!(self.with(Flag::In).identifier());
             } else {
                 // TODO: skip if super`foo`
                 if let TokenResult::Some(_) = self.parse_template_literal_expression()? {
 
                 } else if allow_call {
                     if let TokenResult::Some(_) = self.parse_call_arguments()? {
-                        println!("got args");
+                        // println!("got args");
                     } else {
                         break;
                     }
@@ -370,19 +372,27 @@ where
         Ok(TokenResult::Some(()))
     }
 
+
     fn parse_call_arguments(&mut self) -> OptResult<()> {
         let mut parser = self.with(Flag::In);
 
         try_value!(parser.punc(tokens::PunctuatorToken::ParenOpen));
 
+        // println!("osdf");
         loop {
+            // println!("inside");
             if let TokenResult::Some(_) = parser.punc(tokens::PunctuatorToken::Ellipsis) {
+                println!("4");
                 eat_value!(parser.parse_assignment_expression()?);
                 break;
             }
 
+            // println!("1");
+
             if let TokenResult::Some(_) = parser.parse_assignment_expression()? {
+            // println!("2");
                 if let TokenResult::Some(_) = parser.punc(tokens::PunctuatorToken::Comma) {
+            // println!("3");
                 } else {
                     break;
                 }
@@ -390,6 +400,7 @@ where
                 break;
             }
         }
+        // println!("done");
 
         eat_value!(parser.punc(tokens::PunctuatorToken::ParenClose));
 
@@ -549,6 +560,27 @@ where
         try_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
         // TODO
+
+        let expr = opt_value!(self.with(Flag::In).parse_expression()?);
+
+        let expect_more = if let Some(_) = expr {
+            if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+                true
+            } else {
+                false
+            }
+        } else {
+            true
+        };
+
+        if expect_more {
+            if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Ellipsis) {
+                if let TokenResult::Some(_) = self.parse_binding_pattern()? {
+                } else {
+                    eat_value!(self.binding_identifier());
+                }
+            }
+        }
 
         eat_value!(self.punc(tokens::PunctuatorToken::ParenClose));
 
