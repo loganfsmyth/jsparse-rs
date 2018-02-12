@@ -1,6 +1,7 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag, LookaheadResult};
 use parser::utils::{OptResult};
+use parser::utils;
 
 impl<'code, T> Parser<'code, T>
 where
@@ -20,7 +21,7 @@ where
             try_token!(self.keyword("async"));
             eat_token!(self.keyword("function"));
 
-            None
+            Err(utils::NotFound)
         } else {
             try_token!(self.keyword("function"));
 
@@ -38,7 +39,7 @@ where
 
             eat_fn!(parser.parse_function_params()?);
             eat_fn!(parser.with(Flag::Await).parse_function_body()?);
-        } else if let Some(_) = star {
+        } else if let Ok(_) = star {
             let mut parser = self.without(Flag::Await);
             let mut parser = parser.with(Flag::Yield);
 
@@ -52,7 +53,7 @@ where
             eat_fn!(parser.parse_function_body()?);
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_function_expression(&mut self) -> OptResult<()> {
@@ -69,7 +70,7 @@ where
             try_token!(self.keyword("async"));
             eat_token!(self.keyword("function"));
 
-            None
+            Err(utils::NotFound)
         } else {
             try_token!(self.keyword("function"));
 
@@ -83,7 +84,7 @@ where
 
             eat_fn!(parser.parse_function_params()?);
             eat_fn!(parser.with(Flag::Await).parse_function_body()?);
-        } else if let Some(_) = star {
+        } else if let Ok(_) = star {
             let mut parser = self.without(Flag::Await);
             let mut parser = parser.with(Flag::Yield);
 
@@ -97,33 +98,33 @@ where
             eat_fn!(parser.parse_function_body()?);
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_function_params(&mut self) -> OptResult<()> {
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
         loop {
-            if let Some(_) = self.parse_binding_rest_element()? {
+            if let Ok(_) = self.parse_binding_rest_element()? {
                 break;
             }
 
-            if let Some(_) = self.parse_binding_pattern()? {
+            if let Ok(_) = self.parse_binding_pattern()? {
                 self.parse_initializer();
-            } else if let Some(_) = self.binding_identifier() {
+            } else if let Ok(_) = self.binding_identifier() {
                 self.parse_initializer();
             } else {
                 break;
             }
 
-            if let None = self.punc(tokens::PunctuatorToken::Comma) {
+            if let Err(utils::NotFound) = self.punc(tokens::PunctuatorToken::Comma) {
                 break;
             }
         }
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
     pub fn parse_function_body(&mut self) -> OptResult<()> {
         self.parse_block_statement()

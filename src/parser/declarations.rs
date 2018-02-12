@@ -20,12 +20,12 @@ where
 
         eat_fn!(self.parse_lexical_declarator(false)?);
 
-        while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+        while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
             eat_fn!(self.parse_lexical_declarator(false)?);
         }
         eat_token!(self.semicolon());
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_const_declaration(&mut self) -> OptResult<()> {
@@ -33,16 +33,16 @@ where
 
         eat_fn!(self.parse_lexical_declarator(true)?);
 
-        while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+        while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
             eat_fn!(self.parse_lexical_declarator(true)?);
         }
         eat_token!(self.semicolon());
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_lexical_declarator(&mut self, initializer_required: bool) -> OptResult<()> {
-        if let Some(_) = self.parse_binding_pattern()? {
+        if let Ok(_) = self.parse_binding_pattern()? {
             eat_fn!(self.parse_initializer()?);
         } else {
             eat_token!(self.binding_identifier());
@@ -53,6 +53,6 @@ where
                 self.parse_initializer();
             }
         }
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 }

@@ -4,8 +4,12 @@ use std::error;
 use failure::Fail;
 use failure::Error;
 
+pub struct NotFound;
+
 pub type Result<T> = result::Result<T, Error>;
-pub type OptResult<T> = Result<Option<T>>;
+pub type OptResult<T> = Result<TokenResult<T>>;
+
+pub type TokenResult<T> = result::Result<T, NotFound>;
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Fail)]
@@ -16,21 +20,22 @@ impl fmt::Display for ParseError {
     }
 }
 
+
 // Try a list of OptResult-returning functions, in order.
 #[macro_export]
 macro_rules! try_sequence {
     ($e:expr, $($t:tt)*) => (
         match $e {
-            None => {
+            Err(NotFound) => {
                 try_sequence!($($t)*)
             }
-            Some(val) => {
-                Some(val)
+            Ok(val) => {
+                Ok(val)
             }
         }
     );
     () => {
-        None
+        Err($crate::parser::utils::NotFound)
     };
 }
 
@@ -39,10 +44,10 @@ macro_rules! try_sequence {
 macro_rules! eat_token {
     ($e:expr) => (
         match $e {
-            ::std::option::Option::Some(val) => {
+            ::std::result::Result::Ok(val) => {
                 val
             }
-            ::std::option::Option::None => {
+            ::std::result::Result::Err($crate::parser::utils::NotFound) => {
                 return ::std::result::Result::Err(From::from($crate::parser::utils::ParseError {}));
             }
         }
@@ -54,11 +59,11 @@ macro_rules! eat_token {
 macro_rules! try_token {
     ($e:expr) => (
         match $e {
-            ::std::option::Option::Some(val) => {
+            ::std::result::Result::Ok(val) => {
                 val
             }
-            ::std::option::Option::None => {
-                return ::std::result::Result::Ok(None);
+            ::std::result::Result::Err($crate::parser::utils::NotFound) => {
+                return ::std::result::Result::Ok(::std::result::Result::Err($crate::parser::utils::NotFound));
             }
         }
     );

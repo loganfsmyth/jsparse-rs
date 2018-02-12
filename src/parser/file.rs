@@ -1,6 +1,7 @@
 use tokenizer::Tokenizer;
 use parser::Parser;
 use parser::utils::{OptResult, Result, ParseError};
+use parser::utils;
 
 impl<'code, T> Parser<'code, T>
 where
@@ -10,8 +11,8 @@ where
         let mut body = vec![];
         loop {
             match self.parse_script_item()? {
-                Some(item) => body.push(item),
-                None => { break; }
+                Ok(item) => body.push(item),
+                Err(utils::NotFound) => { break; }
             }
         }
 
@@ -22,8 +23,8 @@ where
         let mut body = vec![];
         loop {
             match self.parse_module_item()? {
-                Some(item) => body.push(item),
-                None => { break; }
+                Ok(item) => body.push(item),
+                Err(utils::NotFound) => { break; }
             }
         }
 

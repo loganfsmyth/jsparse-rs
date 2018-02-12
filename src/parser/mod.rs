@@ -33,6 +33,7 @@ use failure::Fail;
 
 use std::ops::{Deref, DerefMut};
 use tokenizer::{IntoTokenizer, Tokenizer, Hint, tokens};
+use self::utils::TokenResult;
 
 pub fn parse_root<'code, T: 'code, P>(t: T) -> P
 where
@@ -166,13 +167,13 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         Err(utils::ParseError {}.into())
     }
 
-    pub fn semicolon(&mut self) -> Option<()> {
+    pub fn semicolon(&mut self) -> TokenResult<()> {
         self.semicolon_inner(false)
     }
-    pub fn semicolon_dowhile(&mut self) -> Option<()> {
+    pub fn semicolon_dowhile(&mut self) -> TokenResult<()> {
         self.semicolon_inner(true)
     }
-    fn semicolon_inner(&mut self, was_do_while: bool) -> Option<()> {
+    fn semicolon_inner(&mut self, was_do_while: bool) -> TokenResult<()> {
         let exists = {
             let (line, token) = self.token_and_line();
 
@@ -185,7 +186,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             } else if was_do_while || line {
                 false
             } else {
-                return None;
+                return Err(utils::NotFound);
             }
         };
 
@@ -194,7 +195,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         } else {
             self.hint.expression(true);
         }
-        Some(())
+        Ok(())
     }
 
     pub fn with<'parser>(&'parser mut self, flag: Flag) -> ParserProxy<'parser, 'code, T> {
@@ -259,16 +260,16 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     fn try_token<V, F: FnOnce(tokens::Token<'code>) -> Result<V, tokens::Token<'code>>>(
         &mut self,
         handler: F,
-    ) -> Option<V> {
+    ) -> TokenResult<V> {
         self.token_and_line();
 
         let LookaheadResult { line, token } = self.token.take().unwrap();
 
         match handler(token) {
-            Ok(v) => Some(v),
+            Ok(v) => Ok(v),
             Err(result) => {
                 self.token = LookaheadResult { line, token: result }.into();
-                None
+                Err(utils::NotFound)
             }
         }
     }
@@ -331,7 +332,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         }
     }
 
-    pub fn punc(&mut self, punc: tokens::PunctuatorToken) -> Option<tokens::PunctuatorToken> {
+    pub fn punc(&mut self, punc: tokens::PunctuatorToken) -> TokenResult<tokens::PunctuatorToken> {
         self.try_token(|t| {
             match t {
                 tokens::Token::Punctuator(p) => {
@@ -346,7 +347,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn numeric(&mut self) -> Option<tokens::NumericLiteralToken> {
+    pub fn numeric(&mut self) -> TokenResult<tokens::NumericLiteralToken> {
         self.try_token(|t| {
             match t {
                 tokens::Token::NumericLiteral(n) => {
@@ -357,7 +358,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn string(&mut self) -> Option<tokens::StringLiteralToken<'code>> {
+    pub fn string(&mut self) -> TokenResult<tokens::StringLiteralToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::StringLiteral(n) => {
@@ -368,7 +369,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn regex(&mut self) -> Option<tokens::RegularExpressionLiteralToken<'code>> {
+    pub fn regex(&mut self) -> TokenResult<tokens::RegularExpressionLiteralToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::RegularExpressionLiteral(r) => {
@@ -379,7 +380,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn template(&mut self) -> Option<tokens::TemplateToken<'code>> {
+    pub fn template(&mut self) -> TokenResult<tokens::TemplateToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::NoSubstitution, .. }) |
@@ -392,7 +393,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             }
         })
     }
-    pub fn template_tail(&mut self) -> Option<tokens::TemplateToken<'code>> {
+    pub fn template_tail(&mut self) -> TokenResult<tokens::TemplateToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::Middle, .. }) |
@@ -406,7 +407,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn binding_identifier(&mut self) -> Option<tokens::IdentifierNameToken<'code>> {
+    pub fn binding_identifier(&mut self) -> TokenResult<tokens::IdentifierNameToken<'code>> {
         let flags = self.flags;
 
         self.try_token(|t| {
@@ -423,15 +424,15 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn reference_identifier(&mut self) -> Option<tokens::IdentifierNameToken<'code>> {
+    pub fn reference_identifier(&mut self) -> TokenResult<tokens::IdentifierNameToken<'code>> {
         self.binding_identifier()
     }
 
-    pub fn label_identifier(&mut self) -> Option<tokens::IdentifierNameToken<'code>> {
+    pub fn label_identifier(&mut self) -> TokenResult<tokens::IdentifierNameToken<'code>> {
         self.binding_identifier()
     }
 
-    pub fn keyword(&mut self, keyword: &str) -> Option<tokens::IdentifierNameToken<'code>> {
+    pub fn keyword(&mut self, keyword: &str) -> TokenResult<tokens::IdentifierNameToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::IdentifierName(v) => {
@@ -446,7 +447,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn identifier(&mut self) -> Option<tokens::IdentifierNameToken<'code>> {
+    pub fn identifier(&mut self) -> TokenResult<tokens::IdentifierNameToken<'code>> {
         self.try_token(|t| {
             match t {
                 tokens::Token::IdentifierName(v) => {
@@ -457,7 +458,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         })
     }
 
-    pub fn eof(&mut self) -> Option<tokens::EOFToken> {
+    pub fn eof(&mut self) -> TokenResult<tokens::EOFToken> {
         self.try_token(|t| {
             match t {
                 tokens::Token::EOF(v) => {

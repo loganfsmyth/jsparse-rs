@@ -1,6 +1,7 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag, LookaheadResult};
 use parser::utils::OptResult;
+use parser::utils;
 
 enum ForInit {
     // Can occur in any type of for-init.
@@ -75,14 +76,14 @@ where
         let mut body = vec![];
         loop {
             match parser.parse_statement_list_item()? {
-                Some(item) => body.push(item),
-                None => { break; }
+                Ok(item) => body.push(item),
+                Err(utils::NotFound) => { break; }
             }
         }
 
         eat_token!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_variable_statement(&mut self) -> OptResult<()> {
@@ -90,23 +91,23 @@ where
 
         eat_fn!(self.with(Flag::In).parse_var_declarator()?);
 
-        while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+        while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
             eat_fn!(self.with(Flag::In).parse_var_declarator()?);
         }
 
         eat_token!(self.semicolon());
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_var_declarator(&mut self) -> OptResult<()> {
-        if let Some(_) = self.parse_binding_pattern()? {
+        if let Ok(_) = self.parse_binding_pattern()? {
             eat_fn!(self.parse_initializer()?);
         } else {
             eat_token!(self.binding_identifier());
             self.parse_initializer();
         }
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_binding_pattern(&mut self) -> OptResult<()> {
@@ -122,8 +123,8 @@ where
         try_token!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
 
         loop {
-            if let Some(_) = parser.parse_binding_property()? {
-                if let None = parser.punc(tokens::PunctuatorToken::Comma) {
+            if let Ok(_) = parser.parse_binding_property()? {
+                if let Err(utils::NotFound) = parser.punc(tokens::PunctuatorToken::Comma) {
                     break;
                 }
             } else {
@@ -134,7 +135,7 @@ where
 
         eat_token!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     // foo = 4
@@ -144,13 +145,13 @@ where
     fn parse_binding_property(&mut self) -> OptResult<()> {
         let _name = try_fn!(self.parse_property_name()?);
 
-        if let Some(_) = self.punc(tokens::PunctuatorToken::Colon) {
+        if let Ok(_) = self.punc(tokens::PunctuatorToken::Colon) {
             eat_fn!(self.parse_binding_element()?);
         } else {
             self.with(Flag::In).parse_initializer();
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_property_name(&mut self) -> OptResult<()> {
@@ -161,14 +162,14 @@ where
     }
 
     fn parse_literal_property_name(&mut self) -> OptResult<()> {
-        if let Some(_) = self.identifier() {
-        } else if let Some(_) = self.string() {
-        } else if let Some(_) = self.numeric() {
+        if let Ok(_) = self.identifier() {
+        } else if let Ok(_) = self.string() {
+        } else if let Ok(_) = self.numeric() {
         } else {
-            return Ok(None);
+            return Ok(Err(utils::NotFound));
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_computed_property_name(&mut self) -> OptResult<()> {
@@ -179,47 +180,47 @@ where
 
         eat_token!(self.punc(tokens::PunctuatorToken::SquareClose));
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_array_binding_pattern(&mut self) -> OptResult<()> {
         try_token!(self.punc(tokens::PunctuatorToken::SquareOpen));
 
         loop {
-            if let Some(_) = self.parse_binding_rest_element()? {
+            if let Ok(_) = self.parse_binding_rest_element()? {
                 break;
             }
 
-            if let Some(_) = self.parse_binding_element()? {
+            if let Ok(_) = self.parse_binding_element()? {
 
             }
 
-            if let None = self.punc(tokens::PunctuatorToken::Comma) {
+            if let Err(utils::NotFound) = self.punc(tokens::PunctuatorToken::Comma) {
                 break;
             }
         }
 
         eat_token!(self.punc(tokens::PunctuatorToken::SquareClose));
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_binding_rest_element(&mut self) -> OptResult<()> {
         try_token!(self.punc(tokens::PunctuatorToken::Ellipsis));
 
-        if let None = self.parse_binding_pattern()? {
+        if let Err(utils::NotFound) = self.parse_binding_pattern()? {
             eat_token!(self.binding_identifier());
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
     fn parse_binding_element(&mut self) -> OptResult<()> {
-        if let None = self.parse_binding_pattern()? {
+        if let Err(utils::NotFound) = self.parse_binding_pattern()? {
             try_token!(self.binding_identifier());
         }
         self.with(Flag::In).parse_initializer()?;
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     pub fn parse_initializer(&mut self) -> OptResult<()> {
@@ -228,13 +229,13 @@ where
         self.expect_expression();
         eat_fn!(self.parse_assignment_expression()?);
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_empty_statement(&mut self) -> OptResult<()> {
         try_token!(self.punc(tokens::PunctuatorToken::Semicolon));
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_expression_statement(&mut self) -> OptResult<()> {
@@ -244,7 +245,7 @@ where
 
         eat_token!(self.semicolon());
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_if_statement(&mut self) -> OptResult<()> {
@@ -259,11 +260,11 @@ where
 
         eat_fn!(self.parse_statement()?);
 
-        if let Some(_) = self.keyword("else") {
+        if let Ok(_) = self.keyword("else") {
             eat_fn!(self.parse_statement()?);
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_breakable_statement(&mut self) -> OptResult<()> {
@@ -295,7 +296,7 @@ where
 
         eat_token!(self.semicolon_dowhile());
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_while_statement(&mut self) -> OptResult<()> {
@@ -308,7 +309,7 @@ where
 
         eat_fn!(self.parse_statement()?);
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_for_statement(&mut self) -> OptResult<()> {
@@ -318,50 +319,50 @@ where
 
         self.expect_expression();
 
-        let (kind, pattern, initialized, multiple, bracket, left_hand) = if let Some(_) = self.keyword("var") {
+        let (kind, pattern, initialized, multiple, bracket, left_hand) = if let Ok(_) = self.keyword("var") {
             let mut pattern = false;
             let mut initialized = false;
-            if let Some(_) = self.parse_binding_pattern()? {
+            if let Ok(_) = self.parse_binding_pattern()? {
                 pattern = true;
 
-                if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                if let Ok(_) = self.without(Flag::In).parse_initializer()? {
                     initialized = true;
                 }
             } else {
                 eat_token!(self.binding_identifier());
-                if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                if let Ok(_) = self.without(Flag::In).parse_initializer()? {
                     initialized = true;
                 }
             }
 
             let mut multiple = false;
             if !pattern || initialized {
-                while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+                while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
                     multiple = true;
                     eat_fn!(self.without(Flag::In).parse_var_declarator()?);
                 }
             }
 
             ("var", pattern, initialized, multiple, false, false)
-        } else if let Some(_) = self.keyword("const") {
+        } else if let Ok(_) = self.keyword("const") {
             let mut pattern = false;
             let mut initialized = false;
-            if let Some(_) = self.parse_binding_pattern()? {
+            if let Ok(_) = self.parse_binding_pattern()? {
                 pattern = true;
 
-                if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                if let Ok(_) = self.without(Flag::In).parse_initializer()? {
                     initialized = true;
                 }
             } else {
                 eat_token!(self.binding_identifier());
-                if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                if let Ok(_) = self.without(Flag::In).parse_initializer()? {
                     initialized = true;
                 }
             }
 
             let mut multiple = false;
             if !pattern || initialized {
-                while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+                while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
                     multiple = true;
                     eat_fn!(self.without(Flag::In).parse_lexical_declarator(true)?);
                 }
@@ -382,25 +383,25 @@ where
 
 
             let decl = if maybe_decl {
-                if let Some(_) = self.keyword("let") {
+                if let Ok(_) = self.keyword("let") {
                     let mut pattern = false;
                     let mut initialized = false;
-                    if let Some(_) = self.parse_binding_pattern()? {
+                    if let Ok(_) = self.parse_binding_pattern()? {
                         pattern = true;
 
-                        if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                        if let Ok(_) = self.without(Flag::In).parse_initializer()? {
                             initialized = true;
                         }
                     } else {
                         eat_token!(self.binding_identifier());
-                        if let Some(_) = self.without(Flag::In).parse_initializer()? {
+                        if let Ok(_) = self.without(Flag::In).parse_initializer()? {
                             initialized = true;
                         }
                     }
 
                     let mut multiple = false;
                     if !pattern || initialized {
-                        while let Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+                        while let Ok(_) = self.punc(tokens::PunctuatorToken::Comma) {
                             multiple = true;
                             eat_fn!(self.without(Flag::In).parse_lexical_declarator(true)?);
                         }
@@ -450,7 +451,7 @@ where
         };
 
         let found = if maybe_for {
-            if let Some(_) = self.punc(tokens::PunctuatorToken::Semicolon) {
+            if let Ok(_) = self.punc(tokens::PunctuatorToken::Semicolon) {
                 self.expect_expression();
                 self.parse_expression()?;
                 eat_token!(self.punc(tokens::PunctuatorToken::Semicolon));
@@ -466,10 +467,10 @@ where
         };
 
         if !found && maybe_x {
-            if let Some(_) = self.keyword("in") {
+            if let Ok(_) = self.keyword("in") {
                 self.expect_expression();
                 eat_fn!(self.with(Flag::In).parse_assignment_expression()?);
-            } else if let Some(_) = self.keyword("of") {
+            } else if let Ok(_) = self.keyword("of") {
                 self.expect_expression();
                 eat_fn!(self.with(Flag::In).parse_assignment_expression()?);
             } else {
@@ -480,7 +481,7 @@ where
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 /*
 
@@ -534,22 +535,22 @@ enum ForInit {
         let mut body = vec![];
         let mut has_default = false;
         loop {
-            if let Some(_) = parser.parse_default_clause()? {
+            if let Ok(_) = parser.parse_default_clause()? {
                 if has_default {
                     return bail!("duplicate default statements");
                 }
                 has_default = true;
             } else {
                 match parser.parse_case_clause()? {
-                    Some(item) => body.push(item),
-                    None => { break; }
+                    Ok(item) => body.push(item),
+                    Err(utils::NotFound) => { break; }
                 }
             }
         }
 
         eat_token!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
     fn parse_default_clause(&mut self) -> OptResult<()> {
         try_token!(self.keyword("default"));
@@ -558,12 +559,12 @@ enum ForInit {
         let mut body = vec![];
         loop {
             match self.parse_statement_list_item()? {
-                Some(item) => body.push(item),
-                None => { break; }
+                Ok(item) => body.push(item),
+                Err(utils::NotFound) => { break; }
             }
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_case_clause(&mut self) -> OptResult<()> {
@@ -575,12 +576,12 @@ enum ForInit {
         let mut body = vec![];
         loop {
             match self.parse_statement_list_item()? {
-                Some(item) => body.push(item),
-                None => { break; }
+                Ok(item) => body.push(item),
+                Err(utils::NotFound) => { break; }
             }
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
 
@@ -593,7 +594,7 @@ enum ForInit {
 
         self.semicolon();
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
     fn parse_break_statement(&mut self) -> OptResult<()> {
         try_token!(self.keyword("break"));
@@ -603,7 +604,7 @@ enum ForInit {
         }
 
         self.semicolon();
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_return_statement(&mut self) -> OptResult<()> {
@@ -615,7 +616,7 @@ enum ForInit {
         }
         self.semicolon();
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_with_statement(&mut self) -> OptResult<()> {
@@ -628,7 +629,7 @@ enum ForInit {
 
         eat_fn!(self.parse_statement()?);
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_labelled_statement(&mut self) -> OptResult<()> {
@@ -645,9 +646,9 @@ enum ForInit {
             eat_token!(self.identifier());
             eat_token!(self.punc(tokens::PunctuatorToken::Colon));
             eat_fn!(self.parse_statement()?);
-            Ok(Some(()))
+            Ok(Ok(()))
         } else {
-            Ok(None)
+            Ok(Err(utils::NotFound))
         }
 
     }
@@ -660,7 +661,7 @@ enum ForInit {
             eat_fn!(self.with(Flag::In).parse_expression()?);
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_try_statement(&mut self) -> OptResult<()> {
@@ -668,10 +669,10 @@ enum ForInit {
 
         eat_fn!(self.parse_block_statement()?);
 
-        if let Some(_) = self.keyword("catch") {
+        if let Ok(_) = self.keyword("catch") {
             eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
-            if let None = self.parse_binding_pattern()? {
+            if let Err(utils::NotFound) = self.parse_binding_pattern()? {
                 eat_token!(self.binding_identifier());
             }
 
@@ -680,17 +681,17 @@ enum ForInit {
             eat_fn!(self.parse_block_statement()?);
         }
 
-        if let Some(_) = self.keyword("finally") {
+        if let Ok(_) = self.keyword("finally") {
             eat_fn!(self.parse_block_statement()?);
         }
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 
     fn parse_debugger_statement(&mut self) -> OptResult<()> {
         try_token!(self.keyword("debugger"));
         eat_token!(self.semicolon());
 
-        Ok(Some(()))
+        Ok(Ok(()))
     }
 }
