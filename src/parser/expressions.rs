@@ -92,8 +92,10 @@ where
         try_value!(self.keyword("yield"));
 
         if self.no_line_terminator() {
+            self.expect_expression();
             opt_value!(self.punc(tokens::PunctuatorToken::Star));
 
+            self.expect_expression();
             opt_value!(self.parse_expression()?);
         }
 
@@ -103,8 +105,11 @@ where
         try_value!(self.parse_logical_or_expression()?);
 
         if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Question) {
+            self.expect_expression();
             eat_value!(self.with(Flag::In).parse_assignment_expression()?);
             eat_value!(self.punc(tokens::PunctuatorToken::Colon));
+
+            self.expect_expression();
             eat_value!(self.parse_assignment_expression()?);
         }
         Ok(TokenResult::Some(()))
@@ -113,6 +118,7 @@ where
         try_value!(self.parse_logical_and_expression()?);
 
         while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::BarBar) {
+            self.expect_expression();
             eat_value!(self.parse_logical_and_expression()?);
         }
 
@@ -122,6 +128,7 @@ where
         try_value!(self.parse_bitwise_or_expression()?);
 
         while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
+            self.expect_expression();
             eat_value!(self.parse_bitwise_or_expression()?);
         }
 
@@ -131,6 +138,7 @@ where
         try_value!(self.parse_bitwise_xor_expression()?);
 
         while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Bar) {
+            self.expect_expression();
             eat_value!(self.parse_bitwise_xor_expression()?);
         }
 
@@ -140,6 +148,7 @@ where
         try_value!(self.parse_bitwise_and_expression()?);
 
         while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Caret) {
+            self.expect_expression();
             eat_value!(self.parse_bitwise_and_expression()?);
         }
 
@@ -149,6 +158,7 @@ where
         try_value!(self.parse_equality_expression()?);
 
         while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Amp) {
+            self.expect_expression();
             eat_value!(self.parse_equality_expression()?);
         }
 
@@ -163,6 +173,7 @@ where
             self.punc(tokens::PunctuatorToken::ExclamEq),
             self.punc(tokens::PunctuatorToken::ExclamEqEq),
         ) {
+            self.expect_expression();
             eat_value!(self.parse_relational_expression()?);
         }
 
@@ -179,6 +190,7 @@ where
             self.keyword("instanceof").map(tokens::Token::IdentifierName),
             if self.flags.allow_in { self.keyword("in").map(tokens::Token::IdentifierName) } else { TokenResult::None },
         ) {
+            self.expect_expression();
             eat_value!(self.parse_shift_expression()?);
         }
 
@@ -190,8 +202,9 @@ where
         while let TokenResult::Some(_) = try_sequence!(
             self.punc(tokens::PunctuatorToken::LAngleAngle),
             self.punc(tokens::PunctuatorToken::RAngleAngle),
-            self.punc(tokens::PunctuatorToken::RAngleAngle),
+            self.punc(tokens::PunctuatorToken::RAngleAngleAngle),
         ) {
+            self.expect_expression();
             eat_value!(self.parse_additive_expression()?);
         }
 
@@ -204,6 +217,7 @@ where
             self.punc(tokens::PunctuatorToken::Plus),
             self.punc(tokens::PunctuatorToken::Minus),
         ) {
+            self.expect_expression();
             eat_value!(self.parse_multiplicative_expression()?);
         }
 
@@ -217,6 +231,7 @@ where
             self.punc(tokens::PunctuatorToken::Slash),
             self.punc(tokens::PunctuatorToken::Percent),
         ) {
+            self.expect_expression();
             eat_value!(self.parse_exponential_expression()?);
         }
 
@@ -228,6 +243,7 @@ where
         // TODO:
         // if is_update_expression(expr) {
             if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::StarStar) {
+                self.expect_expression();
                 eat_value!(self.parse_exponential_expression()?);
             }
         // }
@@ -250,6 +266,8 @@ where
     fn parse_delete_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("delete"));
 
+        self.expect_expression();
+
         eat_value!(self.parse_unary_expression()?);
 
         Ok(TokenResult::Some(()))
@@ -257,6 +275,7 @@ where
     fn parse_void_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("void"));
 
+        self.expect_expression();
         eat_value!(self.parse_unary_expression()?);
 
         Ok(TokenResult::Some(()))
@@ -264,6 +283,7 @@ where
     fn parse_typeof_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("typeof"));
 
+        self.expect_expression();
         eat_value!(self.parse_unary_expression()?);
 
         Ok(TokenResult::Some(()))
@@ -271,6 +291,7 @@ where
     fn parse_plus_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::Plus));
 
+        self.expect_expression();
         eat_value!(self.parse_unary_expression()?);
 
         Ok(TokenResult::Some(()))
@@ -278,6 +299,7 @@ where
     fn parse_minus_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::Minus));
 
+        self.expect_expression();
         eat_value!(self.parse_unary_expression()?);
 
         Ok(TokenResult::Some(()))
@@ -285,6 +307,7 @@ where
     fn parse_tilde_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::Tilde));
 
+        self.expect_expression();
         eat_value!(self.parse_unary_expression()?);
 
         Ok(TokenResult::Some(()))
@@ -292,6 +315,7 @@ where
     fn parse_exclam_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::Exclam));
 
+        self.expect_expression();
         eat_value!(self.parse_unary_expression()?);
 
         Ok(TokenResult::Some(()))
@@ -303,6 +327,7 @@ where
 
         try_value!(self.keyword("await"));
 
+        self.expect_expression();
         eat_value!(self.parse_unary_expression()?);
 
         Ok(TokenResult::Some(()))
@@ -317,6 +342,7 @@ where
         };
 
         if op {
+            self.expect_expression();
             eat_value!(self.parse_update_expression()?);
         } else {
             try_value!(self.parse_left_hand_expression(true)?);
@@ -380,9 +406,12 @@ where
 
         // println!("osdf");
         loop {
+            parser.expect_expression();
+
             // println!("inside");
             if let TokenResult::Some(_) = parser.punc(tokens::PunctuatorToken::Ellipsis) {
                 println!("4");
+                parser.expect_expression();
                 eat_value!(parser.parse_assignment_expression()?);
                 break;
             }
@@ -514,14 +543,16 @@ where
     }
 
     fn parse_object_property(&mut self) -> OptResult<()> {
-
         // TODO: Disallow static
         let head = try_value!(self.parse_method_head(true)?);
 
         if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Colon) {
+            self.expect_expression();
             eat_value!(self.parse_assignment_expression()?);
         } else {
-            eat_value!(self.parse_method_tail(head)?);
+            // TODO: This needs to handle singlename prop access
+            // eat_value!(self.parse_method_tail(head)?);
+            opt_value!(self.parse_method_tail(head)?);
         }
 
         Ok(TokenResult::Some(()))

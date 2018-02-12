@@ -12,6 +12,8 @@ mod functions;
 use failure;
 use failure::Fail;
 
+use time;
+
 // impl<'code, T> Parser<'code, T>
 // where
 //     T: Tokenizer<'code>
@@ -35,11 +37,32 @@ use std::ops::{Deref, DerefMut};
 use tokenizer::{IntoTokenizer, Tokenizer, Hint, tokens};
 use self::utils::TokenResult;
 
+struct Timer {
+    t: u64
+}
+impl Timer {
+    fn new() -> Timer {
+        Timer {
+            t: time::precise_time_ns()
+        }
+    }
+}
+impl Drop for Timer {
+    fn drop(&mut self) {
+        let t_ns = time::precise_time_ns() - self.t;
+
+        println!("time: {:?}", (t_ns / 1_000_000_000, t_ns % 1_000_000_000  ));
+    }
+}
+
 pub fn parse_root<'code, T: 'code, P>(t: T) -> P
 where
     T: IntoTokenizer<'code>,
     P: FromTokenizer
 {
+    println!("starting");
+    let timer = Timer::new();
+
     FromTokenizer::from_tokenizer(t)
 }
 
@@ -246,6 +269,8 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
                     }
                 }
                 t => {
+                    self.hint = self.hint.expression(false);
+
                     // println!("{:?}", (line, t.clone()));
                     break (line, t);
                 },

@@ -102,7 +102,7 @@ where
     }
 
     pub fn parse_function_params(&mut self) -> OptResult<()> {
-        eat_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
+        try_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
         loop {
             if let TokenResult::Some(_) = self.parse_binding_rest_element()? {

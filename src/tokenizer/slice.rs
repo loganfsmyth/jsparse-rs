@@ -26,12 +26,22 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
 
         let code_s: &'code str = self.code.borrow();
 
+        loop {
+            match (&code_s[self.position.offset..]).chars().next().unwrap() {
+                '\x09' | '\x0B' | '\x0C' | '\x20' => {
+                    self.position.offset += 1;
+                }
+                _ => break,
+            }
+        }
+
         let s = &code_s[self.position.offset..];
 
         let result: TokenResult<'code> = read_next(s, hint);
         let TokenResult(token, size) = result;
 
-        println!("line {} column {}: {:#?}", self.position.line, self.position.column, token);
+        // println!("line {} column {}: {:?}", self.position.line, self.position.column, token );
+
 
 
         if let Some((byte_step, _)) = s.char_indices().skip(size.chars).next() {
@@ -402,9 +412,17 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
             } else if hint.expression {
                 let mut end = index + 1;
 
+                let mut in_escape = false;
                 let mut in_class = false;
                 for (i, c) in code.char_indices().skip(2) {
                     match c {
+                        _ if in_escape => {
+                            in_escape = false;
+                            // TODO: Throw if newlines?
+                        }
+                        '\\' => {
+                            in_escape = true;
+                        }
                         '/' if !in_class => {
                             end = i;
                             break;
@@ -490,16 +508,83 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
             let mut start = index;
             let mut end = start;
 
+            let mut in_escape = 0;
+            let mut in_hex_escape = false;
+            let mut in_unicode_escape = false;
+            let mut in_long_unicode_escape = false;
+            let mut ignore_nl = false;
+
             let mut s: usize = index + 1;
             for (i, c) in code.char_indices().skip(1) {
+                // println!("{:?}", (in_escape, i, c));
+
                 // TODO: Build state transition tables for parsing escapes
+
+                if in_escape == 1 {
+                    match c {
+                        '\r' => {
+                            ignore_nl = true;
+                            in_escape = 0;
+                            continue;
+                        }
+                        '\n' | '\u{2028}' | '\u{2029}' => {
+                            in_escape = 0;
+                            continue;
+                        }
+                        '\'' | '"' | '\\' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' => {
+                            in_escape = 0;
+                            continue;
+                        }
+                        '0' => {
+                            in_escape = 0;
+                            continue;
+                        }
+                        'x' => {
+                            in_hex_escape = true;
+                        }
+                        'u' => {
+                            in_unicode_escape = true;
+                        }
+                        '1'...'9' => {
+                            panic!("numbers not allowed");
+                        }
+                        _ => {
+                            unimplemented!("totally bad escapes");
+                        }
+                    }
+                }
+                if in_hex_escape && in_escape == 3 {
+                    in_escape = 0;
+                    in_hex_escape = false;
+                }
+                if in_unicode_escape {
+                    if in_escape == 2 && c == '{' {
+                        in_long_unicode_escape = true;
+                    }
+
+                    if !in_long_unicode_escape && in_escape == 5 {
+                        in_escape = 0;
+                        in_unicode_escape = false;
+                    }
+
+                    if in_long_unicode_escape && c == '}' {
+                        in_escape = 0;
+                        in_unicode_escape = false;
+                        in_long_unicode_escape = false;
+                    }
+                }
+
+                if in_escape != 0 {
+                    in_escape += 1;
+                    continue;
+                }
 
                 match c {
                     '\\' => {
                         // pieces.push(Cow::from(&code[s..i]));
                         // start = i + 1;
 
-                        unimplemented!("escape")
+                        in_escape = 1;
                     }
                     '\"' if t == b'\"' => {
                         pieces.push(Cow::from(&code[s..i]));
@@ -511,9 +596,12 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                         end = i + 1;
                         break;
                     },
+                    '\n' if ignore_nl => {
+
+                    }
                     '\r' | '\n' | '\u{2028}' | '\u{2029}' => {
                         // Invalid string
-                        unimplemented!("string with newlines")
+                        panic!("string with newlines")
                     }
                     _ => { }
                 }

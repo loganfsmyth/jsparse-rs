@@ -446,6 +446,8 @@ where
             _ => unreachable!(),
         };
 
+        // println!("{}, {:#?}", maybe_for, self);
+
         let found = if maybe_for {
             if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Semicolon) {
                 self.expect_expression();
@@ -463,18 +465,20 @@ where
             false
         };
 
-        if !found && maybe_x {
-            if let TokenResult::Some(_) = self.keyword("in") {
-                self.expect_expression();
-                eat_value!(self.with(Flag::In).parse_assignment_expression()?);
-            } else if let TokenResult::Some(_) = self.keyword("of") {
-                self.expect_expression();
-                eat_value!(self.with(Flag::In).parse_assignment_expression()?);
+        if !found {
+            if maybe_x {
+                if let TokenResult::Some(_) = self.keyword("in") {
+                    self.expect_expression();
+                    eat_value!(self.with(Flag::In).parse_assignment_expression()?);
+                } else if let TokenResult::Some(_) = self.keyword("of") {
+                    self.expect_expression();
+                    eat_value!(self.with(Flag::In).parse_assignment_expression()?);
+                } else {
+                    bail!("Invalid for loop");
+                }
             } else {
-                bail!("Invalid for loop");
+                bail!("bad for loop");
             }
-        } else {
-            bail!("bad for loop");
         }
 
         eat_value!(self.punc(tokens::PunctuatorToken::ParenClose));

@@ -26,8 +26,8 @@ where
         self.expect_expression();
 
         Ok(try_sequence!(
-            self.parse_statement()?,
             self.parse_declaration()?,
+            self.parse_statement()?,
         ))
     }
 

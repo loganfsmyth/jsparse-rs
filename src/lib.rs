@@ -1,4 +1,5 @@
 extern crate ucd;
+extern crate time;
 
 #[macro_use] extern crate failure;
 
