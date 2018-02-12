@@ -26,7 +26,7 @@ impl fmt::Display for ParseError {
 macro_rules! try_sequence {
     ($e:expr, $($t:tt)*) => (
         match $e {
-            Err(NotFound) => {
+            Err($crate::parser::utils::NotFound) => {
                 try_sequence!($($t)*)
             }
             Ok(val) => {
@@ -41,7 +41,7 @@ macro_rules! try_sequence {
 
 // Execute an OptResult-returning function and "throw" if not found.
 #[macro_export]
-macro_rules! eat_token {
+macro_rules! eat_value {
     ($e:expr) => (
         match $e {
             ::std::result::Result::Ok(val) => {
@@ -56,7 +56,7 @@ macro_rules! eat_token {
 
 // Execute an OptResult-returning function, and do nothing if not found.
 #[macro_export]
-macro_rules! try_token {
+macro_rules! try_value {
     ($e:expr) => (
         match $e {
             ::std::result::Result::Ok(val) => {
@@ -69,18 +69,17 @@ macro_rules! try_token {
     );
 }
 
-// Execute an OptResult-returning function and "throw" if not found.
-#[macro_export]
-macro_rules! eat_fn {
-    ($e:expr) => (
-        eat_token!($e)
-    );
-}
-
 // Execute an OptResult-returning function, and do nothing if not found.
 #[macro_export]
-macro_rules! try_fn {
+macro_rules! opt_value {
     ($e:expr) => (
-        try_token!($e)
+        match $e {
+            ::std::result::Result::Ok(val) => {
+                Some(val)
+            }
+            ::std::result::Result::Err($crate::parser::utils::NotFound) => {
+                None
+            }
+        }
     );
 }

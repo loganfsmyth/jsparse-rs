@@ -8,7 +8,7 @@ where
     T: Tokenizer<'code>
 {
     pub fn parse_import_declaration(&mut self) -> OptResult<()>  {
-        try_token!(self.keyword("import"));
+        try_value!(self.keyword("import"));
 
         if let Ok(s) = self.string() {
 
@@ -21,10 +21,10 @@ where
 
             if try_names {
                 if let Ok(_) = self.punc(tokens::PunctuatorToken::Star) {
-                    eat_token!(self.keyword("as"));
-                    eat_token!(self.binding_identifier());
+                    eat_value!(self.keyword("as"));
+                    eat_value!(self.binding_identifier());
                 } else {
-                    eat_token!(self.punc(tokens::PunctuatorToken::CurlyOpen));
+                    eat_value!(self.punc(tokens::PunctuatorToken::CurlyOpen));
 
                     while let Ok(_) = self.parse_import_specifier()? {
                         if let Err(utils::NotFound) = self.punc(tokens::PunctuatorToken::Comma) {
@@ -32,25 +32,25 @@ where
                         }
                     }
 
-                    eat_token!(self.punc(tokens::PunctuatorToken::CurlyClose));
+                    eat_value!(self.punc(tokens::PunctuatorToken::CurlyClose));
                 }
             }
 
-            eat_token!(self.keyword("from"));
-            eat_token!(self.string());
+            eat_value!(self.keyword("from"));
+            eat_value!(self.string());
         }
 
-        eat_token!(self.semicolon());
+        eat_value!(self.semicolon());
 
         Ok(Ok(()))
     }
 
     fn parse_import_specifier(&mut self) -> OptResult<()> {
-        try_token!(self.identifier());
+        try_value!(self.identifier());
 
         if let Ok(_) = self.keyword("as") {
             // TODO: Validate BindingIdentifier
-            eat_token!(self.identifier());
+            eat_value!(self.identifier());
         } else {
             // TODO: Validate first is BindingIdentifier
         }
@@ -59,7 +59,7 @@ where
     }
 
     pub fn parse_export_declaration(&mut self) -> OptResult<()>  {
-        try_token!(self.keyword("export"));
+        try_value!(self.keyword("export"));
 
         if let Ok(_) = self.keyword("default") {
             let mut parser = self.with(Flag::Default);
@@ -69,8 +69,8 @@ where
             } else if let Ok(_) = parser.parse_class_declaration()? {
 
             } else {
-                eat_fn!(parser.with(Flag::In).parse_expression()?);
-                eat_token!(parser.semicolon());
+                eat_value!(parser.with(Flag::In).parse_expression()?);
+                eat_value!(parser.semicolon());
             }
         } else {
             if let Ok(_) = self.parse_variable_statement()? {
@@ -80,10 +80,10 @@ where
             } else if let Ok(_) = self.parse_const_declaration()? {
 
             } else if let Ok(_) = self.punc(tokens::PunctuatorToken::Star) {
-                eat_token!(self.keyword("from"));
-                eat_token!(self.string());
+                eat_value!(self.keyword("from"));
+                eat_value!(self.string());
             } else {
-                eat_token!(self.punc(tokens::PunctuatorToken::CurlyOpen));
+                eat_value!(self.punc(tokens::PunctuatorToken::CurlyOpen));
 
                 while let Ok(_) = self.parse_export_specifier()? {
                     if let Err(utils::NotFound) = self.punc(tokens::PunctuatorToken::Comma) {
@@ -91,26 +91,26 @@ where
                     }
                 }
 
-                eat_token!(self.punc(tokens::PunctuatorToken::CurlyClose));
+                eat_value!(self.punc(tokens::PunctuatorToken::CurlyClose));
 
                 if let Ok(_) = self.keyword("from") {
-                    eat_token!(self.string());
+                    eat_value!(self.string());
                 } else {
                     // TODO: Validate BindingIdentifier for local specifiers
                 }
             }
 
-            eat_token!(self.semicolon());
+            eat_value!(self.semicolon());
         }
 
         Ok(Ok(()))
     }
 
     fn parse_export_specifier(&mut self) -> OptResult<()> {
-        try_token!(self.identifier());
+        try_value!(self.identifier());
 
         if let Ok(_) = self.keyword("as") {
-            eat_token!(self.identifier());
+            eat_value!(self.identifier());
         }
 
         Ok(Ok(()))

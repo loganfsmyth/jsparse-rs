@@ -8,43 +8,43 @@ where
     T: Tokenizer<'code>
 {
     pub fn parse_class_declaration(&mut self) -> OptResult<()> {
-        try_token!(self.keyword("class"));
+        try_value!(self.keyword("class"));
 
         let id = if self.flags.allow_default {
-            self.binding_identifier()
+            opt_value!(self.binding_identifier())
         } else {
-            Ok(eat_token!(self.binding_identifier()))
+            Some(eat_value!(self.binding_identifier()))
         };
 
-        let parent = self.parse_class_heritage()?;
+        let parent = opt_value!(self.parse_class_heritage()?);
 
-        self.parse_class_body()?;
+        eat_value!(self.parse_class_body()?);
 
         Ok(Ok(()))
     }
     pub fn parse_class_expression(&mut self) -> OptResult<()> {
-        try_token!(self.keyword("class"));
+        try_value!(self.keyword("class"));
 
         Ok(Ok(()))
     }
 
     fn parse_class_heritage(&mut self) -> OptResult<()> {
-        try_token!(self.keyword("extends"));
+        try_value!(self.keyword("extends"));
 
         self.expect_expression();
-        eat_fn!(self.parse_left_hand_side_expression()?);
+        eat_value!(self.parse_left_hand_side_expression()?);
 
         Ok(Ok(()))
     }
 
     fn parse_class_body(&mut self) -> OptResult<()> {
         let mut parser = self.without(Flag::Template);
-        eat_token!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
+        eat_value!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
 
         while let Ok(_) = parser.parse_class_item()? {
         }
 
-        eat_token!(parser.punc(tokens::PunctuatorToken::CurlyClose));
+        eat_value!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
         Ok(Ok(()))
     }
@@ -54,9 +54,9 @@ where
             return Ok(Ok(()));
         }
 
-        let head = try_fn!(self.parse_method_head(true)?);
+        let head = try_value!(self.parse_method_head(true)?);
 
-        eat_fn!(self.parse_method_tail(head)?);
+        eat_value!(self.parse_method_tail(head)?);
 
         Ok(Ok(()))
     }
@@ -76,7 +76,7 @@ where
             MethodKind::None
         };
 
-        let mut async = if let MethodKind::None = kind {
+        let async = if let MethodKind::None = kind {
             if let Ok(_) = self.keyword("async") {
                 true
             } else {
@@ -92,7 +92,7 @@ where
             self.punc(tokens::PunctuatorToken::Star)
         };
 
-        let mut is_ident = false;
+        let is_ident = false;
         let name = if async && self.no_line_terminator() {
             if let Ok(_) = self.parse_property_name()? {
                 // async fn method
@@ -133,42 +133,42 @@ where
     pub fn parse_method_tail(&mut self, head: MethodHead) -> OptResult<()> {
         println!("{:?}", head);
 
-        let parser = match head.kind {
+        match head.kind {
             MethodKind::Get => {
-                try_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
-                eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
+                try_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
+                eat_value!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-                eat_fn!(self.parse_function_body()?);
+                eat_value!(self.parse_function_body()?);
             }
             MethodKind::Set => {
-                try_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
+                try_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
                 if let Err(utils::NotFound) = self.parse_binding_pattern()? {
-                    eat_token!(self.binding_identifier());
+                    eat_value!(self.binding_identifier());
                 }
 
-                eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
+                eat_value!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-                eat_fn!(self.parse_function_body()?);
+                eat_value!(self.parse_function_body()?);
             }
             MethodKind::None => {
                 if head.async {
                     let mut parser = self.without(Flag::Yield);
 
-                    try_fn!(parser.parse_function_params()?);
-                    eat_fn!(parser.with(Flag::Await).parse_function_body()?);
+                    try_value!(parser.parse_function_params()?);
+                    eat_value!(parser.with(Flag::Await).parse_function_body()?);
                 } else if head.generator {
                     let mut parser = self.without(Flag::Await);
                     let mut parser = parser.with(Flag::Yield);
 
-                    try_fn!(parser.parse_function_params()?);
-                    eat_fn!(parser.parse_function_body()?);
+                    try_value!(parser.parse_function_params()?);
+                    eat_value!(parser.parse_function_body()?);
                 } else {
                     let mut parser = self.without(Flag::Await);
                     let mut parser = parser.without(Flag::Yield);
 
-                    try_fn!(parser.parse_function_params()?);
-                    eat_fn!(parser.parse_function_body()?);
+                    try_value!(parser.parse_function_params()?);
+                    eat_value!(parser.parse_function_body()?);
                 }
             }
         };

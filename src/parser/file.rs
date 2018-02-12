@@ -16,7 +16,7 @@ where
             }
         }
 
-        eat_token!(self.eof());
+        eat_value!(self.eof());
         Ok(())
     }
     pub fn parse_module(&mut self) -> Result<()> {
@@ -28,7 +28,7 @@ where
             }
         }
 
-        eat_token!(self.eof());
+        eat_value!(self.eof());
         Ok(())
     }
 
