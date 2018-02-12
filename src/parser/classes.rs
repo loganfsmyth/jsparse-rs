@@ -30,6 +30,7 @@ where
     fn parse_class_heritage(&mut self) -> OptResult<()> {
         try_token!(self.keyword("extends"));
 
+        self.expect_expression();
         eat_fn!(self.parse_left_hand_side_expression());
 
         Ok(Some(()))

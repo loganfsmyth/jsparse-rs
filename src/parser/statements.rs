@@ -172,6 +172,7 @@ where
     fn parse_computed_property_name(&mut self) -> OptResult<()> {
         try_token!(self.punc(tokens::PunctuatorToken::SquareOpen));
 
+        self.expect_expression();
         self.with(Flag::In).parse_assignment_expression()?;
 
         eat_token!(self.punc(tokens::PunctuatorToken::SquareClose));
@@ -222,6 +223,7 @@ where
     pub fn parse_initializer(&mut self) -> OptResult<()> {
         try_token!(self.punc(tokens::PunctuatorToken::Eq));
 
+        self.expect_expression();
         eat_fn!(self.parse_assignment_expression());
 
         Ok(Some(()))
@@ -246,6 +248,7 @@ where
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
+        self.expect_expression();
         eat_fn!(self.with(Flag::In).parse_expression());
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
@@ -282,6 +285,7 @@ where
         eat_token!(self.keyword("while"));
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
+        self.expect_expression();
         eat_fn!(self.with(Flag::In).parse_expression());
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
@@ -294,6 +298,7 @@ where
         try_token!(self.keyword("while"));
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
+        self.expect_expression();
         eat_fn!(self.with(Flag::In).parse_expression());
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
@@ -306,6 +311,8 @@ where
         try_token!(self.keyword("for"));
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
+
+        self.expect_expression();
 
         let (kind, pattern, initialized, multiple, bracket, left_hand) = if let Some(_) = self.keyword("var") {
             let mut pattern = false;
@@ -438,12 +445,13 @@ where
             _ => unreachable!(),
         };
 
-        println!("{:?}", (maybe_for, maybe_x));
-
         let found = if maybe_for {
             if let Some(_) = self.punc(tokens::PunctuatorToken::Semicolon) {
+                self.expect_expression();
                 self.parse_expression()?;
                 eat_token!(self.punc(tokens::PunctuatorToken::Semicolon));
+
+                self.expect_expression();
                 self.parse_expression()?;
                 true
             } else {
@@ -455,8 +463,10 @@ where
 
         if !found && maybe_x {
             if let Some(_) = self.keyword("in") {
+                self.expect_expression();
                 eat_fn!(self.with(Flag::In).parse_assignment_expression());
             } else if let Some(_) = self.keyword("of") {
+                self.expect_expression();
                 eat_fn!(self.with(Flag::In).parse_assignment_expression());
             } else {
                 bail!("Invalid for loop");
@@ -509,6 +519,7 @@ enum ForInit {
         try_token!(self.keyword("switch"));
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
+        self.expect_expression();
         eat_fn!(self.with(Flag::In).parse_expression());
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
@@ -551,6 +562,7 @@ enum ForInit {
 
     fn parse_case_clause(&mut self) -> OptResult<()> {
         try_token!(self.keyword("case"));
+        self.expect_expression();
         eat_fn!(self.with(Flag::In).parse_expression());
         eat_token!(self.punc(tokens::PunctuatorToken::Colon));
 
@@ -592,6 +604,7 @@ enum ForInit {
         try_token!(self.keyword("return"));
 
         if self.no_line_terminator() {
+            self.expect_expression();
             self.with(Flag::In).parse_expression();
         }
         self.semicolon();
@@ -603,6 +616,7 @@ enum ForInit {
         try_token!(self.keyword("with"));
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
+        self.expect_expression();
         eat_fn!(self.with(Flag::In).parse_expression());
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
@@ -636,6 +650,7 @@ enum ForInit {
         try_token!(self.keyword("throw"));
 
         if self.no_line_terminator() {
+            self.expect_expression();
             eat_fn!(self.with(Flag::In).parse_expression());
         }
 
