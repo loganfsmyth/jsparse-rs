@@ -361,7 +361,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
         }
         b'/' => {
             if index + 1 < len && bytes[index + 1] == b'/' {
-                let mut end = index + 2;
+                let mut end = 0;
                 for (i, c) in code.char_indices().skip(2) {
                     match c {
                         '\r' | '\n' | '\u{2028}' | '\u{2029}' => {
@@ -372,7 +372,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                         }
                     }
                 }
-                if end == index + 2 {
+                if end == 0 {
                     end = code.len();
                 }
 

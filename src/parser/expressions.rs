@@ -27,7 +27,7 @@ where
             return Ok(TokenResult::Some(()));
         }
 
-        // Alternatively this can kick off the cover lookahead here then skip reify
+        // TODO: Alternatively this can kick off the cover lookahead here then skip reify
 
         let left = try_value!(self.parse_conditional_expression()?);
 
@@ -73,6 +73,8 @@ where
         Ok(TokenResult::Some(()))
     }
     fn reify_arrow(&mut self, left: ()) -> OptResult<()> {
+        self.expect_expression();
+
         Ok(try_sequence!(
             self.parse_block_statement()?,
             self.parse_assignment_expression()?,
@@ -96,19 +98,14 @@ where
         Ok(TokenResult::Some(()))
     }
     fn parse_conditional_expression(&mut self) -> OptResult<()> {
-        let test = try_value!(self.parse_logical_or_expression()?);
+        try_value!(self.parse_logical_or_expression()?);
 
         if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Question) {
             eat_value!(self.with(Flag::In).parse_assignment_expression()?);
-
             eat_value!(self.punc(tokens::PunctuatorToken::Colon));
-
             eat_value!(self.parse_assignment_expression()?);
-
-            Ok(TokenResult::Some(()))
-        } else {
-            Ok(TokenResult::Some(test))
         }
+        Ok(TokenResult::Some(()))
     }
     fn parse_logical_or_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_logical_and_expression()?);
@@ -514,9 +511,7 @@ where
             eat_value!(self.parse_assignment_expression()?);
         } else {
             eat_value!(self.parse_method_tail(head)?);
-
         }
-
 
         Ok(TokenResult::Some(()))
     }

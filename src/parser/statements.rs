@@ -48,7 +48,7 @@ where
             self.parse_block_statement()?,
             self.parse_variable_statement()?,
             self.parse_empty_statement()?,
-            self.parse_expression_statement()?,
+            // self.parse_expression_statement()?, // TODO: This is an ambiguity
             self.parse_if_statement()?,
             self.parse_breakable_statement()?,
             self.parse_continue_statement()?,
@@ -59,13 +59,14 @@ where
             self.parse_throw_statement()?,
             self.parse_try_statement()?,
             self.parse_debugger_statement()?,
+            self.parse_expression_statement()?,
         ))
     }
 
     fn parse_statement_list_item(&mut self) -> OptResult<()> {
         Ok(try_sequence!(
-            self.parse_statement()?,
             self.parse_declaration()?,
+            self.parse_statement()?,
         ))
     }
 
@@ -236,9 +237,7 @@ where
     }
 
     fn parse_expression_statement(&mut self) -> OptResult<()> {
-        let result = self.with(Flag::In).parse_expression();
-
-        try_value!(result?);
+        try_value!(self.with(Flag::In).parse_expression()?);
 
         eat_value!(self.semicolon());
 

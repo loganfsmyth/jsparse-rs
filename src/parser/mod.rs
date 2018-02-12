@@ -270,7 +270,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         }
     }
 
-    fn token(&mut self) -> &tokens::Token {
+    pub fn token(&mut self) -> &tokens::Token {
         self.token_and_line().1
     }
 
