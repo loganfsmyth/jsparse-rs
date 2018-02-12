@@ -65,18 +65,20 @@ pub struct ParserProxy<'parser, 'code: 'parser, T: Tokenizer<'code> + 'code>(&'p
 
 impl<'parser, 'code, T: Tokenizer<'code>> ParserProxy<'parser, 'code, T>
 {
-    fn new(p: &'parser mut Parser<'code, T>, flag: Flag, val: bool) -> ParserProxy<'parser, 'code, T> {
-        p.push_flags(flag, val);
-
+    fn new(p: &'parser mut Parser<'code, T>) -> ParserProxy<'parser, 'code, T> {
         ParserProxy(p)
     }
 
     pub fn with<'p>(&'p mut self, flag: Flag) -> ParserProxy<'p, 'code, T> {
-        ParserProxy::new(self.0, flag, true)
+        self.push_flags(flag, true);
+
+        ParserProxy::new(self.0)
     }
 
     pub fn without<'p>(&'p mut self, flag: Flag) -> ParserProxy<'p, 'code, T> {
-        ParserProxy::new(self.0, flag, false)
+        self.push_flags(flag, false);
+
+        ParserProxy::new(self.0)
     }
 }
 impl<'parser, 'code, T> Deref for ParserProxy<'parser, 'code, T>
@@ -123,6 +125,9 @@ pub enum Flag {
     Module,
     Strict,
     Noop,
+
+    Template,
+    // Curly,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -135,6 +140,8 @@ struct GrammarFlags {
     is_module: bool,
     is_strict: bool,
     // TODO: Where to handle directives?
+
+    expect_template: bool,
 }
 
 #[derive(Debug)]
@@ -190,18 +197,24 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         Some(())
     }
 
-    pub fn with<'parser>(&'parser mut self, flags: Flag) -> ParserProxy<'parser, 'code, T> {
-        ParserProxy::new(self, flags, true)
+    pub fn with<'parser>(&'parser mut self, flag: Flag) -> ParserProxy<'parser, 'code, T> {
+        self.push_flags(flag, true);
+
+        ParserProxy::new(self)
     }
 
-    pub fn without<'parser>(&'parser mut self, flags: Flag) -> ParserProxy<'parser, 'code, T> {
-        ParserProxy::new(self, flags, true)
+    pub fn without<'parser>(&'parser mut self, flag: Flag) -> ParserProxy<'parser, 'code, T> {
+        self.push_flags(flag, false);
+
+        ParserProxy::new(self)
     }
 
-    fn push_flags(&mut self, flags: Flag, val: bool) {
+    fn push_flags(&mut self, flag: Flag, val: bool) {
         self.flags_stack.push(self.flags);
 
-        match flags {
+        println!("pushed {:?} as {:?}", flag, val);
+
+        match flag {
             Flag::In => { self.flags.allow_in = val; }
             Flag::Yield => { self.flags.allow_yield = val; }
             Flag::Await => { self.flags.allow_await = val; }
@@ -209,11 +222,16 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             Flag::Default => { self.flags.allow_default = val; }
             Flag::Module => { self.flags.is_module = val; }
             Flag::Strict => { self.flags.is_strict = val; }
+            Flag::Template => {
+                self.flags.expect_template = val;
+                self.hint = self.hint.template(val);
+            }
             Flag::Noop => { /* useful if you want to consistently pass a ParserProxy */}
         }
     }
     fn pop_flags(&mut self) {
-        self.flags_stack.pop();
+        self.flags = self.flags_stack.pop().unwrap();
+        self.hint = self.hint.template(self.flags.expect_template);
     }
 
     fn read_token(&mut self, hint: &Hint) -> (bool, tokens::Token<'code>) {

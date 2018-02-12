@@ -71,17 +71,18 @@ where
     }
 
     pub fn parse_block_statement(&mut self) -> OptResult<()> {
-        try_token!(self.punc(tokens::PunctuatorToken::CurlyOpen));
+        let mut parser = self.without(Flag::Template);
+        try_token!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
 
         let mut body = vec![];
         loop {
-            match self.parse_statement_list_item()? {
+            match parser.parse_statement_list_item()? {
                 Some(item) => body.push(item),
                 None => { break; }
             }
         }
 
-        eat_token!(self.punc(tokens::PunctuatorToken::CurlyClose));
+        eat_token!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
         Ok(Some(()))
     }
@@ -118,12 +119,13 @@ where
     }
 
     pub fn parse_object_binding_pattern(&mut self) -> OptResult<()> {
-        try_token!(self.punc(tokens::PunctuatorToken::CurlyOpen));
+        let mut parser = self.without(Flag::Template);
 
+        try_token!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
 
         loop {
-            if let Some(_) = self.parse_binding_property()? {
-                if let None = self.punc(tokens::PunctuatorToken::Comma) {
+            if let Some(_) = parser.parse_binding_property()? {
+                if let None = parser.punc(tokens::PunctuatorToken::Comma) {
                     break;
                 }
             } else {
@@ -132,7 +134,7 @@ where
 
         }
 
-        eat_token!(self.punc(tokens::PunctuatorToken::CurlyClose));
+        eat_token!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
         Ok(Some(()))
     }
@@ -527,25 +529,27 @@ enum ForInit {
         eat_fn!(self.with(Flag::In).parse_expression());
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
-        eat_token!(self.punc(tokens::PunctuatorToken::CurlyOpen));
+
+        let mut parser = self.without(Flag::Template);
+        eat_token!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
 
         let mut body = vec![];
         let mut has_default = false;
         loop {
-            if let Some(_) = self.parse_default_clause()? {
+            if let Some(_) = parser.parse_default_clause()? {
                 if has_default {
                     return bail!("duplicate default statements");
                 }
                 has_default = true;
             } else {
-                match self.parse_case_clause()? {
+                match parser.parse_case_clause()? {
                     Some(item) => body.push(item),
                     None => { break; }
                 }
             }
         }
 
-        eat_token!(self.punc(tokens::PunctuatorToken::CurlyClose));
+        eat_token!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
         Ok(Some(()))
     }

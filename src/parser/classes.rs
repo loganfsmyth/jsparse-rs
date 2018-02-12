@@ -37,12 +37,13 @@ where
     }
 
     fn parse_class_body(&mut self) -> OptResult<()> {
-        eat_token!(self.punc(tokens::PunctuatorToken::CurlyOpen));
+        let mut parser = self.without(Flag::Template);
+        eat_token!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
 
-        while let Some(_) = self.parse_class_item()? {
+        while let Some(_) = parser.parse_class_item()? {
         }
 
-        eat_token!(self.punc(tokens::PunctuatorToken::CurlyClose));
+        eat_token!(parser.punc(tokens::PunctuatorToken::CurlyClose));
 
         Ok(Some(()))
     }
@@ -59,7 +60,7 @@ where
         Ok(Some(()))
     }
 
-    fn parse_method_head(&mut self, allow_static: bool) -> OptResult<MethodHead> {
+    pub fn parse_method_head(&mut self, allow_static: bool) -> OptResult<MethodHead> {
         let mut stat = if allow_static {
             self.keyword("static")
         } else {
@@ -90,6 +91,7 @@ where
             self.punc(tokens::PunctuatorToken::Star)
         };
 
+        let mut is_ident = false;
         let name = if async && self.no_line_terminator() {
             if let Some(_) = self.parse_property_name()? {
                 // async fn method
@@ -121,11 +123,13 @@ where
 
         Ok(Some(MethodHead {
             kind,
+            is_ident,
             generator: star.is_some(),
             async,
         }))
     }
-    fn parse_method_tail(&mut self, head: MethodHead) -> OptResult<()> {
+
+    pub fn parse_method_tail(&mut self, head: MethodHead) -> OptResult<()> {
         println!("{:?}", head);
 
         let parser = match head.kind {
@@ -173,15 +177,16 @@ where
 }
 
 #[derive(Debug)]
-enum MethodKind {
+pub enum MethodKind {
     Get,
     Set,
     None,
 }
 
 #[derive(Debug)]
-struct MethodHead {
+pub struct MethodHead {
     kind: MethodKind,
+    is_ident: bool,
     generator: bool,
     async: bool,
 }

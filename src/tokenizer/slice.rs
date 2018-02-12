@@ -23,6 +23,8 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
     fn next_token(&mut self, hint: &Hint) -> (tokens::Token<'code>, TokenRange) {
         let start = self.position;
 
+        println!("line {} column {}", self.position.line, self.position.column);
+
         let code_s: &'code str = self.code.borrow();
 
         let s = &code_s[self.position.offset..];
@@ -383,6 +385,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                     match c {
                         '/' if break_slash => {
                             end = i - 1;
+                            break;
                         }
                         '*' => {
                             break_slash = true;

@@ -77,7 +77,7 @@ where
     fn reify_arrow(&mut self, left: ()) -> OptResult<()> {
         try_sequence!(
             self.parse_block_statement(),
-            self.parse_expression(),
+            self.parse_assignment_expression(),
         )
     }
     fn reify_assignment(&mut self, left: (), op: tokens::PunctuatorToken) -> OptResult<()> {
@@ -348,6 +348,8 @@ where
             try_fn!(result);
         }
 
+        println!("starting member");
+
         loop {
             if let Some(_) = self.punc(tokens::PunctuatorToken::SquareOpen) {
                 eat_fn!(self.with(Flag::In).parse_expression());
@@ -360,7 +362,7 @@ where
 
                 } else if allow_call {
                     if let Some(_) = self.parse_call_arguments()? {
-
+                        println!("got args");
                     } else {
                         break;
                     }
@@ -400,12 +402,16 @@ where
     }
 
     fn parse_meta_property_expression(&mut self) -> OptResult<()> {
-        // TODO:
-        Ok(None)
+        try_token!(self.keyword("new"));
+        eat_token!(self.punc(tokens::PunctuatorToken::Period));
+        eat_token!(self.keyword("target"));
+
+        Ok(Some(()))
     }
     fn parse_super_expression(&mut self) -> OptResult<()> {
-        // TODO:
-        Ok(None)
+        try_token!(self.keyword("super"));
+
+        Ok(Some(()))
     }
 
     fn parse_primary_expression(&mut self) -> OptResult<()> {
@@ -470,26 +476,86 @@ where
     fn parse_array_literal_expression(&mut self) -> OptResult<()> {
         try_token!(self.punc(tokens::PunctuatorToken::SquareOpen));
 
-        Ok(Some(()))
-    }
-    fn parse_object_literal_expression(&mut self) -> OptResult<()> {
-        try_token!(self.punc(tokens::PunctuatorToken::CurlyOpen));
+        loop {
+            if let Some(_) = self.parse_array_item()? {
+            }
+
+            if let None = self.punc(tokens::PunctuatorToken::Comma) {
+                break;
+            }
+        }
+
+        eat_token!(self.punc(tokens::PunctuatorToken::SquareClose));
 
         Ok(Some(()))
     }
+    fn parse_object_literal_expression(&mut self) -> OptResult<()> {
+        let mut parser = self.without(Flag::Template);
+        try_token!(parser.punc(tokens::PunctuatorToken::CurlyOpen));
+
+        loop {
+            if let Some(_) = parser.parse_object_property()? {
+            }
+
+            if let None = parser.punc(tokens::PunctuatorToken::Comma) {
+                break;
+            }
+        }
+
+        eat_token!(parser.punc(tokens::PunctuatorToken::CurlyClose));
+
+        Ok(Some(()))
+    }
+
+    fn parse_object_property(&mut self) -> OptResult<()> {
+
+        // TODO: Disallow static
+        let head = try_fn!(self.parse_method_head(true));
+
+        if let Some(_) = self.punc(tokens::PunctuatorToken::Colon) {
+            eat_fn!(self.parse_assignment_expression());
+        } else {
+            eat_fn!(self.parse_method_tail(head));
+
+        }
+
+
+        Ok(Some(()))
+    }
+    fn parse_array_item(&mut self) -> OptResult<()> {
+        if let Some(_) = self.punc(tokens::PunctuatorToken::Ellipsis) {
+            eat_fn!(self.parse_assignment_expression());
+        } else if let Some(_) = self.parse_assignment_expression()? {
+        }
+        Ok(Some(()))
+    }
+
     fn parse_regular_expression_literal_expression(&mut self) -> OptResult<()> {
         try_token!(self.regex());
 
         Ok(Some(()))
     }
     fn parse_template_literal_expression(&mut self) -> OptResult<()> {
-        try_token!(self.template());
+        let tok = try_token!(self.template());
+
+        if tok.format == tokens::TemplateFormat::Head {
+            let mut parser = self.with(Flag::Template);
+            loop {
+                eat_fn!(parser.parse_expression());
+                let next = eat_token!(parser.template_tail());
+
+                if next.format == tokens::TemplateFormat::Tail {
+                    break;
+                }
+            }
+        }
 
         Ok(Some(()))
     }
     fn parse_cover_parenthesized_expression(&mut self) -> OptResult<()> {
         try_token!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
+        // TODO
 
         eat_token!(self.punc(tokens::PunctuatorToken::ParenClose));
 
