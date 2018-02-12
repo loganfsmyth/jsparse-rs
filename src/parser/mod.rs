@@ -3,7 +3,7 @@ mod utils;
 
 mod file;
 mod module;
-// mod expressions;
+mod expressions;
 mod declarations;
 mod statements;
 mod classes;
@@ -12,22 +12,22 @@ mod functions;
 use failure;
 use failure::Fail;
 
-impl<'code, T> Parser<'code, T>
-where
-    T: Tokenizer<'code>
-{
-    // TODO: Whereever these are called needs to call `self.expect_expression()`.
-    pub fn parse_expression(&mut self) -> utils::OptResult<()> {
-        self.parse_assignment_expression()
-    }
-    pub fn parse_assignment_expression(&mut self) -> utils::OptResult<()> {
-        self.parse_left_hand_side_expression()
-    }
-    pub fn parse_left_hand_side_expression(&mut self) -> utils::OptResult<()> {
-        try_token!(self.keyword("this"));
-        Ok(Some(()))
-    }
-}
+// impl<'code, T> Parser<'code, T>
+// where
+//     T: Tokenizer<'code>
+// {
+//     // TODO: Whereever these are called needs to call `self.expect_expression()`.
+//     pub fn parse_expression(&mut self) -> utils::OptResult<()> {
+//         self.parse_assignment_expression()
+//     }
+//     pub fn parse_assignment_expression(&mut self) -> utils::OptResult<()> {
+//         self.parse_left_hand_side_expression()
+//     }
+//     pub fn parse_left_hand_side_expression(&mut self) -> utils::OptResult<()> {
+//         try_token!(self.keyword("this"));
+//         Ok(Some(()))
+//     }
+// }
 
 
 

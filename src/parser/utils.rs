@@ -16,28 +16,6 @@ impl fmt::Display for ParseError {
     }
 }
 
-// trait OptionExt {
-//     fn eat(self) -> OptResult<tokens::Token>;
-//     fn try(self) -> OptResult<tokens::Token>;
-// }
-
-// impl OptionExt for Option<tokens::Token> {
-//     fn eat(self) -> OptResult<tokens::Token> {
-//         match self {
-//             Some(t) => Ok(t),
-//             None => ParseError {}.into()
-//         }
-//     }
-//     fn try(self) -> OptResult<tokens::Token> {
-//         match self {
-//             Some(t) => Ok(t),
-//             None => ParseError {}.into()
-//         }
-//     }
-
-// }
-
-
 // Try a list of OptResult-returning functions, in order.
 #[macro_export]
 macro_rules! try_sequence {

@@ -43,7 +43,7 @@ where
     pub fn parse_statement(&mut self) -> OptResult<()> {
         self.expect_expression();
 
-        try_sequence!(
+        let result = try_sequence!(
             self.parse_block_statement(),
             self.parse_variable_statement(),
             self.parse_empty_statement(),
@@ -58,7 +58,9 @@ where
             self.parse_throw_statement(),
             self.parse_try_statement(),
             self.parse_debugger_statement(),
-        )
+        );
+
+        result
     }
 
     fn parse_statement_list_item(&mut self) -> OptResult<()> {
@@ -236,9 +238,11 @@ where
     }
 
     fn parse_expression_statement(&mut self) -> OptResult<()> {
-        try_fn!(self.with(Flag::In).parse_expression());
+        let result = self.with(Flag::In).parse_expression();
 
-        try_token!(self.semicolon());
+        try_fn!(result);
+
+        eat_token!(self.semicolon());
 
         Ok(Some(()))
     }
