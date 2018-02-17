@@ -27,11 +27,21 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
         let code_s: &'code str = self.code.borrow();
 
         loop {
-            match (&code_s[self.position.offset..]).chars().next().unwrap() {
-                '\x09' | '\x0B' | '\x0C' | '\x20' => {
-                    self.position.offset += 1;
+            if let Some(c) = (&code_s[self.position.offset..]).chars().next() {
+                match c {
+                    '\x09' | '\x0B' | '\x0C' | '\x20' => {
+                        self.position.offset += 1;
+                    }
+                    _ => break,
                 }
-                _ => break,
+            } else {
+                return (
+                    tokens::EOFToken {}.into(),
+                    TokenRange {
+                        start: self.position,
+                        end: self.position,
+                    }
+                );
             }
         }
 
@@ -414,7 +424,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
 
                 let mut in_escape = false;
                 let mut in_class = false;
-                for (i, c) in code.char_indices().skip(2) {
+                for (i, c) in code.char_indices().skip(1) {
                     match c {
                         _ if in_escape => {
                             in_escape = false;

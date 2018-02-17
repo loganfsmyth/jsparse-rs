@@ -9,8 +9,8 @@ mod statements;
 mod classes;
 mod functions;
 
-use failure;
-use failure::Fail;
+// use failure;
+// use failure::Fail;
 
 use time;
 

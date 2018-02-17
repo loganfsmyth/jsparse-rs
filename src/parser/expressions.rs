@@ -54,6 +54,7 @@ where
             match p {
                 Arrow => {
                     // TODO: No LineTerminator allowed before arrow.
+                    // TODO: This needs to know if the left was an "async(foo)" to decide if "await" is allowed.
                     eat_value!(self.reify_arrow(left)?);
                 }
                 o@Eq | o@StarEq | o@SlashEq | o@PercentEq | o@PlusEq | o@MinusEq |
@@ -114,129 +115,207 @@ where
         }
         Ok(TokenResult::Some(()))
     }
+
     fn parse_logical_or_expression(&mut self) -> OptResult<()> {
-        try_value!(self.parse_logical_and_expression()?);
-
-        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::BarBar) {
-            self.expect_expression();
-            eat_value!(self.parse_logical_and_expression()?);
-        }
-
-        Ok(TokenResult::Some(()))
+        self.parse_fancy(0)
     }
-    fn parse_logical_and_expression(&mut self) -> OptResult<()> {
-        try_value!(self.parse_bitwise_or_expression()?);
-
-        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
-            self.expect_expression();
-            eat_value!(self.parse_bitwise_or_expression()?);
-        }
-
-        Ok(TokenResult::Some(()))
-    }
-    fn parse_bitwise_or_expression(&mut self) -> OptResult<()> {
-        try_value!(self.parse_bitwise_xor_expression()?);
-
-        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Bar) {
-            self.expect_expression();
-            eat_value!(self.parse_bitwise_xor_expression()?);
-        }
-
-        Ok(TokenResult::Some(()))
-    }
-    fn parse_bitwise_xor_expression(&mut self) -> OptResult<()> {
-        try_value!(self.parse_bitwise_and_expression()?);
-
-        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Caret) {
-            self.expect_expression();
-            eat_value!(self.parse_bitwise_and_expression()?);
-        }
-
-        Ok(TokenResult::Some(()))
-    }
-    fn parse_bitwise_and_expression(&mut self) -> OptResult<()> {
-        try_value!(self.parse_equality_expression()?);
-
-        while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Amp) {
-            self.expect_expression();
-            eat_value!(self.parse_equality_expression()?);
-        }
-
-        Ok(TokenResult::Some(()))
-    }
-    fn parse_equality_expression(&mut self) -> OptResult<()> {
-        try_value!(self.parse_relational_expression()?);
-
-        while let TokenResult::Some(_) = try_sequence!(
-            self.punc(tokens::PunctuatorToken::EqEq),
-            self.punc(tokens::PunctuatorToken::EqEqEq),
-            self.punc(tokens::PunctuatorToken::ExclamEq),
-            self.punc(tokens::PunctuatorToken::ExclamEqEq),
-        ) {
-            self.expect_expression();
-            eat_value!(self.parse_relational_expression()?);
-        }
-
-        Ok(TokenResult::Some(()))
-    }
-    fn parse_relational_expression(&mut self) -> OptResult<()> {
-        try_value!(self.parse_shift_expression()?);
-
-        while let TokenResult::Some(_) = try_sequence!(
-            self.punc(tokens::PunctuatorToken::LAngle).map(tokens::Token::Punctuator),
-            self.punc(tokens::PunctuatorToken::LAngleEq).map(tokens::Token::Punctuator),
-            self.punc(tokens::PunctuatorToken::RAngle).map(tokens::Token::Punctuator),
-            self.punc(tokens::PunctuatorToken::RAngleEq).map(tokens::Token::Punctuator),
-            self.keyword("instanceof").map(tokens::Token::IdentifierName),
-            if self.flags.allow_in { self.keyword("in").map(tokens::Token::IdentifierName) } else { TokenResult::None },
-        ) {
-            self.expect_expression();
-            eat_value!(self.parse_shift_expression()?);
-        }
-
-        Ok(TokenResult::Some(()))
-    }
-    fn parse_shift_expression(&mut self) -> OptResult<()> {
-        try_value!(self.parse_additive_expression()?);
-
-        while let TokenResult::Some(_) = try_sequence!(
-            self.punc(tokens::PunctuatorToken::LAngleAngle),
-            self.punc(tokens::PunctuatorToken::RAngleAngle),
-            self.punc(tokens::PunctuatorToken::RAngleAngleAngle),
-        ) {
-            self.expect_expression();
-            eat_value!(self.parse_additive_expression()?);
-        }
-
-        Ok(TokenResult::Some(()))
-    }
-    fn parse_additive_expression(&mut self) -> OptResult<()> {
-        try_value!(self.parse_multiplicative_expression()?);
-
-        while let TokenResult::Some(_) = try_sequence!(
-            self.punc(tokens::PunctuatorToken::Plus),
-            self.punc(tokens::PunctuatorToken::Minus),
-        ) {
-            self.expect_expression();
-            eat_value!(self.parse_multiplicative_expression()?);
-        }
-
-        Ok(TokenResult::Some(()))
-    }
-    fn parse_multiplicative_expression(&mut self) -> OptResult<()> {
+    fn parse_fancy(&mut self, mut precedence: u8) -> OptResult<()> {
         try_value!(self.parse_exponential_expression()?);
 
-        while let TokenResult::Some(_) = try_sequence!(
-            self.punc(tokens::PunctuatorToken::Star),
-            self.punc(tokens::PunctuatorToken::Slash),
-            self.punc(tokens::PunctuatorToken::Percent),
-        ) {
-            self.expect_expression();
-            eat_value!(self.parse_exponential_expression()?);
+        loop {
+            let newPrecedence = if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::BarBar) {
+                1
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
+                2
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Bar) {
+                3
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Caret) {
+                4
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Amp) {
+                5
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::EqEq) {
+                6
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::EqEqEq) {
+                6
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::ExclamEq) {
+                6
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::ExclamEqEq) {
+                6
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::LAngle) {
+                7
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::RAngle) {
+                7
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::LAngleEq) {
+                7
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::RAngleEq) {
+                7
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::LAngleAngle) {
+                8
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::RAngleAngle) {
+                8
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::RAngleAngleAngle) {
+                8
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Plus) {
+                9
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Minus) {
+                9
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Star) {
+                10
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Percent) {
+                10
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Slash) {
+                10
+            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
+                2
+            } else if let TokenResult::Some(_) = self.keyword("in") {
+                if !self.flags.allow_in {
+                    break;
+                }
+
+                7
+            } else if let TokenResult::Some(_) = self.keyword("instanceof") {
+                7
+            } else {
+                break;
+            };
+
+
+            if newPrecedence >= precedence {
+                precedence = newPrecedence;
+
+                self.expect_expression();
+                self.parse_exponential_expression()?;
+            } else {
+                self.parse_fancy(newPrecedence)?;
+            }
         }
 
         Ok(TokenResult::Some(()))
     }
+
+    // fn parse_logical_or_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_logical_and_expression()?);
+
+    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::BarBar) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_logical_and_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
+    // fn parse_logical_and_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_bitwise_or_expression()?);
+
+    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_bitwise_or_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
+    // fn parse_bitwise_or_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_bitwise_xor_expression()?);
+
+    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Bar) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_bitwise_xor_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
+    // fn parse_bitwise_xor_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_bitwise_and_expression()?);
+
+    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Caret) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_bitwise_and_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
+    // fn parse_bitwise_and_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_equality_expression()?);
+
+    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Amp) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_equality_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
+    // fn parse_equality_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_relational_expression()?);
+
+    //     while let TokenResult::Some(_) = try_sequence!(
+    //         self.punc(tokens::PunctuatorToken::EqEq),
+    //         self.punc(tokens::PunctuatorToken::EqEqEq),
+    //         self.punc(tokens::PunctuatorToken::ExclamEq),
+    //         self.punc(tokens::PunctuatorToken::ExclamEqEq),
+    //     ) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_relational_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
+    // fn parse_relational_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_shift_expression()?);
+
+    //     while let TokenResult::Some(_) = try_sequence!(
+    //         self.punc(tokens::PunctuatorToken::LAngle).map(tokens::Token::Punctuator),
+    //         self.punc(tokens::PunctuatorToken::LAngleEq).map(tokens::Token::Punctuator),
+    //         self.punc(tokens::PunctuatorToken::RAngle).map(tokens::Token::Punctuator),
+    //         self.punc(tokens::PunctuatorToken::RAngleEq).map(tokens::Token::Punctuator),
+    //         self.keyword("instanceof").map(tokens::Token::IdentifierName),
+    //         if self.flags.allow_in { self.keyword("in").map(tokens::Token::IdentifierName) } else { TokenResult::None },
+    //     ) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_shift_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
+    // fn parse_shift_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_additive_expression()?);
+
+    //     while let TokenResult::Some(_) = try_sequence!(
+    //         self.punc(tokens::PunctuatorToken::LAngleAngle),
+    //         self.punc(tokens::PunctuatorToken::RAngleAngle),
+    //         self.punc(tokens::PunctuatorToken::RAngleAngleAngle),
+    //     ) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_additive_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
+    // fn parse_additive_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_multiplicative_expression()?);
+
+    //     while let TokenResult::Some(_) = try_sequence!(
+    //         self.punc(tokens::PunctuatorToken::Plus),
+    //         self.punc(tokens::PunctuatorToken::Minus),
+    //     ) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_multiplicative_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
+    // fn parse_multiplicative_expression(&mut self) -> OptResult<()> {
+    //     try_value!(self.parse_exponential_expression()?);
+
+    //     while let TokenResult::Some(_) = try_sequence!(
+    //         self.punc(tokens::PunctuatorToken::Star),
+    //         self.punc(tokens::PunctuatorToken::Slash),
+    //         self.punc(tokens::PunctuatorToken::Percent),
+    //     ) {
+    //         self.expect_expression();
+    //         eat_value!(self.parse_exponential_expression()?);
+    //     }
+
+    //     Ok(TokenResult::Some(()))
+    // }
     fn parse_exponential_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_unary_expression()?);
 
