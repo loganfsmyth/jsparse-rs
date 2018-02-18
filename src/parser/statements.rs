@@ -571,9 +571,16 @@ where
         try_value!(self.keyword("return"));
 
         if self.no_line_terminator() {
+            println!("had linetermiantor");
+
             self.expect_expression();
             opt_value!(self.with(Flag::In).parse_expression()?);
+
+            println!("{:?}", self.token());
+        } else {
+            println!("had linetermiantor");
         }
+
         eat_value!(self.semicolon());
 
         Ok(TokenResult::Some(()))

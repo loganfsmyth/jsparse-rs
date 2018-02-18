@@ -1,6 +1,8 @@
 extern crate ucd;
 extern crate time;
 
+extern crate flame;
+
 #[macro_use] extern crate failure;
 
 // #[macro_use]

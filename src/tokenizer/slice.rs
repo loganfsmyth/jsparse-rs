@@ -5,12 +5,16 @@ use tokenizer::tokens::{PunctuatorToken,
 
 use tokenizer::{Hint, IntoTokenizer, Tokenizer, Position, TokenRange};
 
+use std::collections::HashMap;
+
 #[derive(Debug)]
 pub struct SliceTokenizer<'code> {
     code: &'code str,
     position: Position,
 
     template_stack: Vec<bool>,
+
+    data: HashMap<&'static str, ( u64, u64 )>,
 }
 
 impl<'code> Clone for SliceTokenizer<'code> {
@@ -19,7 +23,28 @@ impl<'code> Clone for SliceTokenizer<'code> {
     }
 }
 
+fn get_name(t: &tokens::Token) -> &'static str {
+    match *t {
+        tokens::Token::Punctuator(_) => "Punctuator",
+        tokens::Token::Comment(_) => "Comment",
+        tokens::Token::Whitespace(_) => "Whitespace",
+        tokens::Token::LineTerminator(_) => "LineTerminator",
+        tokens::Token::RegularExpressionLiteral(_) => "RegularExpression",
+        tokens::Token::IdentifierName(_) => "IdentifierName",
+        tokens::Token::NumericLiteral(_) => "NumericLiteral",
+        tokens::Token::StringLiteral(_) => "StringLiteral",
+        tokens::Token::Template(_) => "Template",
+        tokens::Token::EOF(_) => "EOF",
+    }
+}
+
+use time;
+
 impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
+    fn stats(&self) -> &HashMap<&'static str, ( u64, u64 )> {
+        &self.data
+    }
+
     fn next_token(&mut self, hint: &Hint) -> (tokens::Token<'code>, TokenRange) {
         let start = self.position;
 
@@ -47,11 +72,22 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
 
         let s = &code_s[self.position.offset..];
 
+        let start_ns = time::precise_time_ns();
+
         let result: TokenResult<'code> = read_next(s, hint);
         let TokenResult(token, size) = result;
 
-        // println!("line {} column {}: {:?}", self.position.line, self.position.column, token );
+        let t = time::precise_time_ns() - start_ns;
 
+        let data = self.data.entry(get_name(&token)).or_insert((0, 0));
+
+        data.0 += 1;
+        data.1 += t;
+
+        println!("line {} column {}: {:?}", self.position.line, self.position.column, token );
+
+
+        // TODO: We are inconsistent about byte length vs char count for "chars" here and it breaks things
 
 
         if let Some((byte_step, _)) = s.char_indices().skip(size.chars).next() {
@@ -84,6 +120,7 @@ impl<'code> IntoTokenizer<'code> for &'code str {
             code: self,
             position: Default::default(),
             template_stack: vec![],
+            data: Default::default(),
         }
     }
 }
@@ -203,7 +240,10 @@ fn comment<'a>(tok: Cow<'a, str>, format: CommentFormat) -> TokenResult<'a> {
     )
 }
 
+use flame;
+
 pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
+    // let _g = flame::start_guard("token");
     // loop, eating whitespace chars?
 
     let bytes = code.as_bytes();
@@ -817,7 +857,9 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                             },
                         );
                     }
-                    _ => {}
+                    _ => {
+                        break;
+                    }
                 }
             }
 

@@ -31,7 +31,8 @@ use time;
 //     }
 // }
 
-
+use flame;
+use std::fs::File;
 
 use std::ops::{Deref, DerefMut};
 use tokenizer::{IntoTokenizer, Tokenizer, Hint, tokens};
@@ -61,7 +62,7 @@ where
     P: FromTokenizer
 {
     println!("starting");
-    let timer = Timer::new();
+    let _timer = Timer::new();
 
     FromTokenizer::from_tokenizer(t)
 }
@@ -81,7 +82,18 @@ impl FromTokenizer for () {
             token: None,
         };
 
-        p.parse_module().unwrap()
+        {
+            // let _g = flame::start_guard("jsparse");
+            let _ = p.parse_module().unwrap();
+        }
+
+        for (name, &(count, ns)) in p.tok.stats() {
+            println!("{} took {} tokens in {}ns, averaging {}", name, count, ns, ns as f64 / count as f64);
+        }
+
+        // flame::dump_html(&mut File::create("flame-graph.html").unwrap()).unwrap();
+
+        ()
     }
 }
 

@@ -549,6 +549,18 @@ where
         Ok(TokenResult::Some(()))
     }
     fn parse_identifier_reference_expression(&mut self) -> OptResult<()> {
+        if let Some(ahead) = self.ident_lookahead() {
+            match ahead.token {
+                tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name}) => {
+                    if name == "function" {
+                        return Ok(TokenResult::None);
+                    }
+                }
+                _ => {}
+            }
+
+        }
+
         try_value!(self.reference_identifier());
 
         Ok(TokenResult::Some(()))
