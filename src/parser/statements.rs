@@ -67,19 +67,24 @@ where
         let stmt_type = match *self.token() {
             tokens::Token::Punctuator(tokens::PunctuatorToken::CurlyOpen) => StatementType::Block,
             tokens::Token::Punctuator(tokens::PunctuatorToken::Semicolon) => StatementType::Empty,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "var" => StatementType::Var,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "if" => StatementType::If,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "switch" => StatementType::Switch,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "while" => StatementType::While,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "do" => StatementType::Do,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "for" => StatementType::For,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "continue" => StatementType::Continue,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "break" => StatementType::Break,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "return" => StatementType::Return,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "with" => StatementType::With,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "throw" => StatementType::Throw,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "try" => StatementType::Try,
-            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "debugger" => StatementType::Debugger,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) => {
+                match &**name {
+                    "var" => StatementType::Var,
+                    "if" => StatementType::If,
+                    "switch" => StatementType::Switch,
+                    "while" => StatementType::While,
+                    "do" => StatementType::Do,
+                    "for" => StatementType::For,
+                    "continue" => StatementType::Continue,
+                    "break" => StatementType::Break,
+                    "return" => StatementType::Return,
+                    "with" => StatementType::With,
+                    "throw" => StatementType::Throw,
+                    "try" => StatementType::Try,
+                    "debugger" => StatementType::Debugger,
+                    _ => StatementType::Unknown,
+                }
+            }
             _ => StatementType::Unknown,
         };
 
