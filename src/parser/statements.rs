@@ -1,4 +1,3 @@
-#![feature(nll)]
 
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag, LookaheadResult};
@@ -38,6 +37,26 @@ use parser::utils::{OptResult, TokenResult};
 //     ForX
 // }
 
+enum StatementType {
+    Block,
+    Empty,
+    Var,
+    If,
+    Switch,
+    While,
+    Do,
+    For,
+    Continue,
+    Break,
+    Return,
+    With,
+    Throw,
+    Try,
+    Debugger,
+    Unknown,
+}
+
+
 impl<'code, T> Parser<'code, T>
 where
     T: Tokenizer<'code>
@@ -45,23 +64,52 @@ where
     pub fn parse_statement(&mut self) -> OptResult<()> {
         self.expect_expression();
 
-        Ok(try_sequence!(
-            self.parse_block_statement()?,
-            self.parse_variable_statement()?,
-            self.parse_empty_statement()?,
-            // self.parse_expression_statement()?, // TODO: This is an ambiguity
-            self.parse_if_statement()?,
-            self.parse_breakable_statement()?,
-            self.parse_continue_statement()?,
-            self.parse_break_statement()?,
-            self.parse_return_statement()?,
-            self.parse_with_statement()?,
-            self.parse_labelled_statement()?,
-            self.parse_throw_statement()?,
-            self.parse_try_statement()?,
-            self.parse_debugger_statement()?,
-            self.parse_expression_statement()?,
-        ))
+        let stmt_type = match *self.token() {
+            tokens::Token::Punctuator(tokens::PunctuatorToken::CurlyOpen) => StatementType::Block,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::Semicolon) => StatementType::Empty,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "var" => StatementType::Var,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "if" => StatementType::If,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "switch" => StatementType::Switch,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "while" => StatementType::While,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "do" => StatementType::Do,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "for" => StatementType::For,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "continue" => StatementType::Continue,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "break" => StatementType::Break,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "return" => StatementType::Return,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "with" => StatementType::With,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "throw" => StatementType::Throw,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "try" => StatementType::Try,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) if name == "debugger" => StatementType::Debugger,
+            _ => StatementType::Unknown,
+        };
+
+        match stmt_type {
+            StatementType::Block => eat_value!(self.parse_block_statement()?),
+            StatementType::Empty => eat_value!(self.parse_empty_statement()?),
+            StatementType::Var => eat_value!(self.parse_variable_statement()?),
+            StatementType::If => eat_value!(self.parse_if_statement()?),
+            StatementType::Switch => eat_value!(self.parse_breakable_statement()?),
+            StatementType::While => eat_value!(self.parse_breakable_statement()?),
+            StatementType::Do => eat_value!(self.parse_breakable_statement()?),
+            StatementType::For => eat_value!(self.parse_breakable_statement()?),
+            StatementType::Continue => eat_value!(self.parse_continue_statement()?),
+            StatementType::Break => eat_value!(self.parse_break_statement()?),
+            StatementType::Return => eat_value!(self.parse_return_statement()?),
+            StatementType::With => eat_value!(self.parse_with_statement()?),
+            StatementType::Throw => eat_value!(self.parse_throw_statement()?),
+            StatementType::Try => eat_value!(self.parse_try_statement()?),
+            StatementType::Debugger => eat_value!(self.parse_debugger_statement()?),
+
+            StatementType::Unknown => {
+                return Ok(try_sequence!(
+                    self.parse_labelled_statement()?,
+                    self.parse_expression_statement()?,
+                ));
+            }
+        }
+
+
+        Ok(TokenResult::Some(()))
     }
 
     fn parse_statement_list_item(&mut self) -> OptResult<()> {
