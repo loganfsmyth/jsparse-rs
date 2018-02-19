@@ -190,6 +190,12 @@ pub enum Token<'a> {
     // Invalid(Box<InvalidToken>),
 }
 
+impl<'a> Default for Token<'a> {
+  fn default() -> Token<'a> {
+    EOFToken {}.into()
+  }
+}
+
 // #[derive(Clone, Debug, PartialEq, Eq)]
 // pub enum InvalidToken {
 //   Codepoints(InvalidCodepoints),

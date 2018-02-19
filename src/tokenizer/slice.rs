@@ -45,7 +45,7 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
         &self.data
     }
 
-    fn next_token(&mut self, hint: &Hint) -> (tokens::Token<'code>, TokenRange) {
+    fn next_token(&mut self, hint: &Hint, out: (&mut tokens::Token<'code>, &mut TokenRange)) {
         let start = self.position;
 
 
@@ -62,13 +62,12 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
                     _ => break,
                 }
             } else {
-                return (
-                    tokens::EOFToken {}.into(),
-                    TokenRange {
-                        start: self.position,
-                        end: self.position,
-                    }
-                );
+                *out.0 = tokens::EOFToken {}.into();
+                *out.1 = TokenRange {
+                    start: self.position,
+                    end: self.position,
+                };
+                return;
             }
         }
 
@@ -120,8 +119,8 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
             start,
             end: self.position,
         };
-
-        (token, range)
+        *out.0 = token;
+        *out.1 = range;
     }
 }
 

@@ -34,6 +34,7 @@ pub struct Position {
     pub column: usize,
 }
 
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct TokenRange {
     pub start: Position,
     pub end: Position,
@@ -45,7 +46,7 @@ pub trait Tokenizer<'code>: Clone + ::std::fmt::Debug {
 
     fn stats(&self) -> &HashMap<&'static str, ( u64, u64, u64 )>;
 
-    fn next_token(&mut self, &Hint) -> (tokens::Token<'code>, TokenRange);
+    fn next_token(&mut self, &Hint, (&mut tokens::Token<'code>, &mut TokenRange));
 }
 
 pub trait IntoTokenizer<'code> {

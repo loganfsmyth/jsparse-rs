@@ -35,7 +35,7 @@ use time;
 // use std::fs::File;
 
 use std::ops::{Deref, DerefMut};
-use tokenizer::{IntoTokenizer, Tokenizer, Hint, tokens};
+use tokenizer::{self, IntoTokenizer, Tokenizer, Hint, tokens};
 use self::utils::TokenResult;
 
 use std::collections;
@@ -157,7 +157,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct LookaheadResult<'code> {
     line: bool,
     token: tokens::Token<'code>,
@@ -281,30 +281,6 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         self.hint = self.hint.template(self.flags.expect_template);
     }
 
-    fn read_token(&mut self, hint: &Hint) -> (bool, tokens::Token<'code>) {
-        let mut line = false;
-        loop {
-            let (token, pos) = self.tok.next_token(hint);
-            match token {
-                tokens::Token::Whitespace(_) => {}
-                tokens::Token::LineTerminator(_) => {
-                    line = true;
-                }
-                tokens::Token::Comment(_) => {
-                    if pos.start.line != pos.end.line {
-                        line = true;
-                    }
-                }
-                t => {
-                    self.hint = self.hint.expression(false);
-
-                    // println!("{:?}", (line, t.clone()));
-                    break (line, t);
-                },
-            }
-        }
-    }
-
     pub fn token(&mut self) -> &tokens::Token {
         self.token_and_line().1
     }
@@ -314,16 +290,21 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     }
 
     fn token_and_line(&mut self) -> (bool, &tokens::Token) {
-        if self.tokens.len() == 0 {
-            let hint = self.hint;
-            let (line, token) = self.read_token(&hint);
-            self.tokens.push_back(LookaheadResult {
-                line,
-                token,
-            });
+        let needs_read = if self.tokens.len() == 0 {
+            self.tokens.push_back(LookaheadResult::default());
+
+            true
+        } else {
+            false
+        };
+
+        let mut result = self.tokens.front_mut().unwrap();
+
+        if needs_read {
+            read_token(&mut self.tok, &mut self.hint, &mut result);
         }
 
-        let LookaheadResult { line, ref token } = *self.tokens.front().unwrap();
+        let LookaheadResult { line, ref token } = *result;
         (line, token)
     }
 
@@ -344,14 +325,17 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
                 return None;
             };
 
-            let hint = self.hint.expression(expect_expression);
-            let (line, token) = self.read_token(&hint);
+            self.tokens.push_back(LookaheadResult::default());
+            let mut result = self.tokens.back_mut().unwrap();
 
-            self.tokens.push_back(LookaheadResult { line, token });
+            let mut hint = self.hint.expression(expect_expression);
+
+            read_token(&mut self.tok, &mut hint, &mut result);
+
+            return Some(result);
+        } else {
+            self.tokens.back()
         }
-
-
-        self.tokens.back()
     }
 
     pub fn punc(&mut self, punc: tokens::PunctuatorToken) -> TokenResult<tokens::PunctuatorToken> {
@@ -536,6 +520,35 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             }
         } else {
             TokenResult::None
+        }
+    }
+}
+
+fn read_token<'code, T: 'code>(tok: &mut T, hint: &mut Hint, out: &mut LookaheadResult<'code>)
+where
+    T: Tokenizer<'code>
+{
+    loop {
+        let mut pos = tokenizer::TokenRange::default();
+        // TODO: Explore allocating a token and passing it into next_token
+
+        tok.next_token(hint, (&mut out.token, &mut pos));
+        match out.token {
+            tokens::Token::Whitespace(_) => {}
+            tokens::Token::LineTerminator(_) => {
+                out.line = true;
+            }
+            tokens::Token::Comment(_) => {
+                if pos.start.line != pos.end.line {
+                    out.line = true;
+                }
+            }
+            _ => {
+                *hint = hint.expression(false);
+
+                // println!("{:?}", (line, t.clone()));
+                break;
+            },
         }
     }
 }
