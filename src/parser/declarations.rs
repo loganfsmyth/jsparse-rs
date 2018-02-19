@@ -9,12 +9,36 @@ where
     pub fn parse_declaration(&mut self) -> OptResult<()> {
         self.expect_expression();
 
-        Ok(try_sequence!(
-            self.parse_function_declaration()?,
-            self.parse_class_declaration()?,
-            self.parse_let_declaration()?,
-            self.parse_const_declaration()?,
-        ))
+
+        enum DeclType {
+            Class,
+            Function,
+            Let,
+            Const,
+        }
+
+        let t = match *self.token() {
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) => {
+                match &**name {
+                    "class" => DeclType::Class,
+                    // TODO: Async
+                    "function" => DeclType::Function,
+                    "let" => DeclType::Let,
+                    "const" => DeclType::Const,
+                    _ => return Ok(TokenResult::None),
+                }
+            }
+            _ => return Ok(TokenResult::None),
+        };
+
+        eat_value!(match t {
+            DeclType::Class => self.parse_class_declaration()?,
+            DeclType::Function => self.parse_function_declaration()?,
+            DeclType::Let => self.parse_let_declaration()?,
+            DeclType::Const => self.parse_const_declaration()?,
+        });
+
+        Ok(TokenResult::Some(()))
     }
 
     pub fn parse_let_declaration(&mut self) -> OptResult<()> {

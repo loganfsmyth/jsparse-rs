@@ -360,6 +360,8 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             _ => false
         };
 
+        // println!("Punc: {:?}, got {:?}", punc, same);
+
         if same {
             if let tokens::Token::Punctuator(p) = self.pop() {
                 TokenResult::Some(p)

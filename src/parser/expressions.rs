@@ -202,8 +202,13 @@ where
                 tokens::Token::Punctuator(tokens::PunctuatorToken::Slash) => 10,
                 tokens::Token::Punctuator(tokens::PunctuatorToken::StarStar) => 11,
 
-                tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name })
-                    if (allow_in && name == "in") || name == "instanceof" => 7,
+                tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) => {
+                    match &**name {
+                        "in" if allow_in => 7,
+                        "instanceof" => 7,
+                        _ => break,
+                    }
+                }
                 _ => break,
             };
 
@@ -218,7 +223,7 @@ where
             if new_precedence >= precedence && new_precedence != 11 {
                 precedence = new_precedence;
 
-                eat_value!(self.parse_exponential_expression()?);
+                eat_value!(self.parse_unary_expression()?);
             } else {
                 eat_value!(self.parse_fancy(new_precedence)?);
             }
@@ -412,12 +417,14 @@ where
 
             match t {
                 LeftType::Ident => {
-                    eat_value!(self.punc(tokens::PunctuatorToken::Period));
+                    self.pop();
+                    // eat_value!(self.punc(tokens::PunctuatorToken::Period));
                     eat_value!(self.with(Flag::In).identifier());
                 }
                 LeftType::Call if allow_call => eat_value!(self.parse_call_arguments()?),
                 LeftType::Computed => {
-                    eat_value!(self.punc(tokens::PunctuatorToken::SquareOpen));
+                    self.pop();
+                    // eat_value!(self.punc(tokens::PunctuatorToken::SquareOpen));
                     eat_value!(self.with(Flag::In).parse_expression()?);
                     eat_value!(self.punc(tokens::PunctuatorToken::SquareClose));
                 },
