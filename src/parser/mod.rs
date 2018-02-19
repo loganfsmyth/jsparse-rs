@@ -38,6 +38,8 @@ use std::ops::{Deref, DerefMut};
 use tokenizer::{IntoTokenizer, Tokenizer, Hint, tokens};
 use self::utils::TokenResult;
 
+use std::collections;
+
 // struct Timer {
 //     t: u64
 // }
@@ -78,8 +80,10 @@ impl FromTokenizer for () {
             hint: Default::default(),
             flags: Default::default(),
             flags_stack: vec![],
-            lookahead: None,
-            token: None,
+            // lookahead: None,
+            // token: None,
+
+            tokens: collections::VecDeque::with_capacity(2),
         };
 
 
@@ -198,8 +202,10 @@ where
     hint: Hint,
     flags: GrammarFlags,
     flags_stack: Vec<GrammarFlags>,
-    token: Option<LookaheadResult<'code>>,
-    lookahead: Option<LookaheadResult<'code>>,
+    // token: Option<LookaheadResult<'code>>,
+    // lookahead: Option<LookaheadResult<'code>>,
+
+    tokens: collections::VecDeque<LookaheadResult<'code>>
 }
 
 impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
@@ -231,7 +237,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         };
 
         if exists {
-            self.token = None;
+            self.pop();
         } else {
             self.expect_expression();
         }
@@ -304,36 +310,21 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     }
 
     pub fn pop(&mut self) -> tokens::Token<'code> {
-        self.token.take().unwrap().token
+        self.tokens.pop_front().unwrap().token
     }
 
     fn token_and_line(&mut self) -> (bool, &tokens::Token) {
-        if let Some(LookaheadResult { line, ref token }) = self.token {
-            (line, token)
-        } else {
-            match self.lookahead.take() {
-                Some(LookaheadResult { line, token }) => {
-                    self.token = Some(LookaheadResult { line, token });
-                    (line, &self.token.as_ref().unwrap().token)
-                }
-                _ => {
-                    // TODO
-                    let hint = self.hint;
-                    let (line, token) = self.read_token(&hint);
-                    self.token = Some(LookaheadResult {
-                        line,
-                        token,
-                    });
-
-                    (line, &self.token.as_ref().unwrap().token)
-                }
-            }
+        if self.tokens.len() == 0 {
+            let hint = self.hint;
+            let (line, token) = self.read_token(&hint);
+            self.tokens.push_back(LookaheadResult {
+                line,
+                token,
+            });
         }
 
-        // match self.token {
-        //     Some(LookaheadResult { line, ref token }) => (line, token),
-        //     _ => unreachable!(),
-        // }
+        let LookaheadResult { line, ref token } = *self.tokens.front().unwrap();
+        (line, token)
     }
 
     pub fn no_line_terminator(&mut self) -> bool {
@@ -345,27 +336,22 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     }
 
     pub fn ident_lookahead(&mut self) -> Option<&LookaheadResult> {
-        if let Some(ref lookahead) = self.lookahead {
-            return Some(lookahead);
+        if self.tokens.len() < 2 {
+            let flags = self.flags;
+            let expect_expression = if let tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) = *self.token() {
+                !is_binding_identifier(&flags, name)
+            } else {
+                return None;
+            };
+
+            let hint = self.hint.expression(expect_expression);
+            let (line, token) = self.read_token(&hint);
+
+            self.tokens.push_back(LookaheadResult { line, token });
         }
 
-        let flags = self.flags;
-        let expect_expression = if let tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) = *self.token() {
-            !is_binding_identifier(&flags, name)
-        } else {
-            return None;
-        };
 
-        let hint = self.hint.expression(expect_expression);
-        let (line, token) = self.read_token(&hint);
-
-        self.lookahead = Some(LookaheadResult { line, token });
-
-        if let Some(ref lookahead) = self.lookahead {
-            return Some(lookahead);
-        } else {
-            unreachable!()
-        }
+        self.tokens.back()
     }
 
     pub fn punc(&mut self, punc: tokens::PunctuatorToken) -> TokenResult<tokens::PunctuatorToken> {
