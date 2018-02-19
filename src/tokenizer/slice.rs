@@ -84,7 +84,7 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
         data.0 += 1;
         data.1 += t;
 
-        println!("line {} column {}: {:?}", self.position.line, self.position.column, token );
+        // println!("line {} column {}: {:?}", self.position.line, self.position.column, token );
 
 
         // TODO: We are inconsistent about byte length vs char count for "chars" here and it breaks things

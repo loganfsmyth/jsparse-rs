@@ -66,7 +66,7 @@ where
             false
         };
 
-        println!("tried function expression: {}", maybe_async);
+        // println!("tried function expression: {}", maybe_async);
 
         let star = if maybe_async {
             try_value!(self.keyword("async"));

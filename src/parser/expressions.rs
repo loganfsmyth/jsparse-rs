@@ -672,7 +672,7 @@ where
             if let TokenResult::None = parser.punc(tokens::PunctuatorToken::Comma) {
                 break;
             }
-            println!("again");
+            // println!("again");
         }
 
         eat_value!(parser.punc(tokens::PunctuatorToken::CurlyClose));

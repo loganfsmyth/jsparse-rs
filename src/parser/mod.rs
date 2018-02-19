@@ -472,12 +472,6 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             match t {
                 tokens::Token::IdentifierName(v) => {
                     if v.name == keyword {
-
-                        if keyword == "in" {
-                            use failure;
-                            println!("{:?}", failure::err_msg("sdfgdg"));
-                        }
-
                         Ok(v)
                     } else {
                         Err(v.into())

@@ -377,7 +377,7 @@ where
                 (false, false)
             };
 
-            println!("maybe_decl: {}, {:?}", maybe_decl, self.token());
+            // println!("maybe_decl: {}, {:?}", maybe_decl, self.token());
 
 
             let decl = if maybe_decl {
@@ -416,12 +416,12 @@ where
             if let Some(decl) = decl {
                 decl
             } else {
-                println!("expr pre {:?}", self.token());
+                // println!("expr pre {:?}", self.token());
                 // TODO: What to do here? If this is a LeftHandSideExpression,
                 // the for can be any type, otherwise it _must_ be 'ForStatement'
                 opt_value!(self.without(Flag::In).parse_expression()?);
 
-                println!("expr post {:?}", self.token());
+                // println!("expr post {:?}", self.token());
                 ("expression", false, false, false, false, true /* tmp */)
             }
         };
@@ -451,7 +451,7 @@ where
             _ => unreachable!(),
         };
 
-        println!("{}, {}, {:?}", maybe_for, maybe_x, self.token());
+        // println!("{}, {}, {:?}", maybe_for, maybe_x, self.token());
 
         let found = if maybe_for {
             if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Semicolon) {
@@ -576,14 +576,14 @@ where
         try_value!(self.keyword("return"));
 
         if self.no_line_terminator() {
-            println!("had linetermiantor");
+            // println!("had linetermiantor");
 
             self.expect_expression();
             opt_value!(self.with(Flag::In).parse_expression()?);
 
-            println!("{:?}", self.token());
+            // println!("{:?}", self.token());
         } else {
-            println!("had linetermiantor");
+            // println!("had linetermiantor");
         }
 
         eat_value!(self.semicolon());
