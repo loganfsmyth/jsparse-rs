@@ -154,81 +154,46 @@ where
     fn parse_fancy(&mut self, mut precedence: u8) -> OptResult<()> {
         try_value!(self.parse_exponential_expression()?);
 
-        loop {
-            let newPrecedence = if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::BarBar) {
-                1
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
-                2
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Bar) {
-                3
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Caret) {
-                4
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Amp) {
-                5
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::EqEq) {
-                6
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::EqEqEq) {
-                6
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::ExclamEq) {
-                6
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::ExclamEqEq) {
-                6
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::LAngle) {
-                7
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::RAngle) {
-                7
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::LAngleEq) {
-                7
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::RAngleEq) {
-                7
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::LAngleAngle) {
-                8
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::RAngleAngle) {
-                8
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::RAngleAngleAngle) {
-                8
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Plus) {
-                9
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Minus) {
-                9
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Star) {
-                10
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Percent) {
-                10
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Slash) {
-                10
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
-                2
-            } else {
-                let got_in = if self.flags.allow_in {
-                    if let TokenResult::Some(_) = self.keyword("in") {
-                        Some(7)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                };
+        let allow_in = self.flags.allow_in;
 
-                if let Some(prec) = got_in {
-                    prec
-                } else {
-                    if let TokenResult::Some(_) = self.keyword("instanceof") {
-                        7
-                    } else {
-                        break;
-                    }
-                }
+        loop {
+            let new_precedence = match *self.token() {
+                tokens::Token::Punctuator(tokens::PunctuatorToken::BarBar) => 1,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::AmpAmp) => 2,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::Bar) => 3,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::Caret) => 4,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::Amp) => 5,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::EqEq) => 6,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::EqEqEq) => 6,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::ExclamEq) => 6,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::ExclamEqEq) => 6,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::LAngle) => 7,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::RAngle) => 7,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::LAngleEq) => 7,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::RAngleEq) => 7,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::LAngleAngle) => 8,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::RAngleAngle) => 8,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::RAngleAngleAngle) => 8,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::Plus) => 9,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::Minus) => 9,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::Star) => 10,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::Percent) => 10,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::Slash) => 10,
+
+                tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name })
+                    if (allow_in && name == "in") || name == "instanceof" => 7,
+                _ => break,
             };
 
+            self.pop();
 
             self.expect_expression();
-            if newPrecedence >= precedence {
-                precedence = newPrecedence;
+            if new_precedence >= precedence {
+                precedence = new_precedence;
 
                 eat_value!(self.parse_exponential_expression()?);
             } else {
-                eat_value!(self.parse_fancy(newPrecedence)?);
+                eat_value!(self.parse_fancy(new_precedence)?);
             }
         }
 

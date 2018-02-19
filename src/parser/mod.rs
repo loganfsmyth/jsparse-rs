@@ -38,23 +38,23 @@ use std::ops::{Deref, DerefMut};
 use tokenizer::{IntoTokenizer, Tokenizer, Hint, tokens};
 use self::utils::TokenResult;
 
-struct Timer {
-    t: u64
-}
-impl Timer {
-    fn new() -> Timer {
-        Timer {
-            t: time::precise_time_ns()
-        }
-    }
-}
-impl Drop for Timer {
-    fn drop(&mut self) {
-        let t_ns = time::precise_time_ns() - self.t;
+// struct Timer {
+//     t: u64
+// }
+// impl Timer {
+//     fn new() -> Timer {
+//         Timer {
+//             t: time::precise_time_ns()
+//         }
+//     }
+// }
+// impl Drop for Timer {
+//     fn drop(&mut self) {
+//         let t_ns = time::precise_time_ns() - self.t;
 
-        println!("time: {:?}", (t_ns / 1_000_000_000, t_ns % 1_000_000_000  ));
-    }
-}
+//         println!("time: {:?}", (t_ns / 1_000_000_000, t_ns % 1_000_000_000  ));
+//     }
+// }
 
 pub fn parse_root<'code, T: 'code, P>(t: T) -> P
 where
@@ -62,7 +62,7 @@ where
     P: FromTokenizer
 {
     println!("starting");
-    let _timer = Timer::new();
+    // let _timer = Timer::new();
 
     FromTokenizer::from_tokenizer(t)
 }
@@ -90,14 +90,14 @@ impl FromTokenizer for () {
         }
         let total_parse = time::precise_time_ns() - t_start;
 
-        println!("Total parsing time: {}", total_parse);
+        println!("Total parsing time: {}ms", total_parse as f64 / 1e6);
 
         let mut total_tok = 0;
         for (name, &(count, ns, chars)) in p.tok.stats() {
             total_tok += ns;
-            println!("{} took {} tokens in {}ns, averaging {} each, processing at {} cp/us", name, count, ns, ns as f64 / count as f64, 1e3 * chars as f64 / ns as f64);
+            // println!("{} took {} tokens in {}ns, averaging {} each, processing at {} cp/us", name, count, ns, ns as f64 / count as f64, 1e3 * chars as f64 / ns as f64);
         }
-        println!("Total tokenizing time: {}, roughly {:.2}%", total_tok, 100.0 * total_tok as f64 / total_parse as f64);
+        println!("Total tokenizing time: {:.3}ms, roughly {:.2}%", total_tok as f64 / 1e6, 100.0 * total_tok as f64 / total_parse as f64);
 
 
         // flame::dump_html(&mut File::create("flame-graph.html").unwrap()).unwrap();
@@ -320,6 +320,10 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
 
     pub fn token(&mut self) -> &tokens::Token {
         self.token_and_line().1
+    }
+
+    pub fn pop(&mut self) -> tokens::Token {
+        self.token.take().unwrap().token
     }
 
     fn token_and_line(&mut self) -> (bool, &tokens::Token) {
