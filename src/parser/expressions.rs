@@ -493,24 +493,36 @@ where
         // println!("starting member");
 
         loop {
-            if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::SquareOpen) {
-                eat_value!(self.with(Flag::In).parse_expression()?);
-                eat_value!(self.punc(tokens::PunctuatorToken::SquareClose));
-            } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Period) {
-                eat_value!(self.with(Flag::In).identifier());
-            } else {
-                // TODO: skip if super`foo`
-                if let TokenResult::Some(_) = self.parse_template_literal_expression()? {
+            enum LeftType {
+                Ident,
+                Call,
+                Computed,
+                Template,
+            }
 
-                } else if allow_call {
-                    if let TokenResult::Some(_) = self.parse_call_arguments()? {
-                        // println!("got args");
-                    } else {
-                        break;
-                    }
-                } else {
-                    break;
+            let t = match *self.token() {
+                tokens::Token::Punctuator(tokens::PunctuatorToken::Period) => LeftType::Ident,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::SquareOpen) => LeftType::Computed,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::ParenOpen) => LeftType::Call,
+                tokens::Token::Template(_) => LeftType::Template,
+                _ => break,
+            };
+
+            match t {
+                LeftType::Ident => {
+                    eat_value!(self.punc(tokens::PunctuatorToken::Period));
+                    eat_value!(self.with(Flag::In).identifier());
                 }
+                LeftType::Call if allow_call => eat_value!(self.parse_call_arguments()?),
+                LeftType::Computed => {
+                    eat_value!(self.punc(tokens::PunctuatorToken::SquareOpen));
+                    eat_value!(self.with(Flag::In).parse_expression()?);
+                    eat_value!(self.punc(tokens::PunctuatorToken::SquareClose));
+                },
+
+                // TODO: Not allowed for 'super'.
+                LeftType::Template => eat_value!(self.parse_template_literal_expression()?),
+                _ => break,
             }
         }
 
