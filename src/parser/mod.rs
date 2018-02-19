@@ -299,7 +299,9 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         let LookaheadResult { line, token } = self.token.take().unwrap();
 
         match handler(token) {
-            Ok(v) => TokenResult::Some(v),
+            Ok(v) => {
+                TokenResult::Some(v)
+            },
             Err(result) => {
                 self.token = LookaheadResult { line, token: result }.into();
                 TokenResult::None
@@ -470,6 +472,12 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             match t {
                 tokens::Token::IdentifierName(v) => {
                     if v.name == keyword {
+
+                        if keyword == "in" {
+                            use failure;
+                            println!("{:?}", failure::err_msg("sdfgdg"));
+                        }
+
                         Ok(v)
                     } else {
                         Err(v.into())

@@ -368,7 +368,7 @@ where
         } else {
             let (maybe_decl, bracket) = if let Some(&LookaheadResult { line, ref token }) = self.ident_lookahead() {
                 match *token {
-                    tokens::Token::IdentifierName(_) => (true, false),
+                    tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) => (name != "in" && name != "of", false),
                     tokens::Token::Punctuator(tokens::PunctuatorToken::SquareOpen) => (true, true),
                     tokens::Token::Punctuator(tokens::PunctuatorToken::CurlyOpen) => (true, false),
                     _ => (false, false),
@@ -376,6 +376,8 @@ where
             } else {
                 (false, false)
             };
+
+            println!("maybe_decl: {}, {:?}", maybe_decl, self.token());
 
 
             let decl = if maybe_decl {
@@ -414,10 +416,13 @@ where
             if let Some(decl) = decl {
                 decl
             } else {
+                println!("expr pre {:?}", self.token());
                 // TODO: What to do here? If this is a LeftHandSideExpression,
                 // the for can be any type, otherwise it _must_ be 'ForStatement'
                 opt_value!(self.without(Flag::In).parse_expression()?);
-                ("expression", false, false, false, false, false)
+
+                println!("expr post {:?}", self.token());
+                ("expression", false, false, false, false, true /* tmp */)
             }
         };
 
@@ -446,7 +451,7 @@ where
             _ => unreachable!(),
         };
 
-        // println!("{}, {:#?}", maybe_for, self);
+        println!("{}, {}, {:?}", maybe_for, maybe_x, self.token());
 
         let found = if maybe_for {
             if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Semicolon) {

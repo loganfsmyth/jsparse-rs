@@ -148,7 +148,7 @@ fn punc(tok: tokens::PunctuatorToken, size: usize) -> TokenResult<'static> {
 }
 
 fn number<'a>(tok: f64, raw: Cow<'a, str>) -> TokenResult<'a> {
-    let len = raw.len();
+    let len = raw.chars().count();
     TokenResult(
         tokens::NumericLiteralToken {
             value: tok
@@ -157,7 +157,7 @@ fn number<'a>(tok: f64, raw: Cow<'a, str>) -> TokenResult<'a> {
     )
 }
 fn string<'a>(tok: Cow<'a, str>, raw: Cow<'a, str>) -> TokenResult<'a> {
-    let len = raw.len();
+    let len = raw.chars().count();
     TokenResult(
         tokens::StringLiteralToken {
             value: tok
@@ -749,7 +749,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                     // 0.456e5
 
                     let mut val = 0f64;
-                    let mut offset = 1;
+                    let mut offset = 2;
 
                     let (frac, num) = parse_decimal_digits(&bytes[offset..]);
                     if num != 0 {
@@ -762,6 +762,8 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                         val = val * 10f64.powi(exp);
                         offset += num;
                     }
+
+                    // println!("{}", code[..offset]);
 
                     number(val, code[..offset].into())
                 }

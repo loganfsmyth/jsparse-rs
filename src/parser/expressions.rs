@@ -1,5 +1,5 @@
 use tokenizer::{Tokenizer, tokens};
-use parser::{Parser, Flag};
+use parser::{Parser, Flag, LookaheadResult, is_binding_identifier};
 use parser::utils::{OptResult, TokenResult};
 use parser::utils;
 
@@ -25,6 +25,38 @@ where
     pub fn parse_assignment_expression(&mut self) -> OptResult<()> {
         if let TokenResult::Some(_) = self.parse_yield_expression()? {
             return Ok(TokenResult::Some(()));
+        }
+
+        let flags = self.flags;
+
+        let maybe_async_arrow = if let Some(&LookaheadResult {
+            line: false,
+            token: tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name })
+        }) = self.ident_lookahead() {
+            if is_binding_identifier(&flags, name) {
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        if maybe_async_arrow {
+            if let TokenResult::Some(_) = self.keyword("async") {
+                if !self.no_line_terminator() {
+                    unreachable!();
+                }
+                eat_value!(self.binding_identifier());
+                if !self.no_line_terminator() {
+                    bail!("Unexpected line terminator between async arrow argument and arrow");
+                }
+
+                eat_value!(self.punc(tokens::PunctuatorToken::Arrow));
+                eat_value!(self.reify_arrow(())?);
+
+                return Ok(TokenResult::Some(()));
+            }
         }
 
         // TODO: Alternatively this can kick off the cover lookahead here then skip reify
@@ -70,10 +102,10 @@ where
 
         Ok(TokenResult::Some(()))
     }
-    fn reify_expression(&mut self, left: ()) -> OptResult<()> {
+    fn reify_expression(&mut self, _left: ()) -> OptResult<()> {
         Ok(TokenResult::Some(()))
     }
-    fn reify_arrow(&mut self, left: ()) -> OptResult<()> {
+    fn reify_arrow(&mut self, _left: ()) -> OptResult<()> {
         self.expect_expression();
 
         Ok(try_sequence!(
@@ -81,7 +113,7 @@ where
             self.parse_assignment_expression()?,
         ))
     }
-    fn reify_assignment(&mut self, left: (), op: tokens::PunctuatorToken) -> OptResult<()> {
+    fn reify_assignment(&mut self, _left: (), _op: tokens::PunctuatorToken) -> OptResult<()> {
         self.expect_expression();
 
         eat_value!(self.parse_assignment_expression()?);
@@ -167,26 +199,36 @@ where
                 10
             } else if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
                 2
-            } else if let TokenResult::Some(_) = self.keyword("in") {
-                if !self.flags.allow_in {
-                    break;
-                }
-
-                7
-            } else if let TokenResult::Some(_) = self.keyword("instanceof") {
-                7
             } else {
-                break;
+                let got_in = if self.flags.allow_in {
+                    if let TokenResult::Some(_) = self.keyword("in") {
+                        Some(7)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+
+                if let Some(prec) = got_in {
+                    prec
+                } else {
+                    if let TokenResult::Some(_) = self.keyword("instanceof") {
+                        7
+                    } else {
+                        break;
+                    }
+                }
             };
 
 
+            self.expect_expression();
             if newPrecedence >= precedence {
                 precedence = newPrecedence;
 
-                self.expect_expression();
-                self.parse_exponential_expression()?;
+                eat_value!(self.parse_exponential_expression()?);
             } else {
-                self.parse_fancy(newPrecedence)?;
+                eat_value!(self.parse_fancy(newPrecedence)?);
             }
         }
 
@@ -489,10 +531,14 @@ where
 
             // println!("inside");
             if let TokenResult::Some(_) = parser.punc(tokens::PunctuatorToken::Ellipsis) {
-                println!("4");
+                // println!("4");
                 parser.expect_expression();
                 eat_value!(parser.parse_assignment_expression()?);
-                break;
+
+                if let TokenResult::Some(_) = parser.punc(tokens::PunctuatorToken::Comma) {
+                } else {
+                    break;
+                }
             }
 
             // println!("1");
@@ -626,6 +672,7 @@ where
             if let TokenResult::None = parser.punc(tokens::PunctuatorToken::Comma) {
                 break;
             }
+            println!("again");
         }
 
         eat_value!(parser.punc(tokens::PunctuatorToken::CurlyClose));
@@ -634,6 +681,13 @@ where
     }
 
     fn parse_object_property(&mut self) -> OptResult<()> {
+
+        if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Ellipsis) {
+            self.expect_expression();
+            eat_value!(self.parse_assignment_expression()?);
+            return Ok(TokenResult::Some(()));
+        }
+
         // TODO: Disallow static
         let head = try_value!(self.parse_method_head(true)?);
 
@@ -681,21 +735,18 @@ where
     fn parse_cover_parenthesized_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
-        // TODO
-
-        let expr = opt_value!(self.with(Flag::In).parse_expression()?);
-
-        let expect_more = if let Some(_) = expr {
-            if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
-                true
-            } else {
-                false
+        if let Some(_) = opt_value!(self.parse_assignment_expression()?) {
+            while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+                if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Ellipsis) {
+                    if let TokenResult::Some(_) = self.parse_binding_pattern()? {
+                    } else {
+                        eat_value!(self.binding_identifier());
+                    }
+                } else {
+                    eat_value!(self.parse_assignment_expression()?)
+                }
             }
         } else {
-            true
-        };
-
-        if expect_more {
             if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Ellipsis) {
                 if let TokenResult::Some(_) = self.parse_binding_pattern()? {
                 } else {
