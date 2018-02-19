@@ -339,17 +339,48 @@ where
         Ok(TokenResult::Some(()))
     }
     fn parse_unary_expression(&mut self) -> OptResult<()> {
-        Ok(try_sequence!(
-            self.parse_delete_expression()?,
-            self.parse_void_expression()?,
-            self.parse_typeof_expression()?,
-            self.parse_plus_expression()?,
-            self.parse_minus_expression()?,
-            self.parse_tilde_expression()?,
-            self.parse_exclam_expression()?,
-            self.parse_await_expression()?,
-            self.parse_update_expression()?,
-        ))
+        enum UnaryType {
+            Delete,
+            Void,
+            Typeof,
+            Plus,
+            Minus,
+            Tilde,
+            Exclam,
+            Await,
+            Unknown,
+        }
+
+        let t = match *self.token() {
+            tokens::Token::Punctuator(tokens::PunctuatorToken::Plus) => UnaryType::Plus,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::Minus) => UnaryType::Minus,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::Tilde) => UnaryType::Tilde,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::Exclam) => UnaryType::Exclam,
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) => {
+                match &**name {
+                    "delete" => UnaryType::Delete,
+                    "void" => UnaryType::Void,
+                    "typeof" => UnaryType::Typeof,
+                    "await" => UnaryType::Await,
+                    _ => UnaryType::Unknown,
+                }
+            }
+            _ => UnaryType::Unknown,
+        };
+
+        match t {
+            UnaryType::Delete => eat_value!(self.parse_delete_expression()?),
+            UnaryType::Void => eat_value!(self.parse_void_expression()?),
+            UnaryType::Typeof => eat_value!(self.parse_typeof_expression()?),
+            UnaryType::Plus => eat_value!(self.parse_plus_expression()?),
+            UnaryType::Minus => eat_value!(self.parse_minus_expression()?),
+            UnaryType::Tilde => eat_value!(self.parse_tilde_expression()?),
+            UnaryType::Exclam => eat_value!(self.parse_exclam_expression()?),
+            UnaryType::Await => eat_value!(self.parse_await_expression()?),
+            UnaryType::Unknown => try_value!(self.parse_update_expression()?),
+        }
+
+        Ok(TokenResult::Some(()))
     }
     fn parse_delete_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("delete"));
@@ -542,18 +573,89 @@ where
     }
 
     fn parse_primary_expression(&mut self) -> OptResult<()> {
-        Ok(try_sequence!(
-            self.parse_this_expression()?,
-            self.parse_identifier_reference_expression()?,
-            self.parse_literal_expression()?,
-            self.parse_array_literal_expression()?,
-            self.parse_object_literal_expression()?,
-            self.parse_function_expression()?,
-            self.parse_class_expression()?,
-            self.parse_regular_expression_literal_expression()?,
-            self.parse_template_literal_expression()?,
-            self.parse_cover_parenthesized_expression()?,
-        ))
+        enum PrimaryType {
+            This,
+            Ident,
+            Number,
+            String,
+            True,
+            False,
+            Null,
+            Array,
+            Object,
+            Regex,
+            Template,
+            Paren,
+
+            Function,
+            Class,
+        }
+
+        let flags = self.flags;
+
+        let t = match *self.token() {
+            tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) => {
+                match &**name {
+                    "this" => PrimaryType::This,
+                    "true" => PrimaryType::True,
+                    "false" => PrimaryType::False,
+                    "null" => PrimaryType::Null,
+
+                    // TODO: Ignores async functions
+                    "function" => PrimaryType::Function,
+                    "class" => PrimaryType::Class,
+                    _ => {
+                        if is_binding_identifier(&flags, name) {
+                            PrimaryType::Ident
+                        } else {
+                            return Ok(TokenResult::None)
+                        }
+                    }
+                }
+            }
+            tokens::Token::StringLiteral(_) => PrimaryType::String,
+            tokens::Token::NumericLiteral(_) => PrimaryType::Number,
+            tokens::Token::Template(_) => PrimaryType::Template,
+            tokens::Token::RegularExpressionLiteral(_) => PrimaryType::Regex,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::SquareOpen) => PrimaryType::Array,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::CurlyOpen) => PrimaryType::Object,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::ParenOpen) => PrimaryType::Paren,
+            _ => return Ok(TokenResult::None),
+        };
+
+        match t {
+            PrimaryType::This => eat_value!(self.parse_this_expression()?),
+            PrimaryType::Ident => eat_value!(self.parse_identifier_reference_expression()?),
+            PrimaryType::Number => eat_value!(self.parse_numeric_expression()?),
+            PrimaryType::String => eat_value!(self.parse_string_expression()?),
+            PrimaryType::True => eat_value!(self.parse_true_expression()?),
+            PrimaryType::False => eat_value!(self.parse_false_expression()?),
+            PrimaryType::Null => eat_value!(self.parse_null_expression()?),
+            PrimaryType::Array => eat_value!(self.parse_array_literal_expression()?),
+            PrimaryType::Object => eat_value!(self.parse_object_literal_expression()?),
+            PrimaryType::Regex => eat_value!(self.parse_regular_expression_literal_expression()?),
+            PrimaryType::Template => eat_value!(self.parse_template_literal_expression()?),
+            PrimaryType::Paren => eat_value!(self.parse_cover_parenthesized_expression()?),
+            PrimaryType::Function => eat_value!(self.parse_function_expression()?),
+            PrimaryType::Class => eat_value!(self.parse_class_expression()?),
+        }
+
+        Ok(TokenResult::Some(()))
+
+
+
+        // Ok(try_sequence!(
+        //     self.parse_this_expression()?,
+        //     self.parse_identifier_reference_expression()?,
+        //     self.parse_literal_expression()?,
+        //     self.parse_array_literal_expression()?,
+        //     self.parse_object_literal_expression()?,
+        //     self.parse_function_expression()?,
+        //     self.parse_class_expression()?,
+        //     self.parse_regular_expression_literal_expression()?,
+        //     self.parse_template_literal_expression()?,
+        //     self.parse_cover_parenthesized_expression()?,
+        // ))
     }
 
     fn parse_this_expression(&mut self) -> OptResult<()> {
