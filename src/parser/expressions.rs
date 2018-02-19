@@ -63,46 +63,65 @@ where
 
         let left = try_value!(self.parse_conditional_expression()?);
 
-        use self::tokens::PunctuatorToken::*;
-
-        let result = try_sequence!(
-            self.punc(Arrow),
-            self.punc(Eq),
-            self.punc(StarEq),
-            self.punc(SlashEq),
-            self.punc(PercentEq),
-            self.punc(PlusEq),
-            self.punc(MinusEq),
-            self.punc(LAngleAngleEq),
-            self.punc(RAngleAngleEq),
-            self.punc(RAngleAngleAngleEq),
-            self.punc(AmpEq),
-            self.punc(CaretEq),
-            self.punc(BarEq),
-            self.punc(StarStarEq),
-        );
-
-        if let TokenResult::Some(p) = result {
-            match p {
-                Arrow => {
-                    // TODO: No LineTerminator allowed before arrow.
-                    // TODO: This needs to know if the left was an "async(foo)" to decide if "await" is allowed.
-                    eat_value!(self.reify_arrow(left)?);
-                }
-                o@Eq | o@StarEq | o@SlashEq | o@PercentEq | o@PlusEq | o@MinusEq |
-                o@LAngleAngleEq | o@RAngleAngleEq | o@RAngleAngleAngleEq |
-                o@AmpEq | o@CaretEq | o@BarEq | o@StarStarEq => {
-                    eat_value!(self.reify_assignment(left, o)?);
-                }
-                _ => unreachable!(),
-            }
-        } else {
-            eat_value!(self.reify_expression(left)?);
+        #[derive(Debug)]
+        enum Reify {
+            Arrow,
+            Eq,
+            StarEq,
+            SlashEq,
+            PercentEq,
+            PlusEq,
+            MinusEq,
+            LAngleAngleEq,
+            RAngleAngleEq,
+            RAngleAngleAngleEq,
+            AmpEq,
+            CaretEq,
+            BarEq,
+            StarStarEq,
         }
 
-        Ok(TokenResult::Some(()))
-    }
-    fn reify_expression(&mut self, _left: ()) -> OptResult<()> {
+        let t = match *self.token() {
+            tokens::Token::Punctuator(tokens::PunctuatorToken::Arrow) => Reify::Arrow,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::Eq) => Reify::Eq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::StarEq) => Reify::StarEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::SlashEq) => Reify::SlashEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::PercentEq) => Reify::PercentEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::PlusEq) => Reify::PlusEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::MinusEq) => Reify::MinusEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::LAngleAngleEq) => Reify::LAngleAngleEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::RAngleAngleEq) => Reify::RAngleAngleEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::RAngleAngleAngleEq) => Reify::RAngleAngleAngleEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::AmpEq) => Reify::AmpEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::CaretEq) => Reify::CaretEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::BarEq) => Reify::BarEq,
+            tokens::Token::Punctuator(tokens::PunctuatorToken::StarStarEq) => Reify::StarStarEq,
+            _ => return Ok(TokenResult::Some(())),
+        };
+
+        self.pop();
+
+        eat_value!(match t {
+            Reify::Arrow => {
+                // TODO: No LineTerminator allowed before arrow.
+                // TODO: This needs to know if the left was an "async(foo)" to decide if "await" is allowed.
+                self.reify_arrow(left)?
+            }
+            Reify::Eq => self.reify_assignment(left, tokens::PunctuatorToken::Eq)?,
+            Reify::StarEq => self.reify_assignment(left, tokens::PunctuatorToken::StarEq)?,
+            Reify::SlashEq => self.reify_assignment(left, tokens::PunctuatorToken::SlashEq)?,
+            Reify::PercentEq => self.reify_assignment(left, tokens::PunctuatorToken::PercentEq)?,
+            Reify::PlusEq => self.reify_assignment(left, tokens::PunctuatorToken::PlusEq)?,
+            Reify::MinusEq => self.reify_assignment(left, tokens::PunctuatorToken::MinusEq)?,
+            Reify::LAngleAngleEq => self.reify_assignment(left, tokens::PunctuatorToken::LAngleAngleEq)?,
+            Reify::RAngleAngleEq => self.reify_assignment(left, tokens::PunctuatorToken::RAngleAngleEq)?,
+            Reify::RAngleAngleAngleEq => self.reify_assignment(left, tokens::PunctuatorToken::RAngleAngleAngleEq)?,
+            Reify::AmpEq => self.reify_assignment(left, tokens::PunctuatorToken::AmpEq)?,
+            Reify::CaretEq => self.reify_assignment(left, tokens::PunctuatorToken::CaretEq)?,
+            Reify::BarEq => self.reify_assignment(left, tokens::PunctuatorToken::BarEq)?,
+            Reify::StarStarEq => self.reify_assignment(left, tokens::PunctuatorToken::StarStarEq)?,
+        });
+
         Ok(TokenResult::Some(()))
     }
     fn reify_arrow(&mut self, _left: ()) -> OptResult<()> {
@@ -181,6 +200,7 @@ where
                 tokens::Token::Punctuator(tokens::PunctuatorToken::Star) => 10,
                 tokens::Token::Punctuator(tokens::PunctuatorToken::Percent) => 10,
                 tokens::Token::Punctuator(tokens::PunctuatorToken::Slash) => 10,
+                tokens::Token::Punctuator(tokens::PunctuatorToken::StarStar) => 11,
 
                 tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name })
                     if (allow_in && name == "in") || name == "instanceof" => 7,
@@ -190,7 +210,12 @@ where
             self.pop();
 
             self.expect_expression();
-            if new_precedence >= precedence {
+
+
+            // if new_precedence === 12 {
+            //     self.parse_fancy()
+            // }
+            if new_precedence >= precedence && new_precedence != 11 {
                 precedence = new_precedence;
 
                 eat_value!(self.parse_exponential_expression()?);
@@ -202,129 +227,6 @@ where
         Ok(TokenResult::Some(()))
     }
 
-    // fn parse_logical_or_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_logical_and_expression()?);
-
-    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::BarBar) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_logical_and_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
-    // fn parse_logical_and_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_bitwise_or_expression()?);
-
-    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::AmpAmp) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_bitwise_or_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
-    // fn parse_bitwise_or_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_bitwise_xor_expression()?);
-
-    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Bar) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_bitwise_xor_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
-    // fn parse_bitwise_xor_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_bitwise_and_expression()?);
-
-    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Caret) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_bitwise_and_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
-    // fn parse_bitwise_and_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_equality_expression()?);
-
-    //     while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Amp) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_equality_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
-    // fn parse_equality_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_relational_expression()?);
-
-    //     while let TokenResult::Some(_) = try_sequence!(
-    //         self.punc(tokens::PunctuatorToken::EqEq),
-    //         self.punc(tokens::PunctuatorToken::EqEqEq),
-    //         self.punc(tokens::PunctuatorToken::ExclamEq),
-    //         self.punc(tokens::PunctuatorToken::ExclamEqEq),
-    //     ) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_relational_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
-    // fn parse_relational_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_shift_expression()?);
-
-    //     while let TokenResult::Some(_) = try_sequence!(
-    //         self.punc(tokens::PunctuatorToken::LAngle).map(tokens::Token::Punctuator),
-    //         self.punc(tokens::PunctuatorToken::LAngleEq).map(tokens::Token::Punctuator),
-    //         self.punc(tokens::PunctuatorToken::RAngle).map(tokens::Token::Punctuator),
-    //         self.punc(tokens::PunctuatorToken::RAngleEq).map(tokens::Token::Punctuator),
-    //         self.keyword("instanceof").map(tokens::Token::IdentifierName),
-    //         if self.flags.allow_in { self.keyword("in").map(tokens::Token::IdentifierName) } else { TokenResult::None },
-    //     ) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_shift_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
-    // fn parse_shift_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_additive_expression()?);
-
-    //     while let TokenResult::Some(_) = try_sequence!(
-    //         self.punc(tokens::PunctuatorToken::LAngleAngle),
-    //         self.punc(tokens::PunctuatorToken::RAngleAngle),
-    //         self.punc(tokens::PunctuatorToken::RAngleAngleAngle),
-    //     ) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_additive_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
-    // fn parse_additive_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_multiplicative_expression()?);
-
-    //     while let TokenResult::Some(_) = try_sequence!(
-    //         self.punc(tokens::PunctuatorToken::Plus),
-    //         self.punc(tokens::PunctuatorToken::Minus),
-    //     ) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_multiplicative_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
-    // fn parse_multiplicative_expression(&mut self) -> OptResult<()> {
-    //     try_value!(self.parse_exponential_expression()?);
-
-    //     while let TokenResult::Some(_) = try_sequence!(
-    //         self.punc(tokens::PunctuatorToken::Star),
-    //         self.punc(tokens::PunctuatorToken::Slash),
-    //         self.punc(tokens::PunctuatorToken::Percent),
-    //     ) {
-    //         self.expect_expression();
-    //         eat_value!(self.parse_exponential_expression()?);
-    //     }
-
-    //     Ok(TokenResult::Some(()))
-    // }
     fn parse_exponential_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_unary_expression()?);
 
