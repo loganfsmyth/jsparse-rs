@@ -43,7 +43,7 @@ use std::collections::HashMap;
 
 pub trait Tokenizer<'code>: Clone + ::std::fmt::Debug {
 
-    fn stats(&self) -> &HashMap<&'static str, ( u64, u64 )>;
+    fn stats(&self) -> &HashMap<&'static str, ( u64, u64, u64 )>;
 
     fn next_token(&mut self, &Hint) -> (tokens::Token<'code>, TokenRange);
 }

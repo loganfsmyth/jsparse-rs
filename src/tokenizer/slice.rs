@@ -14,7 +14,7 @@ pub struct SliceTokenizer<'code> {
 
     template_stack: Vec<bool>,
 
-    data: HashMap<&'static str, ( u64, u64 )>,
+    data: HashMap<&'static str, ( u64, u64, u64 )>,
 }
 
 impl<'code> Clone for SliceTokenizer<'code> {
@@ -41,7 +41,7 @@ fn get_name(t: &tokens::Token) -> &'static str {
 use time;
 
 impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
-    fn stats(&self) -> &HashMap<&'static str, ( u64, u64 )> {
+    fn stats(&self) -> &HashMap<&'static str, ( u64, u64, u64 )> {
         &self.data
     }
 
@@ -51,6 +51,8 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
 
         let code_s: &'code str = self.code.borrow();
 
+        let start_ns = time::precise_time_ns();
+        let init_offset = self.position.offset;
         loop {
             if let Some(c) = (&code_s[self.position.offset..]).chars().next() {
                 match c {
@@ -70,6 +72,16 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
             }
         }
 
+        if init_offset != self.position.offset {
+            let t = time::precise_time_ns() - start_ns;
+
+            let data = self.data.entry("Whitespace").or_insert((0, 0, 0));
+
+            data.0 += 1;
+            data.1 += t;
+            data.2 += (self.position.offset - init_offset) as u64;
+        }
+
         let s = &code_s[self.position.offset..];
 
         let start_ns = time::precise_time_ns();
@@ -79,10 +91,11 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
 
         let t = time::precise_time_ns() - start_ns;
 
-        let data = self.data.entry(get_name(&token)).or_insert((0, 0));
+        let data = self.data.entry(get_name(&token)).or_insert((0, 0, 0));
 
         data.0 += 1;
         data.1 += t;
+        data.2 += size.chars as u64;
 
         // println!("line {} column {}: {:?}", self.position.line, self.position.column, token );
 

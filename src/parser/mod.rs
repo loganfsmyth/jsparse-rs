@@ -82,14 +82,23 @@ impl FromTokenizer for () {
             token: None,
         };
 
+
+        let t_start = time::precise_time_ns();
         {
             // let _g = flame::start_guard("jsparse");
             let _ = p.parse_module().unwrap();
         }
+        let total_parse = time::precise_time_ns() - t_start;
 
-        for (name, &(count, ns)) in p.tok.stats() {
-            println!("{} took {} tokens in {}ns, averaging {}", name, count, ns, ns as f64 / count as f64);
+        println!("Total parsing time: {}", total_parse);
+
+        let mut total_tok = 0;
+        for (name, &(count, ns, chars)) in p.tok.stats() {
+            total_tok += ns;
+            println!("{} took {} tokens in {}ns, averaging {} each, processing at {} cp/us", name, count, ns, ns as f64 / count as f64, 1e3 * chars as f64 / ns as f64);
         }
+        println!("Total tokenizing time: {}, roughly {:.2}%", total_tok, 100.0 * total_tok as f64 / total_parse as f64);
+
 
         // flame::dump_html(&mut File::create("flame-graph.html").unwrap()).unwrap();
 
