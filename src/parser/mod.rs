@@ -92,12 +92,12 @@ impl FromTokenizer for () {
 
         println!("Total parsing time: {}ms", total_parse as f64 / 1e6);
 
-        let mut total_tok = 0;
-        for (_name, &(_count, ns, _chars)) in p.tok.stats() {
-            total_tok += ns;
-            // println!("{} took {} tokens in {}ns, averaging {} each, processing at {} cp/us", _name, _count, ns, ns as f64 / _count as f64, 1e3 * _chars as f64 / ns as f64);
-        }
-        println!("Total tokenizing time: {:.3}ms, roughly {:.2}%", total_tok as f64 / 1e6, 100.0 * total_tok as f64 / total_parse as f64);
+        // let mut total_tok = 0;
+        // for (_name, &(_count, ns, _chars)) in p.tok.stats() {
+        //     total_tok += ns;
+        //     // println!("{} took {} tokens in {}ns, averaging {} each, processing at {} cp/us", _name, _count, ns, ns as f64 / _count as f64, 1e3 * _chars as f64 / ns as f64);
+        // }
+        // println!("Total tokenizing time: {:.3}ms, roughly {:.2}%", total_tok as f64 / 1e6, 100.0 * total_tok as f64 / total_parse as f64);
 
 
         // flame::dump_html(&mut File::create("flame-graph.html").unwrap()).unwrap();
@@ -299,53 +299,41 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         }
     }
 
-    fn try_token<V, F: FnOnce(tokens::Token<'code>) -> Result<V, tokens::Token<'code>>>(
-        &mut self,
-        handler: F,
-    ) -> TokenResult<V> {
-        self.token_and_line();
-
-        let LookaheadResult { line, token } = self.token.take().unwrap();
-
-        match handler(token) {
-            Ok(v) => {
-                TokenResult::Some(v)
-            },
-            Err(result) => {
-                self.token = LookaheadResult { line, token: result }.into();
-                TokenResult::None
-            }
-        }
-    }
-
     pub fn token(&mut self) -> &tokens::Token {
         self.token_and_line().1
     }
 
-    pub fn pop(&mut self) -> tokens::Token {
+    pub fn pop(&mut self) -> tokens::Token<'code> {
         self.token.take().unwrap().token
     }
 
     fn token_and_line(&mut self) -> (bool, &tokens::Token) {
-        if let None = self.token {
-            if let Some(ahead) = self.lookahead.take() {
-                self.token = Some(ahead);
-                self.lookahead = None;
-            } else {
-                // TODO
-                let hint = self.hint;
-                let (line, token) = self.read_token(&hint);
-                self.token = Some(LookaheadResult {
-                    line,
-                    token,
-                });
+        if let Some(LookaheadResult { line, ref token }) = self.token {
+            (line, token)
+        } else {
+            match self.lookahead.take() {
+                Some(LookaheadResult { line, token }) => {
+                    self.token = Some(LookaheadResult { line, token });
+                    (line, &self.token.as_ref().unwrap().token)
+                }
+                _ => {
+                    // TODO
+                    let hint = self.hint;
+                    let (line, token) = self.read_token(&hint);
+                    self.token = Some(LookaheadResult {
+                        line,
+                        token,
+                    });
+
+                    (line, &self.token.as_ref().unwrap().token)
+                }
             }
         }
 
-        match self.token {
-            Some(LookaheadResult { line, ref token }) => (line, token),
-            _ => unreachable!(),
-        }
+        // match self.token {
+        //     Some(LookaheadResult { line, ref token }) => (line, token),
+        //     _ => unreachable!(),
+        // }
     }
 
     pub fn no_line_terminator(&mut self) -> bool {
@@ -381,95 +369,125 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     }
 
     pub fn punc(&mut self, punc: tokens::PunctuatorToken) -> TokenResult<tokens::PunctuatorToken> {
-        self.try_token(|t| {
-            match t {
-                tokens::Token::Punctuator(p) => {
-                    if p == punc {
-                        Ok(p)
-                    } else {
-                        Err(p.into())
-                    }
-                }
-                v => Err(v),
+        let same = match *self.token() {
+            tokens::Token::Punctuator(ref p) if *p == punc => { true }
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::Punctuator(p) = self.pop() {
+                TokenResult::Some(p)
+            } else {
+                unreachable!("already matched punc");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
 
     pub fn numeric(&mut self) -> TokenResult<tokens::NumericLiteralToken> {
-        self.try_token(|t| {
-            match t {
-                tokens::Token::NumericLiteral(n) => {
-                    Ok(n)
-                }
-                v => Err(v),
+        let same = match *self.token() {
+            tokens::Token::NumericLiteral(_) => { true }
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::NumericLiteral(n) = self.pop() {
+                TokenResult::Some(n)
+            } else {
+                unreachable!("already matched number");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
 
     pub fn string(&mut self) -> TokenResult<tokens::StringLiteralToken<'code>> {
-        self.try_token(|t| {
-            match t {
-                tokens::Token::StringLiteral(n) => {
-                    Ok(n)
-                }
-                v => Err(v),
+        let same = match *self.token() {
+            tokens::Token::StringLiteral(_) => { true }
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::StringLiteral(s) = self.pop() {
+                TokenResult::Some(s)
+            } else {
+                unreachable!("already matched string");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
 
     pub fn regex(&mut self) -> TokenResult<tokens::RegularExpressionLiteralToken<'code>> {
-        self.try_token(|t| {
-            match t {
-                tokens::Token::RegularExpressionLiteral(r) => {
-                    Ok(r)
-                }
-                v => Err(v),
+        let same = match *self.token() {
+            tokens::Token::RegularExpressionLiteral(_) => { true }
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::RegularExpressionLiteral(r) = self.pop() {
+                TokenResult::Some(r)
+            } else {
+                unreachable!("already matched string");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
 
     pub fn template(&mut self) -> TokenResult<tokens::TemplateToken<'code>> {
-        self.try_token(|t| {
-            match t {
-                tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::NoSubstitution, .. }) |
-                tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::Head, .. }) => {
-                    Ok(t)
-                }
-                v => {
-                    Err(v)
-                }
+        let same = match *self.token() {
+            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::NoSubstitution, .. }) |
+            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Head, .. }) => true,
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::Template(t) = self.pop() {
+                TokenResult::Some(t)
+            } else {
+                unreachable!("already matched template");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
     pub fn template_tail(&mut self) -> TokenResult<tokens::TemplateToken<'code>> {
-        self.try_token(|t| {
-            match t {
-                tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::Middle, .. }) |
-                tokens::Token::Template(t @ tokens::TemplateToken { format: tokens::TemplateFormat::Tail, .. }) => {
-                    Ok(t)
-                }
-                v => {
-                    Err(v)
-                }
+        let same = match *self.token() {
+            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Middle, .. }) |
+            tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Tail, .. }) => true,
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::Template(t) = self.pop() {
+                TokenResult::Some(t)
+            } else {
+                unreachable!("already matched template");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
 
     pub fn binding_identifier(&mut self) -> TokenResult<tokens::IdentifierNameToken<'code>> {
         let flags = self.flags;
 
-        self.try_token(|t| {
-            match t {
-                tokens::Token::IdentifierName(v) => {
-                    if is_binding_identifier(&flags, &v.name) {
-                        Ok(v)
-                    } else {
-                        Err(v.into())
-                    }
-                }
-                v => Err(v),
+        let same = match *self.token() {
+            tokens::Token::IdentifierName(ref v) if is_binding_identifier(&flags, &v.name) => { true }
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::IdentifierName(ident) = self.pop() {
+                TokenResult::Some(ident)
+            } else {
+                unreachable!("already matched ident");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
 
     pub fn reference_identifier(&mut self) -> TokenResult<tokens::IdentifierNameToken<'code>> {
@@ -480,41 +498,55 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         self.binding_identifier()
     }
 
-    pub fn keyword(&mut self, keyword: &str) -> TokenResult<tokens::IdentifierNameToken<'code>> {
-        self.try_token(|t| {
-            match t {
-                tokens::Token::IdentifierName(v) => {
-                    if v.name == keyword {
-                        Ok(v)
-                    } else {
-                        Err(v.into())
-                    }
-                }
-                v => Err(v),
+    pub fn keyword(&mut self, keyword: &'static str) -> TokenResult<tokens::IdentifierNameToken<'code>> {
+        let same = match *self.token() {
+            tokens::Token::IdentifierName(ref v) if &v.name == keyword => { true }
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::IdentifierName(ident) = self.pop() {
+                TokenResult::Some(ident)
+            } else {
+                unreachable!("already matched keyword");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
 
     pub fn identifier(&mut self) -> TokenResult<tokens::IdentifierNameToken<'code>> {
-        self.try_token(|t| {
-            match t {
-                tokens::Token::IdentifierName(v) => {
-                    Ok(v)
-                }
-                v => Err(v),
+        let same = match *self.token() {
+            tokens::Token::IdentifierName(_) => { true }
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::IdentifierName(ident) = self.pop() {
+                TokenResult::Some(ident)
+            } else {
+                unreachable!("already matched identifier");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
 
     pub fn eof(&mut self) -> TokenResult<tokens::EOFToken> {
-        self.try_token(|t| {
-            match t {
-                tokens::Token::EOF(v) => {
-                    Ok(v)
-                }
-                v => Err(v),
+        let same = match *self.token() {
+            tokens::Token::EOF(_) => { true }
+            _ => false
+        };
+
+        if same {
+            if let tokens::Token::EOF(v) = self.pop() {
+                TokenResult::Some(v)
+            } else {
+                unreachable!("already matched keyword");
             }
-        })
+        } else {
+            TokenResult::None
+        }
     }
 }
 
