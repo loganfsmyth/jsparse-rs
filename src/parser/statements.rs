@@ -118,10 +118,14 @@ where
     }
 
     fn parse_statement_list_item(&mut self) -> OptResult<()> {
-        Ok(try_sequence!(
+        // println!("start statement list");
+        let result = Ok(try_sequence!(
             self.parse_declaration()?,
             self.parse_statement()?,
-        ))
+        ));
+        // println!("end statement list");
+
+        result
     }
 
     pub fn parse_block_statement(&mut self) -> OptResult<()> {
@@ -308,11 +312,16 @@ where
 
         eat_value!(self.punc(tokens::PunctuatorToken::ParenClose));
 
+        // println!("start");
         eat_value!(self.parse_statement()?);
+
+        // println!("mid");
 
         if let TokenResult::Some(_) = self.keyword("else") {
             eat_value!(self.parse_statement()?);
         }
+        // println!("done");
+
 
         Ok(TokenResult::Some(()))
     }
@@ -364,6 +373,8 @@ where
 
     fn parse_for_statement(&mut self) -> OptResult<()> {
         try_value!(self.keyword("for"));
+
+        // println!("Starting for");
 
         eat_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
@@ -542,6 +553,7 @@ where
 
         eat_value!(self.punc(tokens::PunctuatorToken::ParenClose));
 
+        eat_value!(self.parse_statement()?);
 
         Ok(TokenResult::Some(()))
     }

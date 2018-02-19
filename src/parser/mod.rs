@@ -233,7 +233,7 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
         if exists {
             self.token = None;
         } else {
-            self.hint.expression(true);
+            self.expect_expression();
         }
         TokenResult::Some(())
     }
@@ -503,6 +503,8 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             tokens::Token::IdentifierName(ref v) if &v.name == keyword => { true }
             _ => false
         };
+
+        // println!("checking {:?}, got {:?}", keyword, same);
 
         if same {
             if let tokens::Token::IdentifierName(ident) = self.pop() {

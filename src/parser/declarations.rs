@@ -7,6 +7,8 @@ where
     T: Tokenizer<'code>
 {
     pub fn parse_declaration(&mut self) -> OptResult<()> {
+        self.expect_expression();
+
         Ok(try_sequence!(
             self.parse_function_declaration()?,
             self.parse_class_declaration()?,

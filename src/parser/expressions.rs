@@ -13,7 +13,10 @@ where
     pub fn parse_expression(&mut self) -> OptResult<()> {
         try_value!(self.parse_assignment_expression()?);
 
+        self.expect_expression();
         while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+            self.expect_expression();
+            // println!("starting comma");
             eat_value!(self.parse_assignment_expression()?);
         }
 
@@ -113,8 +116,10 @@ where
     fn reify_assignment(&mut self, _left: (), _op: tokens::PunctuatorToken) -> OptResult<()> {
         self.expect_expression();
 
+        // println!("starting expr");
         eat_value!(self.parse_assignment_expression()?);
 
+        // println!("ending expr");
         Ok(TokenResult::Some(()))
     }
 
@@ -697,8 +702,11 @@ where
     fn parse_cover_parenthesized_expression(&mut self) -> OptResult<()> {
         try_value!(self.punc(tokens::PunctuatorToken::ParenOpen));
 
+        self.expect_expression();
+
         if let Some(_) = opt_value!(self.parse_assignment_expression()?) {
             while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
+                self.expect_expression();
                 if let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Ellipsis) {
                     if let TokenResult::Some(_) = self.parse_binding_pattern()? {
                     } else {

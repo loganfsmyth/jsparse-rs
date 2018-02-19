@@ -517,6 +517,8 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                     }
                 }
 
+                let size = code[index..flag_end].chars().count();
+
                 // println!("{}, {}, {}", index, end, flag_end);
 
                 return TokenResult(
@@ -524,7 +526,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                         pattern: (&code[index + 1..end]).into(),
                         flags: (&code[end + 1..flag_end]).into()
                     }.into(),
-                    single_size(flag_end - index),
+                    single_size(size),
                 );
             } else {
                 if index + 1 < len && bytes[index + 1] == b'=' {
@@ -795,10 +797,9 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
 
             if offset < len && bytes[offset] == b'.' {
                 let (frac, num) = parse_decimal_digits(&bytes[offset + 1..]);
-                if num != 0 {
-                    val += frac;
-                    offset += num + 1;
-                }
+                val += frac;
+                offset += num + 1;
+                // }
             }
 
             let (exp, num) = parse_exponent(&bytes[offset..]);
