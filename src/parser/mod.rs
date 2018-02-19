@@ -83,7 +83,9 @@ impl FromTokenizer for () {
             // lookahead: None,
             // token: None,
 
-            tokens: collections::VecDeque::with_capacity(2),
+            tokens: Default::default(),
+            index: 0,
+            count: 0,
         };
 
 
@@ -205,7 +207,10 @@ where
     // token: Option<LookaheadResult<'code>>,
     // lookahead: Option<LookaheadResult<'code>>,
 
-    tokens: collections::VecDeque<LookaheadResult<'code>>
+    // tokens: collections::VecDeque<LookaheadResult<'code>>
+    tokens: [LookaheadResult<'code>; 2],
+    index: u8,
+    count: u8,
 }
 
 impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
@@ -232,10 +237,12 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
             } else if was_do_while || line {
                 false
             } else {
+                // println!("No ASI");
                 return TokenResult::None;
             }
         };
 
+        // println!("Performing ASI");
         if exists {
             self.pop();
         } else {
@@ -286,25 +293,29 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     }
 
     pub fn pop(&mut self) -> tokens::Token<'code> {
-        self.tokens.pop_front().unwrap().token
+        let tok = ::std::mem::replace(
+            &mut self.tokens[self.index as usize].token,
+            tokens::EOFToken {}.into(),
+        );
+
+        self.index = (self.index + 1) % 2;
+        self.count -= 1;
+
+        // println!("{:?} {} {} => {:?}", tok, self.count, self.index, self.tokens);
+
+        tok
     }
 
     fn token_and_line(&mut self) -> (bool, &tokens::Token) {
-        let needs_read = if self.tokens.len() == 0 {
-            self.tokens.push_back(LookaheadResult::default());
+        if self.count == 0 {
+            read_token(&mut self.tok, &mut self.hint, &mut self.tokens[0]);
+            self.index = 0;
+            self.count += 1;
 
-            true
-        } else {
-            false
-        };
-
-        let mut result = self.tokens.front_mut().unwrap();
-
-        if needs_read {
-            read_token(&mut self.tok, &mut self.hint, &mut result);
+            // println!("Populated {:?}", self.tokens[0]);
         }
 
-        let LookaheadResult { line, ref token } = *result;
+        let LookaheadResult { line, ref token } = self.tokens[self.index as usize];
         (line, token)
     }
 
@@ -317,7 +328,11 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     }
 
     pub fn ident_lookahead(&mut self) -> Option<&LookaheadResult> {
-        if self.tokens.len() < 2 {
+        self.token_and_line();
+
+        let look_index = ((self.index + 1) % 2) as usize;
+
+        if self.count < 2 {
             let flags = self.flags;
             let expect_expression = if let tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) = *self.token() {
                 !is_binding_identifier(&flags, name)
@@ -325,17 +340,13 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
                 return None;
             };
 
-            self.tokens.push_back(LookaheadResult::default());
-            let mut result = self.tokens.back_mut().unwrap();
-
             let mut hint = self.hint.expression(expect_expression);
 
-            read_token(&mut self.tok, &mut hint, &mut result);
-
-            return Some(result);
-        } else {
-            self.tokens.back()
+            read_token(&mut self.tok, &mut hint, &mut self.tokens[look_index]);
+            self.count += 1;
         }
+
+        Some(&self.tokens[look_index])
     }
 
     pub fn punc(&mut self, punc: tokens::PunctuatorToken) -> TokenResult<tokens::PunctuatorToken> {
@@ -524,12 +535,14 @@ impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
     }
 }
 
-fn read_token<'code, T: 'code>(tok: &mut T, hint: &mut Hint, out: &mut LookaheadResult<'code>)
+fn read_token<'code, T>(tok: &mut T, hint: &mut Hint, out: &mut LookaheadResult<'code>)
 where
-    T: Tokenizer<'code>
+    T: Tokenizer<'code> + 'code
 {
+    out.line = false;
+
+    let mut pos = tokenizer::TokenRange::default();
     loop {
-        let mut pos = tokenizer::TokenRange::default();
         // TODO: Explore allocating a token and passing it into next_token
 
         tok.next_token(hint, (&mut out.token, &mut pos));
