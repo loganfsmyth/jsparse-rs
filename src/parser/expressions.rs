@@ -1,9 +1,6 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag, LookaheadResult, is_binding_identifier};
 use parser::utils::{OptResult, TokenResult};
-use parser::utils;
-
-use failure;
 
 impl<'code, T> Parser<'code, T>
 where

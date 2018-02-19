@@ -1,7 +1,6 @@
 use tokenizer::Tokenizer;
 use parser::Parser;
-use parser::utils::{OptResult, Result, ParseError, TokenResult};
-use parser::utils;
+use parser::utils::{OptResult, Result, TokenResult};
 
 impl<'code, T> Parser<'code, T>
 where

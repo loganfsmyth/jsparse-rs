@@ -200,7 +200,7 @@ fn template<'a>(tok: Cow<'a, str>, raw: Cow<'a, str>, format: TemplateFormat) ->
 fn comment<'a>(tok: Cow<'a, str>, format: CommentFormat) -> TokenResult<'a> {
     let mut chars = tok.chars().count();
     let mut lines = 0;
-    let mut width = 0;
+    let mut width;
     match format {
         CommentFormat::Line => {
             chars += 2;
@@ -253,7 +253,7 @@ fn comment<'a>(tok: Cow<'a, str>, format: CommentFormat) -> TokenResult<'a> {
     )
 }
 
-use flame;
+// use flame;
 
 pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
     // let _g = flame::start_guard("token");

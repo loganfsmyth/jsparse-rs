@@ -31,8 +31,8 @@ use time;
 //     }
 // }
 
-use flame;
-use std::fs::File;
+// use flame;
+// use std::fs::File;
 
 use std::ops::{Deref, DerefMut};
 use tokenizer::{IntoTokenizer, Tokenizer, Hint, tokens};
@@ -93,9 +93,9 @@ impl FromTokenizer for () {
         println!("Total parsing time: {}ms", total_parse as f64 / 1e6);
 
         let mut total_tok = 0;
-        for (name, &(count, ns, chars)) in p.tok.stats() {
+        for (_name, &(_count, ns, _chars)) in p.tok.stats() {
             total_tok += ns;
-            // println!("{} took {} tokens in {}ns, averaging {} each, processing at {} cp/us", name, count, ns, ns as f64 / count as f64, 1e3 * chars as f64 / ns as f64);
+            // println!("{} took {} tokens in {}ns, averaging {} each, processing at {} cp/us", _name, _count, ns, ns as f64 / _count as f64, 1e3 * _chars as f64 / ns as f64);
         }
         println!("Total tokenizing time: {:.3}ms, roughly {:.2}%", total_tok as f64 / 1e6, 100.0 * total_tok as f64 / total_parse as f64);
 

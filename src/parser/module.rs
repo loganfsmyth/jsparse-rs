@@ -1,7 +1,6 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag};
 use parser::utils::{OptResult, TokenResult};
-use parser::utils;
 
 impl<'code, T> Parser<'code, T>
 where
@@ -10,10 +9,10 @@ where
     pub fn parse_import_declaration(&mut self) -> OptResult<()>  {
         try_value!(self.keyword("import"));
 
-        if let TokenResult::Some(s) = self.string() {
+        if let TokenResult::Some(_) = self.string() {
 
         } else {
-            let try_names = if let TokenResult::Some(def) = self.binding_identifier() {
+            let try_names = if let TokenResult::Some(_) = self.binding_identifier() {
                 opt_value!(self.punc(tokens::PunctuatorToken::Comma)).is_some()
             } else {
                 true

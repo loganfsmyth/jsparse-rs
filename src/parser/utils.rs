@@ -1,7 +1,7 @@
 use std::result;
 use std::fmt;
-use std::error;
-use failure::Fail;
+// use std::error;
+// use failure::Fail;
 use failure::Error;
 
 pub type Result<T> = result::Result<T, Error>;

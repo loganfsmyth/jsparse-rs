@@ -1,7 +1,6 @@
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag};
 use parser::utils::{OptResult, TokenResult};
-use parser::utils;
 
 impl<'code, T> Parser<'code, T>
 where
@@ -10,13 +9,13 @@ where
     pub fn parse_class_declaration(&mut self) -> OptResult<()> {
         try_value!(self.keyword("class"));
 
-        let id = if self.flags.allow_default {
+        let _id = if self.flags.allow_default {
             opt_value!(self.binding_identifier())
         } else {
             Some(eat_value!(self.binding_identifier()))
         };
 
-        let parent = opt_value!(self.parse_class_heritage()?);
+        let _parent = opt_value!(self.parse_class_heritage()?);
 
         eat_value!(self.parse_class_body()?);
 
@@ -93,7 +92,7 @@ where
         };
 
         let is_ident = false;
-        let name = if async && self.no_line_terminator() {
+        let _name = if async && self.no_line_terminator() {
             if let TokenResult::Some(_) = self.parse_property_name()? {
                 // async fn method
             } else {
@@ -106,7 +105,7 @@ where
             } else if let TokenResult::Some(_) = self.parse_property_name()? {
 
             } else {
-                match (stat, &kind, &star) {
+                match (&stat, &kind, &star) {
                     (_, _, &Some(_)) => bail!("expected method name"),
                     (_, &MethodKind::Get, _) => {
                         kind = MethodKind::None;
@@ -114,13 +113,15 @@ where
                     (_, &MethodKind::Set, _) => {
                         kind = MethodKind::None;
                     },
-                    (Some(_), _, _) => {
+                    (&Some(_), _, _) => {
                         stat = None;
                     }
                     _ => return Ok(TokenResult::None),
                 }
             }
         };
+
+        let _silence = stat;
 
         Ok(TokenResult::Some(MethodHead {
             kind,

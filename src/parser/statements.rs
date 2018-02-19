@@ -1,7 +1,8 @@
+#![feature(nll)]
+
 use tokenizer::{Tokenizer, tokens};
 use parser::{Parser, Flag, LookaheadResult};
 use parser::utils::{OptResult, TokenResult};
-use parser::utils;
 
 // enum ForInit {
 //     // Can occur in any type of for-init.
@@ -315,7 +316,7 @@ where
 
         self.expect_expression();
 
-        let (kind, pattern, initialized, multiple, bracket, left_hand) = if let TokenResult::Some(_) = self.keyword("var") {
+        let (kind, pattern, initialized, multiple, _bracket, left_hand) = if let TokenResult::Some(_) = self.keyword("var") {
             let mut pattern = false;
             let mut initialized = false;
             if let TokenResult::Some(_) = self.parse_binding_pattern()? {
@@ -366,7 +367,7 @@ where
 
             ("const", pattern, initialized, multiple, false, false)
         } else {
-            let (maybe_decl, bracket) = if let Some(&LookaheadResult { line, ref token }) = self.ident_lookahead() {
+            let (maybe_decl, bracket) = if let Some(&LookaheadResult { line: _line, ref token }) = self.ident_lookahead() {
                 match *token {
                     tokens::Token::IdentifierName(tokens::IdentifierNameToken { ref name }) => (name != "in" && name != "of", false),
                     tokens::Token::Punctuator(tokens::PunctuatorToken::SquareOpen) => (true, true),
@@ -509,7 +510,7 @@ where
         loop {
             if let TokenResult::Some(_) = parser.parse_default_clause()? {
                 if has_default {
-                    return bail!("duplicate default statements");
+                    bail!("duplicate default statements");
                 }
                 has_default = true;
             } else if let TokenResult::Some(item) = parser.parse_case_clause()? {
@@ -606,7 +607,7 @@ where
 
     fn parse_labelled_statement(&mut self) -> OptResult<()> {
         let is_label = if let Some(&LookaheadResult {
-            line,
+            line: _line,
             token: tokens::Token::Punctuator(tokens::PunctuatorToken::Colon),
         }) = self.ident_lookahead() {
             true
