@@ -15,6 +15,8 @@ pub struct SliceTokenizer<'code> {
     template_stack: Vec<bool>,
 
     data: HashMap<&'static str, ( u64, u64, u64 )>,
+
+    size: TokenSize,
 }
 
 impl<'code> Clone for SliceTokenizer<'code> {
@@ -23,27 +25,34 @@ impl<'code> Clone for SliceTokenizer<'code> {
     }
 }
 
+fn eat_whitespace(code: &str, mut start: usize) -> usize {
+
+    let len = code.len();
+    while start < len {
+        match code.as_bytes()[start] {
+            b'\x09' | b'\x0B' | b'\x0C' | b'\x20' => {
+                start += 1;
+            }
+            _ => break,
+        }
+    }
+
+    return start;
+}
+
 impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
     fn stats(&self) -> &HashMap<&'static str, ( u64, u64, u64 )> {
         &self.data
     }
 
+
     fn next_token<'a, 'b, 'c>(&mut self, hint: &'a Hint, mut out: (&'b mut tokens::Token<'code>, &'c mut TokenRange)) {
-        let start = self.position;
 
         let code_s: &'code str = self.code.borrow();
 
-        let len = self.code.len();
-        while self.position.offset < len {
-            match code_s.as_bytes()[self.position.offset] {
-                b'\x09' | b'\x0B' | b'\x0C' | b'\x20' => {
-                    self.position.offset += 1;
-                }
-                _ => break,
-            }
-        }
+        self.position.offset = eat_whitespace(&self.code, self.position.offset);
 
-        if self.position.offset == len {
+        if self.position.offset == code_s.len() {
             *out.0 = tokens::EOFToken {}.into();
             *out.1 = TokenRange {
                 start: self.position,
@@ -52,28 +61,28 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
             return;
         }
 
+        let start = self.position;
+
         let s = &code_s[self.position.offset..];
 
-        let mut size = TokenSize::default();
-        read_next(s, hint, &mut out.0, &mut size);
+        read_next(s, hint, &mut out.0, &mut self.size);
 
         // println!("Token: {:?} at {:?}", out.0, self.position);
-
 
         // TODO: We are inconsistent about byte length vs char count for "chars" here and it breaks things
 
 
-        if let Some((byte_step, _)) = s.char_indices().skip(size.chars).next() {
+        if let Some((byte_step, _)) = s.char_indices().skip(self.size.chars).next() {
             self.position.offset += byte_step;
         } else {
             self.position.offset = code_s.len();
         }
 
-        if size.lines == 0 {
-            self.position.column += size.width;
+        if self.size.lines == 0 {
+            self.position.column += self.size.width;
         } else {
-            self.position.line += size.lines;
-            self.position.column = size.width;
+            self.position.line += self.size.lines;
+            self.position.column = self.size.width;
         }
 
         let range = TokenRange {
@@ -93,6 +102,7 @@ impl<'code> IntoTokenizer<'code> for &'code str {
             position: Default::default(),
             template_stack: vec![],
             data: Default::default(),
+            size: Default::default(),
         }
     }
 }
