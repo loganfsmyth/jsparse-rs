@@ -7,16 +7,6 @@ authors = ["Logan Smyth <loganfsmyth@gmail.com>"]
 ucd = "0.1.1"
 failure = "0.1.1"
 time = "0.1"
-flame = "0.2.0"
-cpuprofiler = "0.0.3"
-
-
-# custom_derive = "0.1.7"
-# enum_derive = "0.1.7"
-
-# serde = "1.0.10"
-# serde_json = "1.0"
-
 
 [profile.release]
 debug = true

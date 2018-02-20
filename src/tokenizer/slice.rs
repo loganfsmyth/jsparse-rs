@@ -5,8 +5,6 @@ use tokenizer::tokens::{PunctuatorToken,
 
 use tokenizer::{Hint, IntoTokenizer, Tokenizer, Position, TokenRange};
 
-use std::collections::HashMap;
-
 static NS_LS: &'static str = "\u{2028}";
 static NS_PS: &'static str = "\u{2029}";
 static WS_NBSP: &'static str = "\u{00A0}";
@@ -16,10 +14,6 @@ static WS_ZWNBSP: &'static str = "\u{FEFF}";
 pub struct SliceTokenizer<'code> {
     code: &'code str,
     position: Position,
-
-    template_stack: Vec<bool>,
-
-    data: HashMap<&'static str, ( u64, u64, u64 )>,
 }
 
 impl<'code> Clone for SliceTokenizer<'code> {
@@ -52,10 +46,6 @@ fn eat_whitespace(code: &str, pos: &mut Position) {
 }
 
 impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
-    fn stats(&self) -> &HashMap<&'static str, ( u64, u64, u64 )> {
-        &self.data
-    }
-
     fn next_token<'a, 'b, 'c>(&mut self, hint: &'a Hint, mut out: (&'b mut tokens::Token<'code>, &'c mut TokenRange)) {
         eat_whitespace(&self.code, &mut self.position);
 
@@ -121,9 +111,6 @@ impl<'code> IntoTokenizer<'code> for &'code str {
         SliceTokenizer {
             code: self,
             position: Default::default(),
-            template_stack: vec![],
-            data: Default::default(),
-            // size: Default::default(),
         }
     }
 }

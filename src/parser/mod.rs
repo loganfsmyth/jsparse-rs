@@ -9,63 +9,17 @@ mod statements;
 mod classes;
 mod functions;
 
-// use failure;
-// use failure::Fail;
-
 use time;
-
-// impl<'code, T> Parser<'code, T>
-// where
-//     T: Tokenizer<'code>
-// {
-//     // TODO: Whereever these are called needs to call `self.expect_expression()`.
-//     pub fn parse_expression(&mut self) -> utils::OptResult<()> {
-//         self.parse_assignment_expression()
-//     }
-//     pub fn parse_assignment_expression(&mut self) -> utils::OptResult<()> {
-//         self.parse_left_hand_side_expression()
-//     }
-//     pub fn parse_left_hand_side_expression(&mut self) -> utils::OptResult<()> {
-//         try_token!(self.keyword("this"));
-//         Ok(Some(()))
-//     }
-// }
-
-// use flame;
-// use std::fs::File;
 
 use std::ops::{Deref, DerefMut};
 use tokenizer::{self, IntoTokenizer, Tokenizer, Hint, tokens};
 use self::utils::TokenResult;
-
-use std::collections;
-
-// struct Timer {
-//     t: u64
-// }
-// impl Timer {
-//     fn new() -> Timer {
-//         Timer {
-//             t: time::precise_time_ns()
-//         }
-//     }
-// }
-// impl Drop for Timer {
-//     fn drop(&mut self) {
-//         let t_ns = time::precise_time_ns() - self.t;
-
-//         println!("time: {:?}", (t_ns / 1_000_000_000, t_ns % 1_000_000_000  ));
-//     }
-// }
 
 pub fn parse_root<'code, T: 'code, P>(t: T) -> P
 where
     T: IntoTokenizer<'code>,
     P: FromTokenizer
 {
-    println!("starting");
-    // let _timer = Timer::new();
-
     FromTokenizer::from_tokenizer(t)
 }
 
@@ -80,33 +34,21 @@ impl FromTokenizer for () {
             hint: Default::default(),
             flags: Default::default(),
             flags_stack: vec![],
-            // lookahead: None,
-            // token: None,
 
             tokens: Default::default(),
             index: 0,
             count: 0,
         };
 
+        println!("starting");
 
         let t_start = time::precise_time_ns();
-        {
-            // let _g = flame::start_guard("jsparse");
-            let _ = p.parse_module().unwrap();
-        }
+
+        p.parse_module().unwrap();
+
         let total_parse = time::precise_time_ns() - t_start;
 
         println!("Total parsing time: {}ms", total_parse as f64 / 1e6);
-
-        // let mut total_tok = 0;
-        // for (_name, &(_count, ns, _chars)) in p.tok.stats() {
-        //     total_tok += ns;
-        //     // println!("{} took {} tokens in {}ns, averaging {} each, processing at {} cp/us", _name, _count, ns, ns as f64 / _count as f64, 1e3 * _chars as f64 / ns as f64);
-        // }
-        // println!("Total tokenizing time: {:.3}ms, roughly {:.2}%", total_tok as f64 / 1e6, 100.0 * total_tok as f64 / total_parse as f64);
-
-
-        // flame::dump_html(&mut File::create("flame-graph.html").unwrap()).unwrap();
 
         ()
     }
@@ -190,7 +132,6 @@ struct GrammarFlags {
     allow_default: bool,
     is_module: bool,
     is_strict: bool,
-    // TODO: Where to handle directives?
 
     expect_template: bool,
 }
@@ -204,10 +145,6 @@ where
     hint: Hint,
     flags: GrammarFlags,
     flags_stack: Vec<GrammarFlags>,
-    // token: Option<LookaheadResult<'code>>,
-    // lookahead: Option<LookaheadResult<'code>>,
-
-    // tokens: collections::VecDeque<LookaheadResult<'code>>
     tokens: [LookaheadResult<'code>; 2],
     index: u8,
     count: u8,

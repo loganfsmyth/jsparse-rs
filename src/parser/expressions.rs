@@ -602,15 +602,15 @@ where
 
         Ok(TokenResult::Some(()))
     }
-    fn parse_literal_expression(&mut self) -> OptResult<()> {
-        Ok(try_sequence!(
-            self.parse_null_expression()?,
-            self.parse_true_expression()?,
-            self.parse_false_expression()?,
-            self.parse_numeric_expression()?,
-            self.parse_string_expression()?,
-        ))
-    }
+    // fn parse_literal_expression(&mut self) -> OptResult<()> {
+    //     Ok(try_sequence!(
+    //         self.parse_null_expression()?,
+    //         self.parse_true_expression()?,
+    //         self.parse_false_expression()?,
+    //         self.parse_numeric_expression()?,
+    //         self.parse_string_expression()?,
+    //     ))
+    // }
     fn parse_null_expression(&mut self) -> OptResult<()> {
         try_value!(self.keyword("null"));
 
