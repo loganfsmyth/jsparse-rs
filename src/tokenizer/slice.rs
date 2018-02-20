@@ -112,22 +112,22 @@ pub struct TokenResult<'code>(tokens::Token<'code>, TokenSize);
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TokenSize {
-  chars: usize,
-  lines: usize,
-  width: usize,
+    chars: usize,
+    lines: usize,
+    width: usize,
 }
 
 fn single_size(size: usize) -> TokenSize {
-  TokenSize {
-    chars: size,
-    lines: 0,
-    width: size,
-  }
+    TokenSize {
+        chars: size,
+        lines: 0,
+        width: size,
+    }
 }
 
 fn punc<'a, 'b>(tok: tokens::PunctuatorToken, size: usize, token: &mut tokens::Token<'a>, t_size: &'b mut TokenSize) {
-  *token = tokens::Token::Punctuator(tok);
-  *t_size = single_size(size);
+    *token = tokens::Token::Punctuator(tok);
+    *t_size = single_size(size);
 }
 
 fn number<'a, 'b>(tok: f64, raw: Cow<'a, str>, token: &mut tokens::Token<'a>, size: &'b mut TokenSize){
