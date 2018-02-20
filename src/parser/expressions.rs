@@ -411,7 +411,8 @@ where
                 tokens::Token::Punctuator(tokens::PunctuatorToken::Period) => LeftType::Ident,
                 tokens::Token::Punctuator(tokens::PunctuatorToken::SquareOpen) => LeftType::Computed,
                 tokens::Token::Punctuator(tokens::PunctuatorToken::ParenOpen) => LeftType::Call,
-                tokens::Token::Template(_) => LeftType::Template,
+                tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::NoSubstitution, .. }) |
+                tokens::Token::Template(tokens::TemplateToken { format: tokens::TemplateFormat::Head, .. }) => LeftType::Template,
                 _ => break,
             };
 
@@ -711,7 +712,11 @@ where
         if tok.format == tokens::TemplateFormat::Head {
             let mut parser = self.with(Flag::Template);
             loop {
+                // println!("In template1");
                 eat_value!(parser.parse_expression()?);
+
+                // println!("In template2");
+
                 let next = eat_value!(parser.template_tail());
 
                 if next.format == tokens::TemplateFormat::Tail {

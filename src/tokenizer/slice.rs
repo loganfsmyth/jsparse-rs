@@ -23,80 +23,41 @@ impl<'code> Clone for SliceTokenizer<'code> {
     }
 }
 
-fn get_name(t: &tokens::Token) -> &'static str {
-    match *t {
-        tokens::Token::Punctuator(_) => "Punctuator",
-        tokens::Token::Comment(_) => "Comment",
-        tokens::Token::Whitespace(_) => "Whitespace",
-        tokens::Token::LineTerminator(_) => "LineTerminator",
-        tokens::Token::RegularExpressionLiteral(_) => "RegularExpression",
-        tokens::Token::IdentifierName(_) => "IdentifierName",
-        tokens::Token::NumericLiteral(_) => "NumericLiteral",
-        tokens::Token::StringLiteral(_) => "StringLiteral",
-        tokens::Token::Template(_) => "Template",
-        tokens::Token::EOF(_) => "EOF",
-    }
-}
-
-use time;
-
 impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
     fn stats(&self) -> &HashMap<&'static str, ( u64, u64, u64 )> {
         &self.data
     }
 
-    fn next_token(&mut self, hint: &Hint, out: (&mut tokens::Token<'code>, &mut TokenRange)) {
+    fn next_token<'a, 'b, 'c>(&mut self, hint: &'a Hint, mut out: (&'b mut tokens::Token<'code>, &'c mut TokenRange)) {
         let start = self.position;
-
 
         let code_s: &'code str = self.code.borrow();
 
-        // let start_ns = time::precise_time_ns();
-        // let init_offset = self.position.offset;
-        loop {
-            if let Some(c) = (&code_s[self.position.offset..]).chars().next() {
-                match c {
-                    '\x09' | '\x0B' | '\x0C' | '\x20' => {
-                        self.position.offset += 1;
-                    }
-                    _ => break,
+        let len = self.code.len();
+        while self.position.offset < len {
+            match code_s.as_bytes()[self.position.offset] {
+                b'\x09' | b'\x0B' | b'\x0C' | b'\x20' => {
+                    self.position.offset += 1;
                 }
-            } else {
-                *out.0 = tokens::EOFToken {}.into();
-                *out.1 = TokenRange {
-                    start: self.position,
-                    end: self.position,
-                };
-                return;
+                _ => break,
             }
         }
 
-        // if init_offset != self.position.offset {
-        //     let t = time::precise_time_ns() - start_ns;
-
-        //     let data = self.data.entry("Whitespace").or_insert((0, 0, 0));
-
-        //     data.0 += 1;
-        //     data.1 += t;
-        //     data.2 += (self.position.offset - init_offset) as u64;
-        // }
+        if self.position.offset == len {
+            *out.0 = tokens::EOFToken {}.into();
+            *out.1 = TokenRange {
+                start: self.position,
+                end: self.position,
+            };
+            return;
+        }
 
         let s = &code_s[self.position.offset..];
 
-        // let start_ns = time::precise_time_ns();
+        let mut size = TokenSize::default();
+        read_next(s, hint, &mut out.0, &mut size);
 
-        let result: TokenResult<'code> = read_next(s, hint);
-        let TokenResult(token, size) = result;
-
-        // let t = time::precise_time_ns() - start_ns;
-
-        // let data = self.data.entry(get_name(&token)).or_insert((0, 0, 0));
-
-        // data.0 += 1;
-        // data.1 += t;
-        // data.2 += size.chars as u64;
-
-        // println!("line {} column {}: {:?}", self.position.line, self.position.column, token );
+        // println!("Token: {:?} at {:?}", out.0, self.position);
 
 
         // TODO: We are inconsistent about byte length vs char count for "chars" here and it breaks things
@@ -119,7 +80,6 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
             start,
             end: self.position,
         };
-        *out.0 = token;
         *out.1 = range;
     }
 }
@@ -140,7 +100,7 @@ impl<'code> IntoTokenizer<'code> for &'code str {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TokenResult<'code>(tokens::Token<'code>, TokenSize);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TokenSize {
   chars: usize,
   lines: usize,
@@ -155,30 +115,27 @@ fn single_size(size: usize) -> TokenSize {
   }
 }
 
-fn punc(tok: tokens::PunctuatorToken, size: usize) -> TokenResult<'static> {
-  TokenResult(tokens::Token::Punctuator(tok), single_size(size))
+fn punc<'a, 'b>(tok: tokens::PunctuatorToken, size: usize, token: &mut tokens::Token<'a>, t_size: &'b mut TokenSize) {
+  *token = tokens::Token::Punctuator(tok);
+  *t_size = single_size(size);
 }
 
-fn number<'a>(tok: f64, raw: Cow<'a, str>) -> TokenResult<'a> {
+fn number<'a, 'b>(tok: f64, raw: Cow<'a, str>, token: &mut tokens::Token<'a>, size: &'b mut TokenSize){
     let len = raw.chars().count();
-    TokenResult(
-        tokens::NumericLiteralToken {
-            value: tok
-        }.into(),
-        single_size(len),
-    )
+    *token = tokens::NumericLiteralToken {
+        value: tok
+    }.into();
+    *size = single_size(len);
 }
-fn string<'a>(tok: Cow<'a, str>, raw: Cow<'a, str>) -> TokenResult<'a> {
+fn string<'a, 'b>(tok: Cow<'a, str>, raw: Cow<'a, str>, token: &mut tokens::Token<'a>, size: &'b mut TokenSize) {
     let len = raw.chars().count();
-    TokenResult(
-        tokens::StringLiteralToken {
-            value: tok
-        }.into(),
-        single_size(len),
-    )
+    *token = tokens::StringLiteralToken {
+        value: tok
+    }.into();
+    *size = single_size(len);
 }
 
-fn template<'a>(tok: Cow<'a, str>, raw: Cow<'a, str>, format: TemplateFormat) -> TokenResult<'a> {
+fn template<'a, 'b>(tok: Cow<'a, str>, raw: Cow<'a, str>, format: TemplateFormat, token: &mut tokens::Token<'a>, size: &'b mut TokenSize) {
     let len = tok.chars().count() + match format {
         TemplateFormat::NoSubstitution => 2,
         TemplateFormat::Head => 3,
@@ -186,17 +143,15 @@ fn template<'a>(tok: Cow<'a, str>, raw: Cow<'a, str>, format: TemplateFormat) ->
         TemplateFormat::Tail => 2,
     };
 
-    TokenResult(
-        tokens::TemplateToken {
-            format,
-            raw,
-            cooked: tok
-        }.into(),
-        single_size(len),
-    )
+    *token = tokens::TemplateToken {
+        format,
+        raw,
+        cooked: tok
+    }.into();
+    *size = single_size(len);
 }
 
-fn comment<'a>(tok: Cow<'a, str>, format: CommentFormat) -> TokenResult<'a> {
+fn comment<'a, 'b>(tok: Cow<'a, str>, format: CommentFormat, token: &mut tokens::Token<'a>, size: &'b mut TokenSize){
     let mut chars = tok.chars().count();
     let mut lines = 0;
     let mut width;
@@ -239,22 +194,20 @@ fn comment<'a>(tok: Cow<'a, str>, format: CommentFormat) -> TokenResult<'a> {
         _ => unimplemented!("unsupported comment format"),
     }
 
-    TokenResult(
-        CommentToken {
-            format,
-            value: tok
-        }.into(),
-        TokenSize {
-            chars,
-            lines,
-            width,
-        }
-    )
+    *token = CommentToken {
+        format,
+        value: tok
+    }.into();
+    *size = TokenSize {
+        chars,
+        lines,
+        width,
+    };
 }
 
 // use flame;
 
-pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
+pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &'tok mut tokens::Token<'code>, size: &'b mut TokenSize) {
     // let _g = flame::start_guard("token");
     // loop, eating whitespace chars?
 
@@ -262,32 +215,30 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
     let len = bytes.len();
 
     if len == 0 {
-        return TokenResult (
-            tokens::EOFToken {}.into(),
-            TokenSize {
-                chars: 0,
-                lines: 0,
-                width: 0,
-            }
-        );
+        *token = tokens::EOFToken {}.into();
+        *size = TokenSize {
+            chars: 0,
+            lines: 0,
+            width: 0,
+        };
     }
 
     let index = 0;
     match bytes[index] {
-        b'{' => punc(PunctuatorToken::CurlyOpen, 1),
-        b'(' => punc(PunctuatorToken::ParenOpen, 1),
-        b')' => punc(PunctuatorToken::ParenClose, 1),
-        b'[' => punc(PunctuatorToken::SquareOpen, 1),
-        b']' => punc(PunctuatorToken::SquareClose, 1),
-        b';' => punc(PunctuatorToken::Semicolon, 1),
-        b',' => punc(PunctuatorToken::Comma, 1),
-        b'?' => punc(PunctuatorToken::Question, 1),
-        b':' => punc(PunctuatorToken::Colon, 1),
-        b'~' => punc(PunctuatorToken::Tilde, 1),
+        b'{' => punc(PunctuatorToken::CurlyOpen, 1, token, size),
+        b'(' => punc(PunctuatorToken::ParenOpen, 1, token, size),
+        b')' => punc(PunctuatorToken::ParenClose, 1, token, size),
+        b'[' => punc(PunctuatorToken::SquareOpen, 1, token, size),
+        b']' => punc(PunctuatorToken::SquareClose, 1, token, size),
+        b';' => punc(PunctuatorToken::Semicolon, 1, token, size),
+        b',' => punc(PunctuatorToken::Comma, 1, token, size),
+        b'?' => punc(PunctuatorToken::Question, 1, token, size),
+        b':' => punc(PunctuatorToken::Colon, 1, token, size),
+        b'~' => punc(PunctuatorToken::Tilde, 1, token, size),
 
         b'.' => {
             if index + 2 < len && bytes[index + 1] == b'.' && bytes[index + 2] == b'.' {
-                punc(PunctuatorToken::Ellipsis, 3)
+                punc(PunctuatorToken::Ellipsis, 3, token, size)
             } else if index + 1 < len && bytes[index + 1] >= b'0' && bytes[index + 1] <= b'9' {
 
                 let mut val = 0f64;
@@ -305,132 +256,132 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                     offset += num;
                 }
 
-                return number(val, code[0..offset].into())
+                return number(val, code[0..offset].into(), token, size)
             } else {
-                punc(PunctuatorToken::Period, 1)
+                punc(PunctuatorToken::Period, 1, token, size)
             }
         }
         b'<' => {
             if index + 1 < len && bytes[index + 1] == b'<' {
                 if index + 2 < len && bytes[index + 2] == b'=' {
-                    punc(PunctuatorToken::LAngleAngleEq, 3)
+                    punc(PunctuatorToken::LAngleAngleEq, 3, token, size)
                 } else {
-                    punc(PunctuatorToken::LAngleAngle, 2)
+                    punc(PunctuatorToken::LAngleAngle, 2, token, size)
                 }
             } else if index + 1 < len && bytes[index + 1] == b'=' {
-                punc(PunctuatorToken::LAngleEq, 2)
+                punc(PunctuatorToken::LAngleEq, 2, token, size)
             } else {
-                punc(PunctuatorToken::LAngle, 1)
+                punc(PunctuatorToken::LAngle, 1, token, size)
             }
         }
         b'>' => {
             if index + 1 < len && bytes[index + 1] == b'>' {
                 if index + 2 < len && bytes[index + 2] == b'>' {
                     if index + 3 < len && bytes[index + 3] == b'=' {
-                        punc(PunctuatorToken::RAngleAngleAngleEq, 4)
+                        punc(PunctuatorToken::RAngleAngleAngleEq, 4, token, size)
                     } else {
-                        punc(PunctuatorToken::RAngleAngleAngle, 3)
+                        punc(PunctuatorToken::RAngleAngleAngle, 3, token, size)
                     }
                 } else if index + 2 < len && bytes[index + 2] == b'=' {
-                    punc(PunctuatorToken::RAngleAngleEq, 3)
+                    punc(PunctuatorToken::RAngleAngleEq, 3, token, size)
                 } else {
-                    punc(PunctuatorToken::RAngleAngle, 2)
+                    punc(PunctuatorToken::RAngleAngle, 2, token, size)
                 }
             } else if index + 1 < len && bytes[index + 1] == b'=' {
-                punc(PunctuatorToken::RAngleEq, 2)
+                punc(PunctuatorToken::RAngleEq, 2, token, size)
             } else {
-                punc(PunctuatorToken::RAngle, 1)
+                punc(PunctuatorToken::RAngle, 1, token, size)
             }
         }
         b'=' => {
             if index + 1 < len && bytes[index + 1] == b'=' {
                 if index + 2 < len && bytes[index + 2] == b'=' {
-                    punc(PunctuatorToken::EqEqEq, 3)
+                    punc(PunctuatorToken::EqEqEq, 3, token, size)
                 } else {
-                    punc(PunctuatorToken::EqEq, 2)
+                    punc(PunctuatorToken::EqEq, 2, token, size)
                 }
             } else if index + 1 < len && bytes[index + 1] == b'>' {
-                punc(PunctuatorToken::Arrow, 2)
+                punc(PunctuatorToken::Arrow, 2, token, size)
             } else {
-                punc(PunctuatorToken::Eq, 1)
+                punc(PunctuatorToken::Eq, 1, token, size)
             }
         }
         b'!' => {
             if index + 1 < len && bytes[index + 1] == b'=' {
                 if index + 2 < len && bytes[index + 2] == b'=' {
-                    punc(PunctuatorToken::ExclamEqEq, 3)
+                    punc(PunctuatorToken::ExclamEqEq, 3, token, size)
                 } else {
-                    punc(PunctuatorToken::ExclamEq, 2)
+                    punc(PunctuatorToken::ExclamEq, 2, token, size)
                 }
             } else {
-                punc(PunctuatorToken::Exclam, 1)
+                punc(PunctuatorToken::Exclam, 1, token, size)
             }
         }
         b'+' => {
             if index + 1 < len && bytes[index + 1] == b'+' {
-                punc(PunctuatorToken::PlusPlus, 2)
+                punc(PunctuatorToken::PlusPlus, 2, token, size)
             } else if index + 1 < len && bytes[index + 1] == b'=' {
-                punc(PunctuatorToken::PlusEq, 2)
+                punc(PunctuatorToken::PlusEq, 2, token, size)
             } else {
-                punc(PunctuatorToken::Plus, 1)
+                punc(PunctuatorToken::Plus, 1, token, size)
             }
         }
         b'-' => {
             if index + 1 < len && bytes[index + 1] == b'-' {
                 if index + 2 < len && bytes[index + 2] == b'>' {
-                    punc(PunctuatorToken::MinusMinusAngle, 3)
+                    punc(PunctuatorToken::MinusMinusAngle, 3, token, size)
                 } else {
-                    punc(PunctuatorToken::MinusMinus, 2)
+                    punc(PunctuatorToken::MinusMinus, 2, token, size)
                 }
             } else if index + 1 < len && bytes[index + 1] == b'=' {
-                punc(PunctuatorToken::MinusEq, 2)
+                punc(PunctuatorToken::MinusEq, 2, token, size)
             } else {
-                punc(PunctuatorToken::Minus, 1)
+                punc(PunctuatorToken::Minus, 1, token, size)
             }
         }
         b'&' => {
             if index + 1 < len && bytes[index + 1] == b'&' {
-                punc(PunctuatorToken::AmpAmp, 2)
+                punc(PunctuatorToken::AmpAmp, 2, token, size)
             } else if index + 1 < len && bytes[index + 1] == b'=' {
-                punc(PunctuatorToken::AmpEq, 2)
+                punc(PunctuatorToken::AmpEq, 2, token, size)
             } else {
-                punc(PunctuatorToken::Amp, 1)
+                punc(PunctuatorToken::Amp, 1, token, size)
             }
         }
         b'|' => {
             if index + 1 < len && bytes[index + 1] == b'|' {
-                punc(PunctuatorToken::BarBar, 2)
+                punc(PunctuatorToken::BarBar, 2, token, size)
             } else  if index + 1 < len && bytes[index + 1] == b'=' {
-                punc(PunctuatorToken::BarEq, 2)
+                punc(PunctuatorToken::BarEq, 2, token, size)
             } else {
-                punc(PunctuatorToken::Bar, 1)
+                punc(PunctuatorToken::Bar, 1, token, size)
             }
         }
         b'^' => {
             if index + 1 < len && bytes[index + 1] == b'=' {
-                punc(PunctuatorToken::CaretEq, 2)
+                punc(PunctuatorToken::CaretEq, 2, token, size)
             } else {
-                punc(PunctuatorToken::Caret, 1)
+                punc(PunctuatorToken::Caret, 1, token, size)
             }
         }
         b'%' => {
             if index + 1 < len && bytes[index + 1] == b'=' {
-                punc(PunctuatorToken::PercentEq, 2)
+                punc(PunctuatorToken::PercentEq, 2, token, size)
             } else {
-                punc(PunctuatorToken::Percent, 1)
+                punc(PunctuatorToken::Percent, 1, token, size)
             }
         }
         b'*' => {
             if index + 1 < len && bytes[index + 1] == b'*' {
                 if index + 2 < len && bytes[index + 2] == b'=' {
-                    punc(PunctuatorToken::StarStarEq, 3)
+                    punc(PunctuatorToken::StarStarEq, 3, token, size)
                 } else {
-                    punc(PunctuatorToken::StarStar, 2)
+                    punc(PunctuatorToken::StarStar, 2, token, size)
                 }
             } else if index + 1 < len && bytes[index + 1] == b'=' {
-                punc(PunctuatorToken::StarEq, 2)
+                punc(PunctuatorToken::StarEq, 2, token, size)
             } else {
-                punc(PunctuatorToken::Star, 1)
+                punc(PunctuatorToken::Star, 1, token, size)
             }
         }
         b'/' => {
@@ -450,7 +401,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                     end = code.len();
                 }
 
-                comment(Cow::from(&code[index + 2..end]), CommentFormat::Line)
+                comment(Cow::from(&code[index + 2..end]), CommentFormat::Line, token, size)
             } else if index + 1 < len && bytes[index + 1] == b'*' {
                 let mut end = index + 2;
 
@@ -470,7 +421,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                     }
                 }
 
-                comment(Cow::from(&code[index + 2..end]), CommentFormat::Block)
+                comment(Cow::from(&code[index + 2..end]), CommentFormat::Block, token, size)
             } else if hint.expression {
                 let mut end = index + 1;
 
@@ -516,22 +467,21 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                     }
                 }
 
-                let size = code[index..flag_end].chars().count();
+                let len = code[index..flag_end].chars().count();
 
                 // println!("{}, {}, {}", index, end, flag_end);
 
-                return TokenResult(
-                    tokens::RegularExpressionLiteralToken {
-                        pattern: (&code[index + 1..end]).into(),
-                        flags: (&code[end + 1..flag_end]).into()
-                    }.into(),
-                    single_size(size),
-                );
+                *token = tokens::RegularExpressionLiteralToken {
+                    pattern: (&code[index + 1..end]).into(),
+                    flags: (&code[end + 1..flag_end]).into()
+                }.into();
+                *size = single_size(len);
+                return;
             } else {
                 if index + 1 < len && bytes[index + 1] == b'=' {
-                    punc(PunctuatorToken::SlashEq, 2)
+                    punc(PunctuatorToken::SlashEq, 2, token, size)
                 } else {
-                    punc(PunctuatorToken::Slash, 1)
+                    punc(PunctuatorToken::Slash, 1, token, size)
                 }
             }
         }
@@ -544,10 +494,10 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                 for (_i, c) in code.char_indices().skip(1) {
                     match c {
                         '{' if  break_curly => {
-                            return template(val.clone().into(), val.into(), TemplateFormat::Middle);
+                            return template(val.clone().into(), val.into(), TemplateFormat::Middle, token, size);
                         }
                         '`' => {
-                            return template(val.clone().into(), val.into(), TemplateFormat::Tail);
+                            return template(val.clone().into(), val.into(), TemplateFormat::Tail, token, size);
                         }
                         '$' => {
                             break_curly = true;
@@ -562,7 +512,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
 
                 unimplemented!("template tail")
             } else {
-                punc(PunctuatorToken::CurlyClose, 1)
+                punc(PunctuatorToken::CurlyClose, 1, token, size)
             }
         }
 
@@ -674,10 +624,10 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
             let raw = Cow::from(&code[start..end]);
 
             return if pieces.len() == 1 {
-                string(pieces.pop().unwrap(), raw)
+                string(pieces.pop().unwrap(), raw, token, size)
             } else {
                 let decoded: String = pieces.into_iter().collect();
-                string(decoded.into(), raw)
+                string(decoded.into(), raw, token, size)
             }
         }
 
@@ -710,7 +660,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                         i += 1;
                     }
 
-                    number(val, code[index..i].into())
+                    number(val, code[index..i].into(), token, size)
                 }
                 b'o' | b'O' => {
                     let mut val = (bytes[index + 2] - b'0') as f64;
@@ -733,7 +683,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                         i += 1;
                     }
 
-                    number(val, code[index..i].into())
+                    number(val, code[index..i].into(), token, size)
                 }
                 b'b' | b'B' => {
                     let mut val = (bytes[index + 2] - b'0') as f64;
@@ -756,7 +706,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                         i += 1;
                     }
 
-                    number(val, code[index..i].into())
+                    number(val, code[index..i].into(), token, size)
                 }
                 b'.' => {
                     // 0.455
@@ -779,12 +729,12 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
 
                     // println!("{}", code[..offset]);
 
-                    number(val, code[..offset].into())
+                    number(val, code[..offset].into(), token, size)
                 }
                 _ => {
                     let (_, num) = parse_exponent(bytes);
 
-                    number(0f64, code[index..index + num + 1].into())
+                    number(0f64, code[index..index + num + 1].into(), token, size)
                 }
             }
         }
@@ -807,7 +757,7 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                 offset += num;
             }
 
-            number(val, code[..offset].into())
+            number(val, code[..offset].into(), token, size)
         }
 
         b'`' => {
@@ -818,10 +768,10 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
             for (_i, c) in code.char_indices().skip(1) {
                 match c {
                     '{' if  break_curly => {
-                        return template(val.clone().into(), val.into(), TemplateFormat::Head);
+                        return template(val.clone().into(), val.into(), TemplateFormat::Head, token, size);
                     }
                     '`' => {
-                        return template(val.clone().into(), val.into(), TemplateFormat::NoSubstitution);
+                        return template(val.clone().into(), val.into(), TemplateFormat::NoSubstitution, token, size);
                     }
                     '$' => {
                         break_curly = true;
@@ -837,40 +787,36 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
             unimplemented!("template string")
         }
         b'\x09' | b'\x0B' | b'\x0C' | b'\x20' => {
-            return TokenResult(
-                tokens::WhitespaceToken {}.into(),
-                single_size(1),
-            );
+            *token = tokens::WhitespaceToken {}.into();
+            *size = single_size(1);
+            return;
         }
         b'\x0A' | b'\x0D' => {
-            return TokenResult(
-                tokens::LineTerminatorToken {}.into(),
-                TokenSize {
-                    chars: 1,
-                    lines: 1,
-                    width: 0,
-                },
-            );
+            *token = tokens::LineTerminatorToken {}.into();
+            *size = TokenSize {
+                chars: 1,
+                lines: 1,
+                width: 0,
+            };
+            return;
         }
 
         _ => {
             for (i, c) in code.char_indices() {
                 match c {
                     '\u{FEFF}' | '\u{00A0}' if i == 0 => {
-                        return TokenResult(
-                            tokens::WhitespaceToken {}.into(),
-                            single_size(1),
-                        );
+                        *token = tokens::WhitespaceToken {}.into();
+                        *size = single_size(1);
+                        return;
                     }
                     '\u{2028}' | '\u{2029}' if i == 0 => {
-                        return TokenResult(
-                            tokens::LineTerminatorToken {}.into(),
-                            TokenSize {
-                                chars: 1,
-                                lines: 1,
-                                width: 0,
-                            },
-                        );
+                        *token = tokens::LineTerminatorToken {}.into();
+                        *size = TokenSize {
+                            chars: 1,
+                            lines: 1,
+                            width: 0,
+                        };
+                        return;
                     }
                     _ => {
                         break;
@@ -891,12 +837,10 @@ pub fn read_next<'a>(code: &'a str, hint: &Hint) -> TokenResult<'a> {
                 }
             }
 
-            return TokenResult(
-                tokens::IdentifierNameToken {
-                    name: (&code[..end]).into(),
-                }.into(),
-                single_size(end - index),
-            );
+            *token = tokens::IdentifierNameToken {
+                name: (&code[..end]).into(),
+            }.into();
+            *size = single_size(end - index);
         }
     }
 }
