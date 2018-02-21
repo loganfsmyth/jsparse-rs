@@ -25,18 +25,14 @@ where
         } else {
             try_value!(self.keyword("function"));
 
-            // println!("here");
             opt_value!(self.punc(tokens::PunctuatorToken::Star))
         };
 
-        // println!("here");
         if self.flags.allow_default {
             opt_value!(self.binding_identifier());
         } else {
             eat_value!(self.binding_identifier());
         }
-
-            // println!("here");
 
         if maybe_async {
             let mut parser = self.without(Flag::Yield);
@@ -69,8 +65,6 @@ where
         } else {
             false
         };
-
-        // println!("tried function expression: {}", maybe_async);
 
         let star = if maybe_async {
             try_value!(self.keyword("async"));

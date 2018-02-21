@@ -16,7 +16,6 @@ where
         self.expect_expression();
         while let TokenResult::Some(_) = self.punc(tokens::PunctuatorToken::Comma) {
             self.expect_expression();
-            // println!("starting comma");
             eat_value!(self.parse_assignment_expression()?);
         }
 
@@ -445,13 +444,10 @@ where
 
         try_value!(parser.punc(tokens::PunctuatorToken::ParenOpen));
 
-        // println!("osdf");
         loop {
             parser.expect_expression();
 
-            // println!("inside");
             if let TokenResult::Some(_) = parser.punc(tokens::PunctuatorToken::Ellipsis) {
-                // println!("4");
                 parser.expect_expression();
                 eat_value!(parser.parse_assignment_expression()?);
 
@@ -461,12 +457,8 @@ where
                 }
             }
 
-            // println!("1");
-
             if let TokenResult::Some(_) = parser.parse_assignment_expression()? {
-            // println!("2");
                 if let TokenResult::Some(_) = parser.punc(tokens::PunctuatorToken::Comma) {
-            // println!("3");
                 } else {
                     break;
                 }
@@ -474,7 +466,6 @@ where
                 break;
             }
         }
-        // println!("done");
 
         eat_value!(parser.punc(tokens::PunctuatorToken::ParenClose));
 
@@ -663,7 +654,6 @@ where
             if let TokenResult::None = parser.punc(tokens::PunctuatorToken::Comma) {
                 break;
             }
-            // println!("again");
         }
 
         eat_value!(parser.punc(tokens::PunctuatorToken::CurlyClose));
@@ -712,10 +702,7 @@ where
         if tok.format == tokens::TemplateFormat::Head {
             let mut parser = self.with(Flag::Template);
             loop {
-                // println!("In template1");
                 eat_value!(parser.parse_expression()?);
-
-                // println!("In template2");
 
                 let next = eat_value!(parser.template_tail());
 

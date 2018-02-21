@@ -148,6 +148,16 @@ where
     tokens: [LookaheadResult<'code>; 2],
     index: u8,
     count: u8,
+
+    // Track first location of non-object-literal single-name assignment
+    // { foo = 4 } = {} -> allowed in patterns, not objects
+    // cover_pattern
+
+
+    // Track if there was a rest element in the expression
+    // cover_arrow_formal
+
+    // cover_async_arrow_formal
 }
 
 impl<'code, T: Tokenizer<'code>> Parser<'code, T> {
