@@ -25,9 +25,8 @@ impl<'code> Clone for SliceTokenizer<'code> {
 fn eat_whitespace(code: &str, pos: &mut Position) {
     let mut index = pos.offset;
 
-    let len = code.len();
-    while index < len {
-        match code.as_bytes()[index] {
+    for &b in code[pos.offset..].as_bytes() {
+        match b {
             b'\x09' | b'\x0B' | b'\x0C' | b'\x20' => {
                 index += 1;
             }
@@ -45,11 +44,40 @@ fn eat_whitespace(code: &str, pos: &mut Position) {
     pos.offset = index;
 }
 
+fn increment_position(code: &str, size: usize, pos: &mut Position) {
+    pos.offset += size;
+
+    let mut saw_cr = false;
+    for c in code[..size].chars() {
+        match c {
+            '\r' => {
+                pos.line += 1;
+                pos.column = 0;
+                saw_cr = true;
+            }
+            '\n' => {
+                if !saw_cr {
+                    pos.line += 1;
+                    pos.column = 0;
+                }
+                saw_cr = false;
+            }
+            '\u{2028}' | '\u{2029}' => {
+                pos.line += 1;
+                pos.column = 0;
+                saw_cr = false;
+            }
+            _ => {
+                pos.column += 1;
+                saw_cr = false;
+            }
+        }
+    }
+}
+
 impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
     fn next_token<'a, 'b, 'c>(&mut self, hint: &'a Hint, mut out: (&'b mut tokens::Token<'code>, &'c mut TokenRange)) {
         eat_whitespace(&self.code, &mut self.position);
-
-        let start = self.position;
 
         let s = &self.code[self.position.offset..];
 
@@ -57,44 +85,8 @@ impl<'code> Tokenizer<'code> for SliceTokenizer<'code> {
 
         // println!("Token: {:?} at {:?}", out.0, self.position);
 
-
-        self.position.offset += size;
-
-        let mut lines = 0;
-        let mut columns = 0;
-        let mut saw_cr = false;
-        for c in s[..size].chars() {
-            match c {
-                '\r' => {
-                    lines += 1;
-                    columns = 0;
-                    saw_cr = true;
-                }
-                '\n' => {
-                    if !saw_cr {
-                        lines += 1;
-                        columns = 0;
-                    }
-                    saw_cr = false;
-                }
-                '\u{2028}' | '\u{2029}' => {
-                    lines += 1;
-                    columns = 0;
-                    saw_cr = false;
-                }
-                _ => {
-                    columns += 1;
-                    saw_cr = false;
-                }
-            }
-        }
-
-        if lines == 0 {
-            self.position.column += columns;
-        } else {
-            self.position.line += lines;
-            self.position.column = columns;
-        }
+        let start = self.position;
+        increment_position(&s, size, &mut self.position);
 
         let range = TokenRange {
             start,
@@ -146,6 +138,27 @@ fn comment<'a, 'b>(tok: Cow<'a, str>, format: CommentFormat, token: &mut tokens:
     }.into();
 }
 
+fn tok_fractional<'code, 'tok>(code: &'code str, token: &'tok mut tokens::Token<'code>) -> usize {
+    let bytes = code.as_bytes();
+    let mut val = 0f64;
+    let mut offset = 1;
+
+    let (frac, num) = parse_decimal_digits(&bytes[offset..]);
+
+    val += frac;
+    offset += num;
+
+    let (exp, num) = parse_exponent(&bytes[offset..]);
+
+    if num != 0 {
+        val = val * 10f64.powi(exp);
+        offset += num;
+    }
+
+    number(val, code[0..offset].into(), token);
+    offset
+}
+
 pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &'tok mut tokens::Token<'code>) -> usize {
     let bytes = code.as_bytes();
     let len = bytes.len();
@@ -155,8 +168,7 @@ pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &
         return 0;
     }
 
-    let index = 0;
-    match bytes[index] {
+    match bytes[0] {
         b'{' => punc(PunctuatorToken::CurlyOpen, 1, token),
         b'(' => punc(PunctuatorToken::ParenOpen, 1, token),
         b')' => punc(PunctuatorToken::ParenClose, 1, token),
@@ -167,81 +179,63 @@ pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &
         b'?' => punc(PunctuatorToken::Question, 1, token),
         b':' => punc(PunctuatorToken::Colon, 1, token),
         b'~' => punc(PunctuatorToken::Tilde, 1, token),
-
         b'.' => {
-            if index + 2 < len && bytes[index + 1] == b'.' && bytes[index + 2] == b'.' {
+            if len > 2 && bytes[1] == b'.' && bytes[2] == b'.' {
                 punc(PunctuatorToken::Ellipsis, 3, token)
-            } else if index + 1 < len && bytes[index + 1] >= b'0' && bytes[index + 1] <= b'9' {
-
-                let mut val = 0f64;
-                let mut offset = 1;
-
-                let (frac, num) = parse_decimal_digits(&bytes[offset..]);
-
-                val += frac;
-                offset += num;
-
-                let (exp, num) = parse_exponent(&bytes[offset..]);
-
-                if num != 0 {
-                    val = val * 10f64.powi(exp);
-                    offset += num;
-                }
-
-                number(val, code[0..offset].into(), token);
-                return offset;
+            } else if len > 1 && bytes[1] >= b'0' && bytes[1] <= b'9' {
+                tok_fractional(&code, token)
             } else {
                 punc(PunctuatorToken::Period, 1, token)
             }
         }
         b'<' => {
-            if index + 1 < len && bytes[index + 1] == b'<' {
-                if index + 2 < len && bytes[index + 2] == b'=' {
+            if len > 1 && bytes[1] == b'<' {
+                if len > 2 && bytes[2] == b'=' {
                     punc(PunctuatorToken::LAngleAngleEq, 3, token)
                 } else {
                     punc(PunctuatorToken::LAngleAngle, 2, token)
                 }
-            } else if index + 1 < len && bytes[index + 1] == b'=' {
+            } else if len > 1 && bytes[1] == b'=' {
                 punc(PunctuatorToken::LAngleEq, 2, token)
             } else {
                 punc(PunctuatorToken::LAngle, 1, token)
             }
         }
         b'>' => {
-            if index + 1 < len && bytes[index + 1] == b'>' {
-                if index + 2 < len && bytes[index + 2] == b'>' {
-                    if index + 3 < len && bytes[index + 3] == b'=' {
+            if len > 1 && bytes[1] == b'>' {
+                if len > 2 && bytes[2] == b'>' {
+                    if len > 3 && bytes[3] == b'=' {
                         punc(PunctuatorToken::RAngleAngleAngleEq, 4, token)
                     } else {
                         punc(PunctuatorToken::RAngleAngleAngle, 3, token)
                     }
-                } else if index + 2 < len && bytes[index + 2] == b'=' {
+                } else if len > 2 && bytes[2] == b'=' {
                     punc(PunctuatorToken::RAngleAngleEq, 3, token)
                 } else {
                     punc(PunctuatorToken::RAngleAngle, 2, token)
                 }
-            } else if index + 1 < len && bytes[index + 1] == b'=' {
+            } else if len > 1 && bytes[1] == b'=' {
                 punc(PunctuatorToken::RAngleEq, 2, token)
             } else {
                 punc(PunctuatorToken::RAngle, 1, token)
             }
         }
         b'=' => {
-            if index + 1 < len && bytes[index + 1] == b'=' {
-                if index + 2 < len && bytes[index + 2] == b'=' {
+            if len > 1 && bytes[1] == b'=' {
+                if len > 2 && bytes[2] == b'=' {
                     punc(PunctuatorToken::EqEqEq, 3, token)
                 } else {
                     punc(PunctuatorToken::EqEq, 2, token)
                 }
-            } else if index + 1 < len && bytes[index + 1] == b'>' {
+            } else if len > 1 && bytes[1] == b'>' {
                 punc(PunctuatorToken::Arrow, 2, token)
             } else {
                 punc(PunctuatorToken::Eq, 1, token)
             }
         }
         b'!' => {
-            if index + 1 < len && bytes[index + 1] == b'=' {
-                if index + 2 < len && bytes[index + 2] == b'=' {
+            if len > 1 && bytes[1] == b'=' {
+                if len > 2 && bytes[2] == b'=' {
                     punc(PunctuatorToken::ExclamEqEq, 3, token)
                 } else {
                     punc(PunctuatorToken::ExclamEq, 2, token)
@@ -251,442 +245,289 @@ pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &
             }
         }
         b'+' => {
-            if index + 1 < len && bytes[index + 1] == b'+' {
+            if len > 1 && bytes[1] == b'+' {
                 punc(PunctuatorToken::PlusPlus, 2, token)
-            } else if index + 1 < len && bytes[index + 1] == b'=' {
+            } else if len > 1 && bytes[1] == b'=' {
                 punc(PunctuatorToken::PlusEq, 2, token)
             } else {
                 punc(PunctuatorToken::Plus, 1, token)
             }
         }
         b'-' => {
-            if index + 1 < len && bytes[index + 1] == b'-' {
-                if index + 2 < len && bytes[index + 2] == b'>' {
+            if len > 1 && bytes[1] == b'-' {
+                if len > 2 && bytes[2] == b'>' {
                     punc(PunctuatorToken::MinusMinusAngle, 3, token)
                 } else {
                     punc(PunctuatorToken::MinusMinus, 2, token)
                 }
-            } else if index + 1 < len && bytes[index + 1] == b'=' {
+            } else if len > 1 && bytes[1] == b'=' {
                 punc(PunctuatorToken::MinusEq, 2, token)
             } else {
                 punc(PunctuatorToken::Minus, 1, token)
             }
         }
         b'&' => {
-            if index + 1 < len && bytes[index + 1] == b'&' {
+            if len > 1 && bytes[1] == b'&' {
                 punc(PunctuatorToken::AmpAmp, 2, token)
-            } else if index + 1 < len && bytes[index + 1] == b'=' {
+            } else if len > 1 && bytes[1] == b'=' {
                 punc(PunctuatorToken::AmpEq, 2, token)
             } else {
                 punc(PunctuatorToken::Amp, 1, token)
             }
         }
         b'|' => {
-            if index + 1 < len && bytes[index + 1] == b'|' {
+            if len > 1 && bytes[1] == b'|' {
                 punc(PunctuatorToken::BarBar, 2, token)
-            } else  if index + 1 < len && bytes[index + 1] == b'=' {
+            } else  if len > 1 && bytes[1] == b'=' {
                 punc(PunctuatorToken::BarEq, 2, token)
             } else {
                 punc(PunctuatorToken::Bar, 1, token)
             }
         }
         b'^' => {
-            if index + 1 < len && bytes[index + 1] == b'=' {
+            if len > 1 && bytes[1] == b'=' {
                 punc(PunctuatorToken::CaretEq, 2, token)
             } else {
                 punc(PunctuatorToken::Caret, 1, token)
             }
         }
         b'%' => {
-            if index + 1 < len && bytes[index + 1] == b'=' {
+            if len > 1 && bytes[1] == b'=' {
                 punc(PunctuatorToken::PercentEq, 2, token)
             } else {
                 punc(PunctuatorToken::Percent, 1, token)
             }
         }
         b'*' => {
-            if index + 1 < len && bytes[index + 1] == b'*' {
-                if index + 2 < len && bytes[index + 2] == b'=' {
+            if len > 1 && bytes[1] == b'*' {
+                if len > 2 && bytes[2] == b'=' {
                     punc(PunctuatorToken::StarStarEq, 3, token)
                 } else {
                     punc(PunctuatorToken::StarStar, 2, token)
                 }
-            } else if index + 1 < len && bytes[index + 1] == b'=' {
+            } else if len > 1 && bytes[1] == b'=' {
                 punc(PunctuatorToken::StarEq, 2, token)
             } else {
                 punc(PunctuatorToken::Star, 1, token)
             }
         }
         b'/' => {
-            if index + 1 < len && bytes[index + 1] == b'/' {
-                let mut end = 0;
-
-                for (i, &b) in bytes.iter().enumerate().skip(2) {
-                    match b {
-                        b'\r' | b'\n' => {
-                            end = i;
-                            break;
-                        }
-                        b'\xE2' if code[i..].starts_with(NS_LS) || code[i..].starts_with(NS_PS) => {
-                            end = i;
-                            break;
-                        }
-                        _ => {}
-                    }
-                }
-                if end == 0 {
-                    end = code.len();
-                }
-
-                comment(Cow::from(&code[index + 2..end]), CommentFormat::Line, token);
-                return end;
-            } else if index + 1 < len && bytes[index + 1] == b'*' {
-                let mut break_slash = false;
-                for (i, &b) in bytes.iter().enumerate().skip(2) {
-                    match b {
-                        b'/' if break_slash => {
-                            comment(Cow::from(&code[2..i - 1]), CommentFormat::Block, token);
-                            return i + 1;
-                        }
-                        b'*' => {
-                            break_slash = true;
-                        }
-                        _ => {
-                            break_slash = false;
-                        }
-                    }
-                }
-
-                unimplemented!("unterminated block comment");
-            } else if hint.expression {
-                let mut end = index + 1;
-
-                let mut in_escape = false;
-                let mut in_class = false;
-                for (i, &b) in bytes.iter().enumerate().skip(1) {
-                    match b {
-                        _ if in_escape => {
-                            in_escape = false;
-                            // TODO: Throw if newlines?
-                        }
-                        b'\\' => {
-                            in_escape = true;
-                        }
-                        b'/' if !in_class => {
-                            end = i;
-                            break;
-                        }
-                        b'[' if !in_class => {
-                            in_class = true;
-                        }
-                        b']' if in_class => {
-                            in_class = false;
-                        }
-                        _ => {},
-                    }
-                }
-                if end == index + 1 {
-                    unimplemented!("unterminated regex");
-                }
-
-                let mut flag_end = end + 1;
-                for (i, c) in (&code[flag_end..]).char_indices() {
-                    match c {
-                        'a'...'z' => {
-                            flag_end = (end + 1) + (i + 1);
-                        }
-                        _ => break,
-                    }
-                }
-
-                *token = tokens::RegularExpressionLiteralToken {
-                    pattern: (&code[index + 1..end]).into(),
-                    flags: (&code[end + 1..flag_end]).into()
-                }.into();
-                return flag_end;
-            } else {
-                if index + 1 < len && bytes[index + 1] == b'=' {
-                    punc(PunctuatorToken::SlashEq, 2, token)
-                } else {
-                    punc(PunctuatorToken::Slash, 1, token)
-                }
-            }
+            tok_slash(code, hint, token)
         }
         b'}' => {
-            if hint.template {
-                let mut break_curly = false;
-
-                for (i, &b) in bytes.iter().enumerate().skip(1) {
-                    match b {
-                        b'{' if break_curly => {
-
-                            template(code[..i - 1].into(), code[..i - 1].into(), TemplateFormat::Middle, token);
-                            return i + 1;
-                        }
-                        b'`' => {
-                            template(code[..i - 1].into(), code[..i - 1].into(), TemplateFormat::Tail, token);
-                            return i + 1;
-                        }
-                        b'$' => {
-                            break_curly = true;
-                        }
-                        _ => {
-                            break_curly = false;
-                        }
-                    }
-                }
-
-                unimplemented!("template tail")
-            } else {
-                punc(PunctuatorToken::CurlyClose, 1, token)
-            }
+            tok_curly_close(code, hint, token)
         }
 
         t @ b'\'' | t @ b'\"' => {
-            let mut pieces = vec![];
-
-            let mut start = index;
-            let mut end = start;
-
-            let mut in_escape = 0;
-            let mut in_hex_escape = false;
-            let mut in_unicode_escape = false;
-            let mut in_long_unicode_escape = false;
-            let mut ignore_nl = false;
-
-            let mut s: usize = index + 1;
-            for (i, &b) in bytes.iter().enumerate().skip(1) {
-                // TODO: Build state transition tables for parsing escapes
-
-                if in_escape == 1 {
-                    match b {
-                        b'\r' => {
-                            ignore_nl = true;
-                            in_escape = 0;
-                            continue;
-                        }
-                        b'\n' => {
-                            in_escape = 0;
-                            continue;
-                        }
-                        b'\xE2' | b'\xE2' if code[i..].starts_with(NS_PS) || code[i..].starts_with(NS_LS) => {
-                            in_escape = 0;
-                            continue;
-                        }
-                        b'\'' | b'"' | b'\\' | b'b' | b'f' | b'n' | b'r' | b't' | b'v' => {
-                            in_escape = 0;
-                            continue;
-                        }
-                        b'0' => {
-                            in_escape = 0;
-                            continue;
-                        }
-                        b'x' => {
-                            in_hex_escape = true;
-                        }
-                        b'u' => {
-                            in_unicode_escape = true;
-                        }
-                        b'1'...b'9' => {
-                            panic!("numbers not allowed");
-                        }
-                        _ => {
-                            unimplemented!("totally bad escapes");
-                        }
-                    }
-                }
-                if in_hex_escape && in_escape == 3 {
-                    in_escape = 0;
-                    in_hex_escape = false;
-                }
-                if in_unicode_escape {
-                    if in_escape == 2 && b == b'{' {
-                        in_long_unicode_escape = true;
-                    }
-
-                    if !in_long_unicode_escape && in_escape == 5 {
-                        in_escape = 0;
-                        in_unicode_escape = false;
-                    }
-
-                    if in_long_unicode_escape && b == b'}' {
-                        in_escape = 0;
-                        in_unicode_escape = false;
-                        in_long_unicode_escape = false;
-                    }
-                }
-
-                if in_escape != 0 {
-                    in_escape += 1;
-                    continue;
-                }
-
-                match b {
-                    b'\\' => {
-                        // pieces.push(Cow::from(&code[s..i]));
-                        // start = i + 1;
-
-                        in_escape = 1;
-                    }
-                    b'\"' if t == b'\"' => {
-                        pieces.push(Cow::from(&code[s..i]));
-                        end = i + 1;
-                        break;
-                    },
-                    b'\'' if t == b'\'' => {
-                        pieces.push(Cow::from(&code[s..i]));
-                        end = i + 1;
-                        break;
-                    },
-                    b'\n' if ignore_nl => {
-
-                    }
-                    b'\r' | b'\n' => {
-                        // Invalid string
-                        panic!("string with newlines")
-                    }
-                    b'\xE2' if code[i..].starts_with(NS_PS) || code[i..].starts_with(NS_LS) => {
-                        // Invalid string
-                        panic!("string with newlines")
-                    }
-                    _ => { }
-                }
-            }
-
-            let raw = Cow::from(&code[start..end]);
-
-            if pieces.len() == 1 {
-                string(pieces.pop().unwrap(), raw, token);
-            } else {
-                let decoded: String = pieces.into_iter().collect();
-                string(decoded.into(), raw, token);
-            }
-            return end;
+            tok_str(t, code, token)
         }
 
         b'0' => {
-            let b = if index + 2 < len { bytes[index + 1] } else { 0 };
-            match b {
-                b'x' | b'X' => {
-                    let mut val = (bytes[index + 2] - b'0') as f64;
-
-                    let mut i = index + 3;
-                    loop {
-                        if i == len { break }
-
-                        match bytes[i] {
-                            v @ b'0'...b'9' => {
-                                val *= 16f64;
-                                val += (v - b'0') as f64;
-                            }
-                            v @ b'a'...b'f' => {
-                                val *= 16f64;
-                                val += (v - b'a') as f64;
-                            }
-                            v @ b'A'...b'F' => {
-                                val *= 16f64;
-                                val += (v - b'A') as f64;
-                            }
-                            _ => break,
-                        }
-
-                        i += 1;
-                    }
-
-                    number(val, code[index..i].into(), token);
-                    i
-                }
-                b'o' | b'O' => {
-                    let mut val = (bytes[index + 2] - b'0') as f64;
-
-                    let mut i = index + 3;
-                    loop {
-                        if i == len { break }
-
-                        match bytes[i] {
-                            v @ b'0'...b'7' => {
-                                val *= 8f64;
-                                val += (v - b'0') as f64;
-                            }
-                            b'8' | b'9' => {
-                                unimplemented!("invalid number error")
-                            }
-                            _ => break,
-                        }
-
-                        i += 1;
-                    }
-
-                    number(val, code[index..i].into(), token);
-                    i
-                }
-                b'b' | b'B' => {
-                    let mut val = (bytes[index + 2] - b'0') as f64;
-
-                    let mut i = index + 3;
-                    loop {
-                        if i == len { break }
-
-                        match bytes[i] {
-                            v @ b'0'...b'1' => {
-                                val *= 2f64;
-                                val += (v - b'0') as f64;
-                            }
-                            b'2'...b'9' => {
-                                unimplemented!("invalid number error")
-                            }
-                            _ => break,
-                        }
-
-                        i += 1;
-                    }
-
-                    number(val, code[index..i].into(), token);
-                    i
-                }
-                b'.' => {
-                    // 0.455
-                    // 0.456e5
-
-                    let mut val = 0f64;
-                    let mut offset = 2;
-
-                    let (frac, num) = parse_decimal_digits(&bytes[offset..]);
-                    if num != 0 {
-                        val += frac;
-                        offset += num;
-                    }
-
-                    let (exp, num) = parse_exponent(&bytes[offset..]);
-                    if num != 0 {
-                        val = val * 10f64.powi(exp);
-                        offset += num;
-                    }
-
-                    // println!("{}", code[..offset]);
-
-                    number(val, code[..offset].into(), token);
-                    offset
-                }
-                _ => {
-                    let (_, num) = parse_exponent(bytes);
-
-                    number(0f64, code[index..index + num + 1].into(), token);
-                    index + num + 1
-                }
-            }
+            tok_zero_num(code, token)
         }
         b'1'...b'9' => {
-            // println!("+start+");
-            let (mut val, mut offset) = parse_int_literal(bytes);
+            tok_num(code, token)
+        }
 
-            // println!("+{}+", val);
+        b'`' => {
+            tok_template_head(code, token)
+        }
+        b'\x09' | b'\x0B' | b'\x0C' | b'\x20' => {
+            unreachable!();
+        }
+        b'\x0A' | b'\x0D' => {
+            *token = tokens::LineTerminatorToken {}.into();
+            return 1;
+        }
 
-            if offset < len && bytes[offset] == b'.' {
-                let (frac, num) = parse_decimal_digits(&bytes[offset + 1..]);
+        _ => {
+            tok_misc(code, token)
+        }
+    }
+}
+
+fn tok_misc<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> usize {
+    let bytes = code.as_bytes();
+    let index = 0;
+
+    let mut end = index;
+
+    for (i, &b) in bytes.iter().enumerate() {
+        match b {
+            b'$' | b'_' | b'a'...b'z' | b'A'...b'Z' | b'0'...b'9' => {
+                end = i + 1;
+            }
+            b'\xEF' if i == 0 && code.starts_with(WS_ZWNBSP) => {
+                unreachable!();
+            }
+            b'\xE2' if i == 0 && code.starts_with(WS_NBSP) => {
+                unreachable!();
+            }
+            b'\xE2' if i == 0 && (code[i..].starts_with(NS_PS) || code[i..].starts_with(NS_LS)) => {
+                *token = tokens::LineTerminatorToken {}.into();
+                return NS_PS.len();
+            }
+            _ => {
+                break;
+            }
+        }
+    }
+
+    *token = tokens::IdentifierNameToken {
+        name: (&code[..end]).into(),
+    }.into();
+
+    end - index
+
+
+}
+
+fn tok_template_head<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> usize {
+    let bytes = code.as_bytes();
+
+    let mut break_curly = false;
+
+    for (i, &b) in bytes.iter().enumerate().skip(1) {
+        match b {
+            b'{' if  break_curly => {
+                template(code[..i].into(), code[..i].into(), TemplateFormat::Head, token);
+                return i + 1;
+
+            }
+            b'`' => {
+                template(code[..i].into(), code[..i].into(), TemplateFormat::NoSubstitution, token);
+                return i + 1;
+            }
+            b'$' => {
+                break_curly = true;
+            }
+            _ => {
+                break_curly = false;
+            }
+        }
+    }
+
+    unimplemented!("template string")
+
+}
+
+fn tok_num<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> usize {
+    let bytes = code.as_bytes();
+    let len = code.len();
+
+    let (mut val, mut offset) = parse_int_literal(bytes);
+
+    if offset < len && bytes[offset] == b'.' {
+        let (frac, num) = parse_decimal_digits(&bytes[offset + 1..]);
+        val += frac;
+        offset += num + 1;
+    }
+
+    let (exp, num) = parse_exponent(&bytes[offset..]);
+    if num != 0 {
+        val = val * 10f64.powi(exp);
+        offset += num;
+    }
+
+    number(val, code[..offset].into(), token);
+    offset
+}
+
+fn tok_zero_num<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> usize {
+    let bytes = code.as_bytes();
+    let len = code.len();
+    let index = 0;
+
+    let b = if index + 2 < len { bytes[index + 1] } else { 0 };
+    match b {
+        b'x' | b'X' => {
+            let mut val = (bytes[index + 2] - b'0') as f64;
+
+            let mut i = index + 3;
+            loop {
+                if i == len { break }
+
+                match bytes[i] {
+                    v @ b'0'...b'9' => {
+                        val *= 16f64;
+                        val += (v - b'0') as f64;
+                    }
+                    v @ b'a'...b'f' => {
+                        val *= 16f64;
+                        val += (v - b'a') as f64;
+                    }
+                    v @ b'A'...b'F' => {
+                        val *= 16f64;
+                        val += (v - b'A') as f64;
+                    }
+                    _ => break,
+                }
+
+                i += 1;
+            }
+
+            number(val, code[index..i].into(), token);
+            i
+        }
+        b'o' | b'O' => {
+            let mut val = (bytes[index + 2] - b'0') as f64;
+
+            let mut i = index + 3;
+            loop {
+                if i == len { break }
+
+                match bytes[i] {
+                    v @ b'0'...b'7' => {
+                        val *= 8f64;
+                        val += (v - b'0') as f64;
+                    }
+                    b'8' | b'9' => {
+                        unimplemented!("invalid number error")
+                    }
+                    _ => break,
+                }
+
+                i += 1;
+            }
+
+            number(val, code[index..i].into(), token);
+            i
+        }
+        b'b' | b'B' => {
+            let mut val = (bytes[index + 2] - b'0') as f64;
+
+            let mut i = index + 3;
+            loop {
+                if i == len { break }
+
+                match bytes[i] {
+                    v @ b'0'...b'1' => {
+                        val *= 2f64;
+                        val += (v - b'0') as f64;
+                    }
+                    b'2'...b'9' => {
+                        unimplemented!("invalid number error")
+                    }
+                    _ => break,
+                }
+
+                i += 1;
+            }
+
+            number(val, code[index..i].into(), token);
+            i
+        }
+        b'.' => {
+            // 0.455
+            // 0.456e5
+
+            let mut val = 0f64;
+            let mut offset = 2;
+
+            let (frac, num) = parse_decimal_digits(&bytes[offset..]);
+            if num != 0 {
                 val += frac;
-                offset += num + 1;
-                // }
+                offset += num;
             }
 
             let (exp, num) = parse_exponent(&bytes[offset..]);
@@ -695,77 +536,275 @@ pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &
                 offset += num;
             }
 
+            // println!("{}", code[..offset]);
+
             number(val, code[..offset].into(), token);
             offset
         }
-
-        b'`' => {
-            let mut break_curly = false;
-
-            for (i, &b) in bytes.iter().enumerate().skip(1) {
-                match b {
-                    b'{' if  break_curly => {
-                        template(code[..i].into(), code[..i].into(), TemplateFormat::Head, token);
-                        return i + 1;
-
-                    }
-                    b'`' => {
-                        template(code[..i].into(), code[..i].into(), TemplateFormat::NoSubstitution, token);
-                        return i + 1;
-                    }
-                    b'$' => {
-                        break_curly = true;
-                    }
-                    _ => {
-                        break_curly = false;
-                    }
-                }
-            }
-
-            unimplemented!("template string")
-        }
-        // b'\x09' | b'\x0B' | b'\x0C' | b'\x20' => {
-        //     *token = tokens::WhitespaceToken {}.into();
-        //     return 1;
-        // }
-        b'\x0A' | b'\x0D' => {
-            *token = tokens::LineTerminatorToken {}.into();
-            return 1;
-        }
-
         _ => {
-            let mut end = index;
+            let (_, num) = parse_exponent(bytes);
 
-            for (i, &b) in bytes.iter().enumerate() {
-                match b {
-                    b'$' | b'_' | b'a'...b'z' | b'A'...b'Z' | b'0'...b'9' => {
-                        end = i + 1;
-                    }
-                    // b'\xEF' if i == 0 && code.starts_with(WS_ZWNBSP) => {
-                    //     *token = tokens::WhitespaceToken {}.into();
-                    //     return WS_ZWNBSP.len();
-                    // }
-                    // b'\xE2' if i == 0 && code.starts_with(WS_NBSP) => {
-                    //     *token = tokens::WhitespaceToken {}.into();
-                    //     return WS_NBSP.len();
-                    // }
-                    b'\xE2' if i == 0 && (code[i..].starts_with(NS_PS) || code[i..].starts_with(NS_LS)) => {
-                        *token = tokens::LineTerminatorToken {}.into();
-                        return NS_PS.len();
-                    }
-                    _ => {
-                        break;
-                    }
-                }
-            }
-
-            *token = tokens::IdentifierNameToken {
-                name: (&code[..end]).into(),
-            }.into();
-
-            end - index
+            number(0f64, code[index..index + num + 1].into(), token);
+            index + num + 1
         }
     }
+}
+
+fn tok_slash<'code, 'tok>(code: &'code str, hint: &Hint, token: &mut tokens::Token<'code>) -> usize {
+    let index = 0;
+    let len = code.len();
+    let bytes = code.as_bytes();
+
+    if index + 1 < len && bytes[index + 1] == b'/' {
+        let mut end = 0;
+
+        for (i, &b) in bytes.iter().enumerate().skip(2) {
+            match b {
+                b'\r' | b'\n' => {
+                    end = i;
+                    break;
+                }
+                b'\xE2' if code[i..].starts_with(NS_LS) || code[i..].starts_with(NS_PS) => {
+                    end = i;
+                    break;
+                }
+                _ => {}
+            }
+        }
+        if end == 0 {
+            end = code.len();
+        }
+
+        comment(Cow::from(&code[index + 2..end]), CommentFormat::Line, token);
+        return end;
+    } else if index + 1 < len && bytes[index + 1] == b'*' {
+        let mut break_slash = false;
+        for (i, &b) in bytes.iter().enumerate().skip(2) {
+            match b {
+                b'/' if break_slash => {
+                    comment(Cow::from(&code[2..i - 1]), CommentFormat::Block, token);
+                    return i + 1;
+                }
+                b'*' => {
+                    break_slash = true;
+                }
+                _ => {
+                    break_slash = false;
+                }
+            }
+        }
+
+        unimplemented!("unterminated block comment");
+    } else if hint.expression {
+        let mut end = index + 1;
+
+        let mut in_escape = false;
+        let mut in_class = false;
+        for (i, &b) in bytes.iter().enumerate().skip(1) {
+            match b {
+                _ if in_escape => {
+                    in_escape = false;
+                    // TODO: Throw if newlines?
+                }
+                b'\\' => {
+                    in_escape = true;
+                }
+                b'/' if !in_class => {
+                    end = i;
+                    break;
+                }
+                b'[' if !in_class => {
+                    in_class = true;
+                }
+                b']' if in_class => {
+                    in_class = false;
+                }
+                _ => {},
+            }
+        }
+        if end == index + 1 {
+            unimplemented!("unterminated regex");
+        }
+
+        let mut flag_end = end + 1;
+        for (i, c) in (&code[flag_end..]).char_indices() {
+            match c {
+                'a'...'z' => {
+                    flag_end = (end + 1) + (i + 1);
+                }
+                _ => break,
+            }
+        }
+
+        *token = tokens::RegularExpressionLiteralToken {
+            pattern: (&code[index + 1..end]).into(),
+            flags: (&code[end + 1..flag_end]).into()
+        }.into();
+        return flag_end;
+    } else {
+        if index + 1 < len && bytes[index + 1] == b'=' {
+            punc(PunctuatorToken::SlashEq, 2, token)
+        } else {
+            punc(PunctuatorToken::Slash, 1, token)
+        }
+    }
+}
+
+fn tok_curly_close<'code, 'tok>(code: &'code str, hint: &Hint, token: &mut tokens::Token<'code>) -> usize {
+    let bytes = code.as_bytes();
+    if hint.template {
+        let mut break_curly = false;
+
+        for (i, &b) in bytes.iter().enumerate().skip(1) {
+            match b {
+                b'{' if break_curly => {
+
+                    template(code[..i - 1].into(), code[..i - 1].into(), TemplateFormat::Middle, token);
+                    return i + 1;
+                }
+                b'`' => {
+                    template(code[..i - 1].into(), code[..i - 1].into(), TemplateFormat::Tail, token);
+                    return i + 1;
+                }
+                b'$' => {
+                    break_curly = true;
+                }
+                _ => {
+                    break_curly = false;
+                }
+            }
+        }
+
+        unimplemented!("template tail")
+    } else {
+        punc(PunctuatorToken::CurlyClose, 1, token)
+    }
+
+}
+
+fn tok_str<'code, 'tok>(t: u8, code: &'code str, token: &mut tokens::Token<'code>) -> usize {
+    let index = 0;
+    let bytes = code.as_bytes();
+
+    let mut pieces = vec![];
+
+    let start = index;
+    let mut end = start;
+
+    let mut in_escape = 0;
+    let mut in_hex_escape = false;
+    let mut in_unicode_escape = false;
+    let mut in_long_unicode_escape = false;
+    let mut ignore_nl = false;
+
+    let s: usize = index + 1;
+    for (i, &b) in bytes.iter().enumerate().skip(1) {
+        // TODO: Build state transition tables for parsing escapes
+
+        if in_escape == 1 {
+            match b {
+                b'\r' => {
+                    ignore_nl = true;
+                    in_escape = 0;
+                    continue;
+                }
+                b'\n' => {
+                    in_escape = 0;
+                    continue;
+                }
+                b'\xE2' | b'\xE2' if code[i..].starts_with(NS_PS) || code[i..].starts_with(NS_LS) => {
+                    in_escape = 0;
+                    continue;
+                }
+                b'\'' | b'"' | b'\\' | b'b' | b'f' | b'n' | b'r' | b't' | b'v' => {
+                    in_escape = 0;
+                    continue;
+                }
+                b'0' => {
+                    in_escape = 0;
+                    continue;
+                }
+                b'x' => {
+                    in_hex_escape = true;
+                }
+                b'u' => {
+                    in_unicode_escape = true;
+                }
+                b'1'...b'9' => {
+                    panic!("numbers not allowed");
+                }
+                _ => {
+                    unimplemented!("totally bad escapes");
+                }
+            }
+        }
+        if in_hex_escape && in_escape == 3 {
+            in_escape = 0;
+            in_hex_escape = false;
+        }
+        if in_unicode_escape {
+            if in_escape == 2 && b == b'{' {
+                in_long_unicode_escape = true;
+            }
+
+            if !in_long_unicode_escape && in_escape == 5 {
+                in_escape = 0;
+                in_unicode_escape = false;
+            }
+
+            if in_long_unicode_escape && b == b'}' {
+                in_escape = 0;
+                in_unicode_escape = false;
+                in_long_unicode_escape = false;
+            }
+        }
+
+        if in_escape != 0 {
+            in_escape += 1;
+            continue;
+        }
+
+        match b {
+            b'\\' => {
+                // pieces.push(Cow::from(&code[s..i]));
+                // start = i + 1;
+
+                in_escape = 1;
+            }
+            b'\"' if t == b'\"' => {
+                pieces.push(Cow::from(&code[s..i]));
+                end = i + 1;
+                break;
+            },
+            b'\'' if t == b'\'' => {
+                pieces.push(Cow::from(&code[s..i]));
+                end = i + 1;
+                break;
+            },
+            b'\n' if ignore_nl => {
+
+            }
+            b'\r' | b'\n' => {
+                // Invalid string
+                panic!("string with newlines")
+            }
+            b'\xE2' if code[i..].starts_with(NS_PS) || code[i..].starts_with(NS_LS) => {
+                // Invalid string
+                panic!("string with newlines")
+            }
+            _ => { }
+        }
+    }
+
+    let raw = Cow::from(&code[start..end]);
+
+    if pieces.len() == 1 {
+        string(pieces.pop().unwrap(), raw, token);
+    } else {
+        let decoded: String = pieces.into_iter().collect();
+        string(decoded.into(), raw, token);
+    }
+    end
 }
 
 
