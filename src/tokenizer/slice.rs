@@ -335,7 +335,7 @@ pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &
         b'\xEF' if code.starts_with(WS_ZWNBSP) => {
             unreachable!();
         }
-        b'\xE2' if code.starts_with(WS_NBSP) => {
+        b'\xC2' if code.starts_with(WS_NBSP) => {
             unreachable!();
         }
         b'\x0A' | b'\x0D' => {
@@ -363,6 +363,8 @@ fn tok_ident<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) ->
             b'$' | b'_' | b'a'...b'z' | b'A'...b'Z' | b'0'...b'9' => {
                 end = i + 1;
             }
+
+            // TODO: Handle all the other ident characters
             _ => {
                 break;
             }
