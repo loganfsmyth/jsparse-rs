@@ -317,36 +317,42 @@ pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &
         b'}' => {
             tok_curly_close(code, hint, token)
         }
-
         t @ b'\'' | t @ b'\"' => {
             tok_str(t, code, token)
         }
-
         b'0' => {
             tok_zero_num(code, token)
         }
         b'1'...b'9' => {
             tok_num(code, token)
         }
-
         b'`' => {
             tok_template_head(code, token)
         }
         b'\x09' | b'\x0B' | b'\x0C' | b'\x20' => {
             unreachable!();
         }
+        b'\xEF' if code.starts_with(WS_ZWNBSP) => {
+            unreachable!();
+        }
+        b'\xE2' if code.starts_with(WS_NBSP) => {
+            unreachable!();
+        }
         b'\x0A' | b'\x0D' => {
             *token = tokens::LineTerminatorToken {}.into();
-            return 1;
+            1
         }
-
+        b'\xE2' if code.starts_with(NS_PS) || code.starts_with(NS_LS) => {
+            *token = tokens::LineTerminatorToken {}.into();
+            NS_PS.len()
+        }
         _ => {
-            tok_misc(code, token)
+            tok_ident(code, token)
         }
     }
 }
 
-fn tok_misc<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> usize {
+fn tok_ident<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> usize {
     let bytes = code.as_bytes();
     let index = 0;
 
@@ -356,16 +362,6 @@ fn tok_misc<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> 
         match b {
             b'$' | b'_' | b'a'...b'z' | b'A'...b'Z' | b'0'...b'9' => {
                 end = i + 1;
-            }
-            b'\xEF' if i == 0 && code.starts_with(WS_ZWNBSP) => {
-                unreachable!();
-            }
-            b'\xE2' if i == 0 && code.starts_with(WS_NBSP) => {
-                unreachable!();
-            }
-            b'\xE2' if i == 0 && (code[i..].starts_with(NS_PS) || code[i..].starts_with(NS_LS)) => {
-                *token = tokens::LineTerminatorToken {}.into();
-                return NS_PS.len();
             }
             _ => {
                 break;
@@ -378,8 +374,6 @@ fn tok_misc<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> 
     }.into();
 
     end - index
-
-
 }
 
 fn tok_template_head<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> usize {
