@@ -118,50 +118,35 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use parser;
     use parser::Parser;
+    use parser::FromTokenizer;
     use tokenizer::IntoTokenizer;
 
     #[test]
     fn it_parses_imports() {
-        let mut p = Parser {
-            tok: "
-                import \"foo\";
-                import foo from \"foo\";
-                import * as ns from \"foo\";
-                import { named, named as other } from \"foo\";
-                import { named, named as other, } from \"foo\";
-                import foo, * as ns from \"foo\";
-                import foo, { named, named as other } from \"foo\";
-                import foo, { named, named as other, } from \"foo\";
-            ".into_tokenizer(),
-            hint: Default::default(),
-            flags: Default::default(),
-            flags_stack: vec![],
-            lookahead: None,
-            token: None,
-        };
-
-        p.parse_module().unwrap();
+        parser::Test::from_tokenizer::<>("
+            import \"foo\";
+            import foo from \"foo\";
+            import * as ns from \"foo\";
+            import { named, named as other } from \"foo\";
+            import { named, named as other, } from \"foo\";
+            import foo, * as ns from \"foo\";
+            import foo, { named, named as other } from \"foo\";
+            import foo, { named, named as other, } from \"foo\";
+        ");
     }
 
     #[test]
     fn it_parses_exports() {
-        let mut p = Parser {
-            tok: "
-                export * from \"foo\";
-                export { foo, foo as other } from \"foo\";
-                export { foo, foo as other, } from \"foo\";
-                export { foo, foo as other };
-                export { foo, foo as other, };
-                export default this;
-            ".into_tokenizer(),
-            hint: Default::default(),
-            flags: Default::default(),
-            flags_stack: vec![],
-            lookahead: None,
-            token: None,
-        };
-
-        p.parse_module().unwrap();
+        parser::Test::from_tokenizer("
+            export * from \"foo\";
+            export { foo, foo as other } from \"foo\";
+            export { foo, foo as other, } from \"foo\";
+            export { foo, foo as other };
+            export { foo, foo as other, };
+            export default this;
+        ");
     }
 }

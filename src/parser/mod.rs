@@ -27,6 +27,28 @@ pub trait FromTokenizer {
     fn from_tokenizer<'code, T: IntoTokenizer<'code> + 'code>(t: T) -> Self;
 }
 
+struct Test {}
+
+impl FromTokenizer for Test {
+    fn from_tokenizer<'code, T: IntoTokenizer<'code> + 'code>(t: T) -> Test {
+        let mut p = Parser {
+            tok: t.into_tokenizer(),
+            hint: Default::default(),
+            flags: Default::default(),
+            flags_stack: vec![],
+
+            tokens: Default::default(),
+            index: 0,
+            count: 0,
+        };
+
+        p.parse_module().unwrap();
+
+        Test {}
+    }
+}
+
+
 impl FromTokenizer for () {
     fn from_tokenizer<'code, T: IntoTokenizer<'code> + 'code>(t: T) -> () {
         let mut p = Parser {
@@ -547,18 +569,10 @@ fn is_binding_identifier(flags: &GrammarFlags, s: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use parser;
 
     #[test]
     fn it_parses() {
-        let mut p = Parser {
-            tok: "this;".into_tokenizer(),
-            hint: Default::default(),
-            flags: Default::default(),
-            flags_stack: vec![],
-            lookahead: None,
-            token: None,
-        };
-
-        p.parse_module().unwrap();
+        parser::Test::from_tokenizer("this;");
     }
 }

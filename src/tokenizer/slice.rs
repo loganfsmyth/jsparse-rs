@@ -386,12 +386,12 @@ fn tok_template_head<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'c
     for (i, &b) in bytes.iter().enumerate().skip(1) {
         match b {
             b'{' if  break_curly => {
-                template(code[..i].into(), code[..i].into(), TemplateFormat::Head, token);
+                template(code[1..i - 1].into(), code[1..i - 1].into(), TemplateFormat::Head, token);
                 return i + 1;
 
             }
             b'`' => {
-                template(code[..i].into(), code[..i].into(), TemplateFormat::NoSubstitution, token);
+                template(code[1..i].into(), code[1..i].into(), TemplateFormat::NoSubstitution, token);
                 return i + 1;
             }
             b'$' => {
@@ -655,11 +655,11 @@ fn tok_curly_close<'code, 'tok>(code: &'code str, hint: &Hint, token: &mut token
             match b {
                 b'{' if break_curly => {
 
-                    template(code[..i - 1].into(), code[..i - 1].into(), TemplateFormat::Middle, token);
+                    template(code[1..i - 1].into(), code[1..i - 1].into(), TemplateFormat::Middle, token);
                     return i + 1;
                 }
                 b'`' => {
-                    template(code[..i - 1].into(), code[..i - 1].into(), TemplateFormat::Tail, token);
+                    template(code[1..i].into(), code[1..i].into(), TemplateFormat::Tail, token);
                     return i + 1;
                 }
                 b'$' => {
@@ -886,76 +886,63 @@ fn parse_exponent(bytes: &[u8]) -> (i32, usize) {
 mod tests {
     use super::*;
 
+    fn read_token<'code>(s: &'code str, h: &Hint) -> (tokens::Token<'code>, usize) {
+        let mut t = tokens::EOFToken {}.into();
+        let bs = read_next(s, h, &mut t);
+
+        (t, bs)
+    }
+
     #[test]
     fn it_parses_line_comments() {
         assert_eq!(
-            read_next("// this is some", &Hint::default()),
-            TokenResult(
+            read_token("// this is some", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Line,
                     value: " this is some".into(),
                 }.into(),
-                TokenSize {
-                    chars: 15,
-                    lines: 0,
-                    width: 15,
-                },
+                15,
             ),
         );
         assert_eq!(
-            read_next("// this is some\rmore", &Hint::default()),
-            TokenResult(
+            read_token("// this is some\rmore", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Line,
                     value: " this is some".into(),
                 }.into(),
-                TokenSize {
-                    chars: 15,
-                    lines: 0,
-                    width: 15,
-                },
+                15,
             ),
         );
         assert_eq!(
-            read_next("// this is some\nmore", &Hint::default()),
-            TokenResult(
+            read_token("// this is some\nmore", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Line,
                     value: " this is some".into(),
                 }.into(),
-                TokenSize {
-                    chars: 15,
-                    lines: 0,
-                    width: 15,
-                },
+                15,
             ),
         );
         assert_eq!(
-            read_next("// this is some\u{2028}more", &Hint::default()),
-            TokenResult(
+            read_token("// this is some\u{2028}more", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Line,
                     value: " this is some".into(),
                 }.into(),
-                TokenSize {
-                    chars: 15,
-                    lines: 0,
-                    width: 15,
-                },
+                15,
             ),
         );
         assert_eq!(
-            read_next("// this is some\u{2029}more", &Hint::default()),
-            TokenResult(
+            read_token("// this is some\u{2029}more", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Line,
                     value: " this is some".into(),
                 }.into(),
-                TokenSize {
-                    chars: 15,
-                    lines: 0,
-                    width: 15,
-                },
+                15,
             ),
         );
     }
@@ -963,119 +950,90 @@ mod tests {
     #[test]
     fn it_parses_block_comments() {
         assert_eq!(
-            read_next("/* this *is some */", &Hint::default()),
-            TokenResult(
+            read_token("/* this *is some */", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Block,
                     value: " this *is some ".into(),
                 }.into(),
-                TokenSize {
-                    chars: 19,
-                    lines: 0,
-                    width: 19,
-                },
+                19,
             ),
         );
         assert_eq!(
-            read_next("/* this *\nis some */", &Hint::default()),
-            TokenResult(
+            read_token("/* this *\nis some */", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Block,
                     value: " this *\nis some ".into(),
                 }.into(),
-                TokenSize {
-                    chars: 20,
-                    lines: 1,
-                    width: 10,
-                },
+                20,
             ),
         );
         assert_eq!(
-            read_next("/* this *\r\nis some */", &Hint::default()),
-            TokenResult(
+            read_token("/* this *\r\nis some */", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Block,
                     value: " this *\r\nis some ".into(),
                 }.into(),
-                TokenSize {
-                    chars: 21,
-                    lines: 1,
-                    width: 10,
-                },
+                21,
             ),
         );
         assert_eq!(
-            read_next("/* this *\u{2028}is some */", &Hint::default()),
-            TokenResult(
+            read_token("/* this *\u{2028}is some */", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Block,
                     value: " this *\u{2028}is some ".into(),
                 }.into(),
-                TokenSize {
-                    chars: 20,
-                    lines: 1,
-                    width: 10,
-                },
+                22,
             ),
         );
         assert_eq!(
-            read_next("/* this *\u{2029}is some */", &Hint::default()),
-            TokenResult(
+            read_token("/* this *\u{2029}is some */", &Hint::default()),
+            (
                 tokens::CommentToken {
                     format: CommentFormat::Block,
                     value: " this *\u{2029}is some ".into(),
                 }.into(),
-                TokenSize {
-                    chars: 20,
-                    lines: 1,
-                    width: 10,
-                },
+                22,
             ),
         );
     }
 
-    #[test]
-    fn it_parses_whitespace() {
-        fn assert_whitespace(code: &str) {
-            let len = code.chars().count();
-            let s: String = vec![code, "\n"].into_iter().collect();
+    // #[test]
+    // fn it_parses_whitespace() {
+    //     fn assert_whitespace(code: &str) {
+    //         let len = code.chars().count();
+    //         let s: String = vec![code, "  "].into_iter().collect();
 
-            assert_eq!(
-                read_next(&s, &Hint::default()),
-                TokenResult(
-                    tokens::WhitespaceToken {}.into(),
-                    TokenSize {
-                        chars: 1,
-                        lines: 0,
-                        width: 1,
-                    },
-                ),
-            );
-        }
+    //         assert_eq!(
+    //             read_token(&s, &Hint::default()),
+    //             (
+    //                 tokens::EOFToken {}.into(),
+    //                 0,
+    //             ),
+    //         );
+    //     }
 
-        assert_whitespace("\u{0009}");
-        assert_whitespace("\u{000B}");
-        assert_whitespace("\u{000C}");
-        assert_whitespace("\u{0020}");
-        assert_whitespace("\u{00A0}");
-        assert_whitespace("\u{FEFF}");
-    }
+    //     assert_whitespace("\u{0009}");
+    //     assert_whitespace("\u{000B}");
+    //     assert_whitespace("\u{000C}");
+    //     assert_whitespace("\u{0020}");
+    //     assert_whitespace("\u{00A0}");
+    //     assert_whitespace("\u{FEFF}");
+    // }
 
     #[test]
     fn it_parses_line_terminators() {
         fn assert_line_terminator(code: &str) {
-            let len = code.chars().count();
             let s: String = vec![code, " "].into_iter().collect();
 
             assert_eq!(
-                read_next(&s, &Hint::default()),
-                TokenResult(
+                read_token(&s, &Hint::default()),
+                (
                     tokens::LineTerminatorToken {}.into(),
-                    TokenSize {
-                        chars: 1,
-                        lines: 1,
-                        width: 0,
-                    },
+                    code.len(),
                 ),
             );
         }
@@ -1089,20 +1047,15 @@ mod tests {
     #[test]
     fn it_parses_strings() {
         fn assert_string(code: &str, value: &str) {
-            let len = code.chars().count();
             let s: String = vec![code, " "].into_iter().collect();
 
             assert_eq!(
-                read_next(&s, &Hint::default()),
-                TokenResult(
+                read_token(&s, &Hint::default()),
+                (
                     tokens::StringLiteralToken {
                         value: value.into(),
                     }.into(),
-                    TokenSize {
-                        chars: len,
-                        lines: 0,
-                        width: len,
-                    },
+                    code.len(),
                 ),
             );
         }
@@ -1116,22 +1069,17 @@ mod tests {
     #[test]
     fn it_parses_templates() {
         fn assert_template(code: &str, value: &str, raw_value: &str, format: TemplateFormat, lines: usize, width: usize) {
-            let len = code.chars().count();
             let s: String = vec![code, " "].into_iter().collect();
 
             assert_eq!(
-                read_next(&s, &Hint::default().template(true)),
-                TokenResult(
+                read_token(&s, &Hint::default().template(true)),
+                (
                     tokens::TemplateToken {
                         format,
                         cooked: value.into(),
                         raw: raw_value.into(),
                     }.into(),
-                    TokenSize {
-                        chars: len,
-                        lines,
-                        width,
-                    },
+                    code.len(),
                 ),
             );
         }
@@ -1145,20 +1093,15 @@ mod tests {
     #[test]
     fn it_parses_numbers() {
         fn assert_number(code: &str, value: f64) {
-            let len = code.chars().count();
             let s: String = vec![code, " "].into_iter().collect();
 
             assert_eq!(
-                read_next(&s, &Hint::default()),
-                TokenResult(
+                read_token(&s, &Hint::default()),
+                (
                     tokens::NumericLiteralToken {
                         value,
                     }.into(),
-                    TokenSize {
-                        chars: len,
-                        lines: 0,
-                        width: len,
-                    },
+                    code.len(),
                 ),
             );
         }
@@ -1187,21 +1130,16 @@ mod tests {
     #[test]
     fn it_parses_regexes() {
         fn assert_regex(code: &str, pattern: &str, flags: &str) {
-            let len = code.chars().count();
             let s: String = vec![code, " "].into_iter().collect();
 
             assert_eq!(
-                read_next(&s, &Hint::default().expression(true)),
-                TokenResult(
+                read_token(&s, &Hint::default().expression(true)),
+                (
                     tokens::RegularExpressionLiteralToken {
                         pattern: pattern.into(),
                         flags: flags.into(),
                     }.into(),
-                    TokenSize {
-                        chars: len,
-                        lines: 0,
-                        width: len,
-                    },
+                    code.len(),
                 ),
             );
         }
@@ -1216,16 +1154,15 @@ mod tests {
     #[test]
     fn it_parses_identifiers() {
         fn assert_identifier(code: &str, name: &str) {
-            let len = code.chars().count();
             let s: String = vec![code, " "].into_iter().collect();
 
             assert_eq!(
-                read_next(&s, &Hint::default()),
-                TokenResult(
+                read_token(&s, &Hint::default()),
+                (
                     tokens::IdentifierNameToken {
                         name: name.into(),
                     }.into(),
-                    single_size(len),
+                    code.len(),
                 ),
             );
         }
@@ -1236,18 +1173,13 @@ mod tests {
     #[test]
     fn it_parses_punctuators() {
         fn assert_punc(code: &str, punc: tokens::PunctuatorToken) {
-            let len = code.chars().count();
             let s: String = vec![code, " "].into_iter().collect();
 
             assert_eq!(
-                read_next(&s, &Hint::default()),
-                TokenResult(
+                read_token(&s, &Hint::default()),
+                (
                     tokens::Token::Punctuator(punc),
-                    TokenSize {
-                        chars: len,
-                        lines: 0,
-                        width: len,
-                    },
+                    code.len(),
                 ),
             );
         }
