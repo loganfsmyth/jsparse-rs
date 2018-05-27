@@ -138,27 +138,6 @@ fn comment<'a, 'b>(tok: Cow<'a, str>, format: CommentFormat, token: &mut tokens:
     }.into();
 }
 
-fn tok_fractional<'code, 'tok>(code: &'code str, token: &'tok mut tokens::Token<'code>) -> usize {
-    let bytes = code.as_bytes();
-    let mut val = 0f64;
-    let mut offset = 1;
-
-    let (frac, num) = parse_decimal_digits(&bytes[offset..]);
-
-    val += frac;
-    offset += num;
-
-    let (exp, num) = parse_exponent(&bytes[offset..]);
-
-    if num != 0 {
-        val = val * 10f64.powi(exp);
-        offset += num;
-    }
-
-    number(val, code[0..offset].into(), token);
-    offset
-}
-
 pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &'tok mut tokens::Token<'code>) -> usize {
     let bytes = code.as_bytes();
     let len = bytes.len();
@@ -352,6 +331,27 @@ pub fn read_next<'code, 'b, 'c, 'tok>(code: &'code str, hint: &'c Hint, token: &
     }
 }
 
+fn tok_fractional<'code, 'tok>(code: &'code str, token: &'tok mut tokens::Token<'code>) -> usize {
+    let bytes = code.as_bytes();
+    let mut val = 0f64;
+    let mut offset = 1;
+
+    let (frac, num) = parse_decimal_digits(&bytes[offset..]);
+
+    val += frac;
+    offset += num;
+
+    let (exp, num) = parse_exponent(&bytes[offset..]);
+
+    if num != 0 {
+        val = val * 10f64.powi(exp);
+        offset += num;
+    }
+
+    number(val, code[0..offset].into(), token);
+    offset
+}
+
 fn tok_ident<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) -> usize {
     let bytes = code.as_bytes();
     let index = 0;
@@ -360,7 +360,7 @@ fn tok_ident<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>) ->
 
     for (i, &b) in bytes.iter().enumerate() {
         match b {
-            b'$' | b'_' | b'a'...b'z' | b'A'...b'Z' | b'0'...b'9' => {
+            b'a'...b'z' | b'A'...b'Z' | b'0'...b'9' | b'$' | b'_'  => {
                 end = i + 1;
             }
 
@@ -531,8 +531,6 @@ fn tok_zero_num<'code, 'tok>(code: &'code str, token: &mut tokens::Token<'code>)
                 val = val * 10f64.powi(exp);
                 offset += num;
             }
-
-            // println!("{}", code[..offset]);
 
             number(val, code[..offset].into(), token);
             offset
